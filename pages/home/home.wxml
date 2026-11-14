@@ -1,0 +1,6 @@
+<view class="screen home-screen">
+  <view class="home-greeting"><text class="home-kicker">此刻</text><text class="home-title">一切，都可以慢慢来。</text></view>
+  <view wx:if="{{loadError}}" class="error"><text>{{loadError}}</text><t-button variant="text" size="small" bind:tap="retry">重试</t-button></view>
+  <view class="home-entry"><t-button class="hero-cta" theme="primary" shape="round" size="large" block bind:tap="startChat">写下此刻</t-button></view>
+</view>
+<author-letter wx:if="{{showFirstLetter}}" id="first-letter" first="{{true}}" saving="{{savingLetter}}" bind:begin="beginLetter" bind:archive="archiveLetter" bind:cancel="cancelLetter"/>

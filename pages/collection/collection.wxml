@@ -1,0 +1,49 @@
+<view class="screen collection-screen">
+  <view wx:if="{{error}}" class="error spaced">{{error}}</view>
+  <view wx:if="{{active === 'board'}}" class="pegboard-wrap">
+    <view class="pegboard">
+      <view class="peg" bindtap="openBoard" data-key="letters" aria-label="信封">
+        <view class="peg-pin"></view>
+        <view class="peg-art art-envelope"><view class="ae-body"></view><view class="ae-flap"></view></view>
+        <text class="peg-label">信封</text>
+      </view>
+      <view class="peg" bindtap="openBoard" data-key="items" aria-label="物品">
+        <view class="peg-pin"></view>
+        <view class="peg-art art-box"><view class="ab-lid"></view><view class="ab-body"></view><view class="ab-ribbon"></view></view>
+        <text class="peg-label">物品</text>
+      </view>
+      <view class="peg" bindtap="openBoard" data-key="photos" aria-label="拍立得">
+        <view class="peg-pin"></view>
+        <view class="peg-art art-polaroid"><view class="ap-photo"></view></view>
+        <text class="peg-label">拍立得</text>
+      </view>
+      <view class="peg" bindtap="openBoard" data-key="memories" aria-label="记忆球">
+        <view class="peg-pin"></view>
+        <view class="peg-art art-orb"><view class="ao-spark"></view></view>
+        <text class="peg-label">记忆球</text>
+      </view>
+    </view>
+  </view>
+  <block wx:else>
+    <button class="board-back" bindtap="backToBoard"><text class="board-back-arrow">‹</text>洞洞板</button>
+    <view wx:if="{{active === 'letters' && items.length}}" class="surface letter-list"><t-cell class="letter-card" wx:for="{{items}}" wx:key="id" title="主创的信" description="{{item.subtitle}}" left-icon="mail" arrow hover bind:click="readLetter"/></view>
+    <view wx:else class="empty-state"><text class="empty-title">{{emptyTitle}}</text><text class="empty-description">{{emptyDescription}}</text></view>
+  </block>
+</view>
+<view wx:if="{{showChatGuide && active === 'letters'}}" class="chat-onboarding" catchtouchmove="blockGuideTouch">
+  <view class="chat-guide-scrim" catchtap="blockGuideTouch"></view>
+  <!-- CHAT_GUIDE_START -->
+  <view class="chat-guide">
+    <view class="chat-guide-top"><text class="chat-guide-kicker">OUR FIRST CONVERSATION</text><text class="chat-guide-sparkle" aria-hidden="true">×</text></view>
+    <view class="chat-guide-title" id="chatGuideTitle"><text class="chat-guide-line">先聊聊，</text><text class="chat-guide-line">让我认识你。</text></view>
+    <button class="chat-guide-button" bindtap="startChat" loading="{{openingChat}}" disabled="{{openingChat}}">开启我们的第一次对话<text class="chat-guide-arrow" aria-hidden="true">→</text></button>
+    <text class="chat-guide-pointer" aria-hidden="true">⌄</text>
+  </view>
+  <!-- CHAT_GUIDE_END -->
+  <view class="chat-guide-tabs">
+    <view class="chat-guide-tab chat-guide-tab-muted" aria-hidden="true"><image src="/assets/tab-home.png"/><text>首页</text></view>
+    <button class="chat-guide-tab chat-guide-tab-chat" bindtap="startChat" disabled="{{openingChat}}" aria-label="聊天"><view class="chat-guide-tab-icon"><image src="/assets/tab-chat.png"/></view><text>聊天</text></button>
+    <view class="chat-guide-tab chat-guide-tab-muted chat-guide-tab-current" aria-hidden="true"><image src="/assets/tab-collection-active.png"/><text>收藏</text></view>
+    <view class="chat-guide-tab chat-guide-tab-muted" aria-hidden="true"><image src="/assets/tab-profile.png"/><text>我的</text></view>
+  </view>
+</view>

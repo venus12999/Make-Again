@@ -1,0 +1,25 @@
+@import '../../assets/fonts/motto.wxss';
+.login-screen { height: 100vh; min-height: 100vh; padding: calc(env(safe-area-inset-top) + 90rpx) 40rpx calc(150rpx + env(safe-area-inset-bottom)); display: flex; flex-direction: column; background: transparent; }
+.login-hero { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 110rpx; }
+.brand-name { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 140rpx; overflow: visible; }
+.brand-canvas { display: block; height: 128rpx; }
+.brand-fallback { font-family: 'MACaveat', 'KaiTi', cursive; font-size: 124rpx; font-weight: 500; line-height: 1.25; color: #4C4555; }
+/* Preview-only: the HTML build turns the canvas into the SVG below. */
+.brand-stroke { fill: none; stroke: #4C4555; stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.brand-animate .brand-stroke { animation-name: brand-stroke-draw; animation-timing-function: linear; animation-fill-mode: forwards; }
+.brand-fill { fill: #4C4555; fill-opacity: 0; stroke: none; }
+.brand-animate .brand-fill { animation: brand-fill-in .32s linear forwards; }
+.brand-svg { display: block; height: 128rpx; }
+.login-motto { display: block; margin-top: 40rpx; font-family: 'MAMottoWenKai', 'KaiTi', 'STKaiti', serif; font-size: 32rpx; font-weight: 400; line-height: 1.5; letter-spacing: 2.4rpx; color: #857D8D; white-space: nowrap; }
+.motto-text { display: inline-block; }
+.motto-animate .motto-text { animation: motto-reveal 1.2s both cubic-bezier(.23,.86,.29,.98); clip-path: inset(0 0 0 0); }
+.login-footer { flex-shrink: 0; width: 100%; padding: 0 20rpx; }
+.wechat-login { display: flex; align-items: center; justify-content: center; width: 100%; height: 96rpx; margin: 0; padding: 0 28rpx; border: 0; border-radius: 48rpx; background: #81728F; color: #FFFFFF; font-size: 30rpx; font-weight: 500; line-height: 1.5; }
+.wechat-login::after { border: 0; }
+.wechat-login-hover { background: #6D5E7B; }
+.wechat-login[disabled] { background: #A497AE; color: #FFFFFF; }
+.login-error { display: block; margin-bottom: 20rpx; text-align: center; color: #9A6378; font-size: 24rpx; line-height: 1.6; }
+@keyframes brand-stroke-draw { to { stroke-dashoffset: 0; } }
+@keyframes brand-fill-in { to { fill-opacity: 1; } }
+@keyframes motto-reveal { 0% { opacity: .08; clip-path: inset(0 100% 0 0); filter: blur(3px); } 85% { opacity: 1; filter: blur(0); } 100% { opacity: 1; clip-path: inset(0 0 0 0); filter: blur(0); } }
+@media (prefers-reduced-motion: reduce) { .brand-animate .brand-stroke, .brand-animate .brand-fill, .motto-animate .motto-text { animation-duration: .01ms; } }
