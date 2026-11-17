@@ -172,6 +172,14 @@ def init_db() -> None:
     # Add model columns before legacy companion reads.
     from memory.migrations_b07 import migrate
     migrate(engine, _RawSessionLocal)
+    # Seed default content (e.g. welcome letter) for first-run databases.
+    try:
+        from memory.seed import seed_welcome_letter
+        with _RawSessionLocal() as _seed_db:
+            seed_welcome_letter(_seed_db)
+            _seed_db.commit()
+    except Exception:
+        pass
 
 
 def get_session():

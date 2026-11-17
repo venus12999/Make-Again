@@ -14,4 +14,10 @@ def enqueue(kind,user_id,payload,dedupe=None):
 
 def flush_intents(db):
     for args in db.info.pop('job_intents',[]):
-        if not db.scalar(select(Job).where(Job.dedupe_key==args['dedupe_key'])): db.add(Job(**args))
+        existing = db.scalar(select(Job).where(Job.dedupe_key==args['dedupe_key']))
+        # 仅在仍活跃/进行中时跳过；已失败/已取消的作业允许按新事务重新入队。
+        if existing is None or existing.status in ('failed','cancelled'):
+            if existing is not None:
+                db.delete(existing)
+                db.flush()
+            db.add(Job(**args))

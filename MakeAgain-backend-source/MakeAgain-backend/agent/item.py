@@ -337,16 +337,18 @@ def handle_upload(db, user_id: str, image_bytes: bytes, item_name: str, intent: 
             return {"ok": False, "match": False,
                     "reason": check.get("reason") or "这张图好像不是你说的那件物品,换一张更清晰、主体更明显的再试一次?"}
 
-    # 不保留原图:抠图校验通过后,删除原图与中间裁切图,只留抠图(尽力而为,失败不阻塞)
-    for k in {crop_key} - {original_key}:
-        try:
-            obj_store.delete(k)
-        except StorageError:
-            pass
+    # 不保留原图与中间裁切图:抠图完成后只留抠图(尽力而为,失败不阻塞)。
+    # 模型注释约定 original_key 恒为空串,故这里显式删除原图与裁切图,只保留 cutout_key。
+    for k in {original_key, crop_key}:
+        if k and k != cutout_key:
+            try:
+                obj_store.delete(k)
+            except StorageError:
+                pass
 
     row = store.add_item_memory(
         db, user_id, item_name=item_name, intent=intent, description=desc,
-        label=label, original_key=original_key, cutout_key=cutout_key,
+        label=label, original_key="", cutout_key=cutout_key,
     )
     row.processing_status=processing_status
     # 入记忆流供后续召回(emotion=None 不污染情绪指标)

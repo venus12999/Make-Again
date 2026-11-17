@@ -9,16 +9,16 @@ from sqlalchemy.orm import Session
 
 from config import get_settings
 from memory.models import (
-    ActivationRedemption, AuthSession, ChatMessage, Companion, DailyChatSummary, DailyPick, DiaryNote, EchoEntry,
+    ActivationRedemption, AuthSession, ChatMessage, Companion, DailyChatSummary, DailyMood, DailyPick, DiaryNote, EchoEntry,
     EmotionNode, FeedbackEntry, InterviewSession, ItemMemory, MemoryEntry, NudgeLog, OnboardingState, PhotoMemory,
     Portrait, Report, StateSnapshot, TodoItem, TreeholeLetter, TreeholeReply, TreeholeSeen, User, UserAuth, UserState,
-    WeeklyReport, utcnow,
+    WeeklyReport, WelcomeLetter, utcnow,
 )
 
 
-# 陪伴类型口径:新真源为 breakup/pet/relative;旧 users.loss_type 用 loved_one 表达"亲人",统一映射为 relative。
-RELATIONSHIP_TYPES = ("breakup", "pet", "relative")
-_LEGACY_LOSS_TO_RELATIONSHIP = {"breakup": "breakup", "loved_one": "relative", "pet": "pet"}
+# Canonical relationship categories. Keep legacy loved_one mapped to relative.
+RELATIONSHIP_TYPES = ("breakup", "pet", "relative", "friend")
+_LEGACY_LOSS_TO_RELATIONSHIP = {"breakup": "breakup", "loved_one": "relative", "pet": "pet", "friend": "friend"}
 
 
 def normalize_relationship_type(value: str | None) -> str | None:
@@ -31,8 +31,8 @@ def normalize_relationship_type(value: str | None) -> str | None:
     return _LEGACY_LOSS_TO_RELATIONSHIP.get(v)
 
 
-# 新陪伴类型(breakup/pet/relative) → 旧 loss_type 词汇(breakup/loved_one/pet),与 _LEGACY_LOSS_TO_RELATIONSHIP 互逆。
-RELATIONSHIP_TO_LOSS_TYPE = {"breakup": "breakup", "pet": "pet", "relative": "loved_one"}
+# Canonical relationship type → legacy loss_type value.
+RELATIONSHIP_TO_LOSS_TYPE = {"breakup": "breakup", "pet": "pet", "relative": "loved_one", "friend": "friend"}
 
 
 def relationship_to_loss_type(relationship_type: str | None) -> str | None:
@@ -1226,3 +1226,126 @@ def last_echo_surfaced_at(db: Session, user_id: str) -> datetime | None:
             EchoEntry.delivered_at.isnot(None),
         ).order_by(EchoEntry.delivered_at.desc()).limit(1)
     ).scalar_one_or_none()
+
+
+def _local_date_key(now=None):
+    from datetime import datetime, timedelta
+    from config import get_settings
+    base = now or datetime.now().replace(microsecond=0)
+    local = base + timedelta(hours=get_settings().timezone_offset_hours)
+    return local.strftime('%Y-%m-%d')
+
+
+def upsert_daily_mood(db, user_id, mood=None, score=None, valence=None, arousal=None, reason=None, companion_id=None, now=None):
+    get_or_create_user(db, user_id)
+    cid = companion_id or (db.info.get('companion_id') if hasattr(db,'info') else None)
+    if cid is None:
+        st = db.get(UserState, user_id)
+        cid = st.current_companion_id if st else None
+    date_key = _local_date_key(now)
+    row = db.scalar(select(DailyMood).where(DailyMood.user_id==user_id, DailyMood.companion_id==cid, DailyMood.date_key==date_key))
+    if row is None:
+        row = DailyMood(user_id=user_id, companion_id=cid, date_key=date_key)
+        db.add(row)
+    row.mood = mood
+    row.score = score
+    row.valence = valence
+    row.arousal = arousal
+    row.reason = reason
+    row.ts = utcnow()
+    db.flush()
+    return row
+
+
+def get_daily_mood(db, user_id, date_key, companion_id=None):
+    cid = companion_id
+    if cid is None:
+        st = db.get(UserState, user_id)
+        cid = st.current_companion_id if st else None
+    return db.scalar(select(DailyMood).where(DailyMood.user_id==user_id, DailyMood.companion_id==cid, DailyMood.date_key==date_key))
+
+
+def list_daily_moods(db, user_id, limit=30, companion_id=None):
+    cid = companion_id
+    if cid is None:
+        st = db.get(UserState, user_id)
+        cid = st.current_companion_id if st else None
+    q = select(DailyMood).where(DailyMood.user_id==user_id, DailyMood.companion_id==cid).order_by(DailyMood.date_key.desc()).limit(limit)
+    return list(db.scalars(q))
+
+
+def get_nudge_prefs(db, user_id):
+    st = get_or_create_user_state(db, user_id)
+    return {'enabled': bool(st.nudge_enabled), 'quiet_start': st.nudge_quiet_start, 'quiet_end': st.nudge_quiet_end}
+
+
+def update_nudge_prefs(db, user_id, enabled=None, quiet_start=None, quiet_end=None):
+    st = get_or_create_user_state(db, user_id)
+    if enabled is not None:
+        st.nudge_enabled = bool(enabled)
+    if quiet_start is not None:
+        st.nudge_quiet_start = quiet_start or None
+    if quiet_end is not None:
+        st.nudge_quiet_end = quiet_end or None
+    db.flush()
+    return get_nudge_prefs(db, user_id)
+
+
+def get_active_welcome_letter(db):
+    return db.scalar(select(WelcomeLetter).where(WelcomeLetter.is_active==True).order_by(WelcomeLetter.version.desc(), WelcomeLetter.updated_at.desc()))
+
+
+def upsert_welcome_letter(db, title=None, content=None, version=None, is_active=None):
+    # 输入校验
+    if title is not None:
+        title = title.strip()
+        if not title:
+            raise ValueError("title 不能为空")
+        if len(title) > 128:
+            raise ValueError("title 超过 128 字符")
+    if content is not None and len(content) > 50000:
+        raise ValueError("content 超过 50000 字符")
+
+    # 版本号：未指定时自动递增
+    latest = db.scalar(select(WelcomeLetter).order_by(WelcomeLetter.version.desc()))
+    if version is None:
+        version = (latest.version + 1) if latest else 1
+
+    make_active = True if is_active is None else is_active
+
+    if make_active:
+        # 停用旧的活跃版本
+        for old in db.scalars(select(WelcomeLetter).where(WelcomeLetter.is_active == True)):
+            old.is_active = False
+
+    row = WelcomeLetter(
+        title=title or (latest.title if latest else "来自主创团队的信"),
+        content=content if content is not None else (latest.content if latest else ""),
+        version=version,
+        is_active=make_active,
+    )
+    db.add(row)
+    db.flush()
+    return row
+
+
+def mark_welcome_letter_seen(db, user_id, version):
+    st = get_or_create_user_state(db, user_id)
+    if version and version > (st.welcome_letter_seen_version or 0):
+        st.welcome_letter_seen_version = version
+    db.flush()
+    return st.welcome_letter_seen_version or 0
+
+
+def welcome_letter_view(row, seen_version=0):
+    if row is None:
+        return {'available': False}
+    return {
+        'available': True,
+        'id': row.id,
+        'title': row.title,
+        'content': row.content,
+        'version': row.version,
+        'seen': (seen_version or 0) >= row.version,
+        'updated_at': row.updated_at.isoformat() if row.updated_at else None,
+    }

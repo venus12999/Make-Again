@@ -1,0 +1,47 @@
+"""Seed data for first-run initialization."""
+from __future__ import annotations
+
+WELCOME_LETTER_TITLE = "在开始之前，想写一封信给你"
+WELCOME_LETTER_CONTENT = """在正式使用之前，Make Again 主创想跟你分享两段自己的故事：
+
+高中时期，我谈过一段非常内耗的恋爱。
+
+转到新学校时，班主任安排了个打橄榄球的男生当我的前桌，让我监督他学习。年少的互动很纯粹，他会刻意逗我、照顾我的情绪，我也慢慢动心，不顾身边所有人的反对，和他走到了一起。
+
+他曾郑重承诺会收心努力，和我奔赴同一个未来。但长久相处下来，他始终难以改变惰性，承诺反复落空。加上他骨子里的自卑与敏感，常常陷入无端内耗和猜忌，不断消耗我的情绪。我一次次期待、一次次失望，耗尽了所有热情。
+
+在我彻底失望，准备出国时，他才幡然醒悟想要努力追赶。但情绪和真心早已被消耗殆尽，我们之间的心态和眼界差距早已无法弥补，最后我坦然放手。
+
+这段无疾而终的感情，让我第一次深刻体会到：失恋的遗憾和内耗，真的可以困住一个人很久。
+
+在我慢慢走出情伤、试着和遗憾和解的那一年，我遭遇了人生第一次重大离别——我的姥姥骤然离世。
+
+那段时间，巨大的悲伤将我击溃。
+
+我深陷情绪低谷，满心愧疚与不舍，无数个深夜独自消化思念和遗憾。
+
+我第一次明白，亲人的离别不是瞬间的痛哭，而是往后漫长日子里，反复想起、反复遗憾的自我拉扯。
+
+所幸身边有人温柔陪伴、耐心倾听，慢慢引导我接纳失去、与离别和解，让我慢慢走出了丧亲的阴霾，学会带着思念好好生活。
+
+经历过失恋的内耗，也经历过亲人的永别，我太懂普通人面对离别的无助。
+
+因为自己淋过雨，所以我想为所有困在离别里的人撑一把伞，决定打造一款专门应对离别与遗憾的 AI 陪伴产品。
+
+我们想帮每一个被过去困住的人，好好和遗憾和解、和自己和解。Make Again 和市面上普通的情绪产品都不一样。它会全程温柔倾听、稳稳承接你的所有负面情绪，耐心陪你梳理过往，帮你学会"带着回忆往前走"，而不是强迫自己遗忘和释怀。
+
+我们想做的，从来不是快速抹平你的难过，而是给你一个可以表达、也可以暂时休息的情绪角落，让每一份遗憾都有归处，每一段离别都能被温柔安放。"""
+
+
+def seed_welcome_letter(db) -> None:
+    """Seed the default welcome letter if none exists."""
+    from memory import store
+    existing = store.get_active_welcome_letter(db)
+    if existing is not None:
+        return
+    # check if any letter exists at all
+    from memory import models as m
+    any_letter = db.scalar(__import__("sqlalchemy").select(m.WelcomeLetter))
+    if any_letter is not None:
+        return
+    store.upsert_welcome_letter(db, title=WELCOME_LETTER_TITLE, content=WELCOME_LETTER_CONTENT, version=1, is_active=True)

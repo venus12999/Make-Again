@@ -222,11 +222,34 @@ def _quote_fallback(db, user_id: str, local: datetime, date_key: str) -> dict:
     }]}
 
 
+def _in_quiet_hours(local: datetime, start: str | None, end: str | None) -> bool:
+    if not start or not end:
+        return False
+    try:
+        sh, sm = [int(x) for x in start.split(":")]
+        eh, em = [int(x) for x in end.split(":")]
+    except (ValueError, AttributeError):
+        return False
+    mins = local.hour * 60 + local.minute
+    s = sh * 60 + sm
+    e = eh * 60 + em
+    if s <= e:
+        return s <= mins < e
+    # 跨午夜
+    return mins >= s or mins < e
+
+
 def get_nudges(db, user_id: str, client: LLMClient, now: datetime | None = None) -> dict:
     """拉取式软引导:计算候选 → 过滤已触达 → 生成文案 → 标记已触达 → 返回。"""
     store.get_or_create_user(db, user_id)
     local = _local_now(now)
     date_key = local.strftime("%Y-%m-%d")
+    prefs = store.get_nudge_prefs(db, user_id)
+    now_str = local.strftime("%Y-%m-%d %H:%M")
+    if not prefs.get("enabled", True):
+        return {"now": now_str, "nudges": []}
+    if _in_quiet_hours(local, prefs.get("quiet_start"), prefs.get("quiet_end")):
+        return {"now": now_str, "nudges": []}
     is_breakup = store.effective_loss_type(db, user_id) == "breakup"
     candidates = _build_candidates(db, user_id, local, breakup=is_breakup)
 
