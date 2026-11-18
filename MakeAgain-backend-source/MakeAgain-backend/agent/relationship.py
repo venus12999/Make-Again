@@ -13,9 +13,10 @@ _LABELS = {
     "breakup": "分手/恋人(前任、伴侣、感情破裂)",
     "pet": "宠物(猫、狗等陪伴过的小动物)",
     "relative": "亲人(家人、父母、长辈、亲友离世)",
+    "friend": "朋友(朋友离世或关系决裂)",
 }
 
-_VALID = ("breakup", "pet", "relative")
+_VALID = ("breakup", "pet", "relative", "friend")
 
 # 置信度 >= 此值才静默采用;低于则交给前端弹窗兜底。
 ADOPT_CONFIDENCE = 0.6
@@ -35,11 +36,12 @@ def infer(client: LLMClient, answer: str) -> dict:
             {"role": "system", "content": _SYSTEM},
             {"role": "user", "content": (
                 "用户回答了「Ta 是谁」,判断这段陪伴属于哪一类,只输出 JSON:\n"
-                '{"relationship_type":"breakup|pet|relative","confidence":0.0~1.0}\n'
+                '{"relationship_type":"breakup|pet|relative|friend","confidence":0.0~1.0}\n'
                 "分类口径:\n"
                 f"- breakup = {_LABELS['breakup']}\n"
                 f"- pet = {_LABELS['pet']}\n"
                 f"- relative = {_LABELS['relative']}\n"
+                f"- friend = {_LABELS['friend']}\n"
                 "confidence 是把握程度,拿不准就给低分。\n\n"
                 f"用户回答:{answer}"
             )},
@@ -66,6 +68,8 @@ def _keyword_infer(answer: str) -> str | None:
     if any(w in a for w in ("爸", "妈", "母", "父", "亲人", "家人", "爷爷", "奶奶", "外公", "外婆",
                             "哥哥", "姐姐", "弟弟", "妹妹", "女儿", "儿子", "丈夫", "妻子", "老伴")):
         return "relative"
+    if any(w in a for w in ("朋友", "好友", "挚友", "闺蜜", "兄弟", "朋友决裂")):
+        return "friend"
     if any(w in a for w in ("前任", "前男友", "前女友", "分手", "恋人", "男朋友", "女朋友", "伴侣", "ex")):
         return "breakup"
     return None

@@ -79,7 +79,13 @@ class ObjectStore:
                 msg = e.get_error_msg() if hasattr(e, "get_error_msg") else str(e)
                 raise StorageError(f"COS 删除失败: {msg}") from e
         else:
-            dest = Path(self.settings.storage_local_dir) / full_key
+            root = Path(self.settings.storage_local_dir).resolve()
+            dest = (root / full_key).resolve()
+            # 防止 key 中含路径穿越段,把删除限制在存储根目录内。
+            try:
+                dest.relative_to(root)
+            except ValueError as e:
+                raise StorageError(f"非法存储 key: {full_key}") from e
             try:
                 dest.unlink(missing_ok=True)
             except OSError as e:

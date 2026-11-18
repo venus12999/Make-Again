@@ -160,7 +160,7 @@ class SecureRoute(APIRoute):
                         if cid and resource.companion_id!=cid: fail(403,'COMPANION_MISMATCH','记录不属于此陪伴')
                         cid=resource.companion_id
                     cid=cid or current
-                    if not cid and path not in ("/api/state","/api/relationship","/api/relationship/infer"):
+                    if not cid and path not in ("/api/state","/api/consent","/api/relationship","/api/relationship/infer"):
                         fail(409,"COMPANION_REQUIRED","请先读取状态并开始陪伴")
                     if cid:
                         c=db.get(m.Companion,cid)
@@ -174,7 +174,13 @@ class SecureRoute(APIRoute):
                 if response.status_code>=400:
                     db.rollback()
                     return response
-                result=json.loads(response.body) if 'application/json' in response.headers.get('content-type','') else None
+                _ct = response.headers.get('content-type','')
+                result = None
+                if 'application/json' in _ct and response.body:
+                    try:
+                        result = json.loads(response.body)
+                    except (json.JSONDecodeError, ValueError):
+                        result = None
                 if isinstance(result,dict) and result.get('ok') is False:
                     fail(422,'OPERATION_REJECTED',result.get('message') or result.get('error') or result.get('reason') or '操作未完成')
                 if isinstance(result,dict) and op:

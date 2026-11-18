@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  make-again-api:
+    build: .
+    container_name: make-again-api
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - make-again-data:/app/data
+      - make-again-uploads:/app/uploads
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=sqlite:////app/data/b07.sqlite3
+      - STORAGE_LOCAL_DIR=/app/uploads
+      - PUBLIC_BASE_URL=https://makeagain.edsionc.top
+      - CORS_ORIGINS=https://makeagain.edsionc.top
+      - MEDIA_SIGNING_KEY=${MEDIA_SIGNING_KEY}
+      - MOCK_LLM=${MOCK_LLM:-false}
+      - MOCK_WECHAT=${MOCK_WECHAT:-false}
+      - MOCK_SPEECH=${MOCK_SPEECH:-false}
+      - MOCK_VISION=${MOCK_VISION:-false}
+      - MOCK_STORAGE=${MOCK_STORAGE:-false}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-v4-pro}
+      - LLM_FAST_MODEL=${LLM_FAST_MODEL:-deepseek-chat}
+      - WECHAT_APPID=${WECHAT_APPID}
+      - WECHAT_SECRET=${WECHAT_SECRET}
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  make-again-worker:
+    build: .
+    container_name: make-again-worker
+    command: ["python", "admin_cli.py", "worker", "--forever", "--poll-seconds", "3"]
+    volumes:
+      - make-again-data:/app/data
+      - make-again-uploads:/app/uploads
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=sqlite:////app/data/b07.sqlite3
+      - STORAGE_LOCAL_DIR=/app/uploads
+      - PUBLIC_BASE_URL=https://makeagain.edsionc.top
+      - CORS_ORIGINS=https://makeagain.edsionc.top
+      - MEDIA_SIGNING_KEY=${MEDIA_SIGNING_KEY}
+      - MOCK_LLM=${MOCK_LLM:-false}
+      - MOCK_WECHAT=${MOCK_WECHAT:-false}
+      - MOCK_SPEECH=${MOCK_SPEECH:-false}
+      - MOCK_VISION=${MOCK_VISION:-false}
+      - MOCK_STORAGE=${MOCK_STORAGE:-false}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-v4-pro}
+      - LLM_FAST_MODEL=${LLM_FAST_MODEL:-deepseek-chat}
+      - WECHAT_APPID=${WECHAT_APPID}
+      - WECHAT_SECRET=${WECHAT_SECRET}
+      - TZ=Asia/Shanghai
+    depends_on:
+      make-again-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  make-again-data:
+  make-again-uploads:

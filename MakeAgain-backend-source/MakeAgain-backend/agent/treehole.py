@@ -95,6 +95,30 @@ def write_letter(db, user_id: str, content: str, client: LLMClient) -> dict:
             "tags": tags, "summary": summary}
 
 
+def withdraw_letter(db, user_id: str, letter_id: str) -> dict:
+    """用户撤回自己尚未送达的来信(仅 pending_review 可撤回;已发布/已送达不可撤回,避免破坏匹配与送达)。"""
+    from memory import models as _m
+    letter = db.get(_m.TreeholeLetter, letter_id)
+    if letter is None or letter.author_user_id != user_id:
+        return {"ok": False, "reason": "信件不存在或无权操作"}
+    if letter.status != "pending_review":
+        return {"ok": False, "reason": "当前状态不可撤回"}
+    letter.status = "withdrawn"
+    db.flush()
+    return {"ok": True, "letter_id": letter.id, "status": letter.status}
+
+
+def remove_letter(db, letter_id: str) -> dict:
+    """运营下架来信(管理员):标记为 removed,不再参与匹配/展示。"""
+    from memory import models as m
+    letter = db.get(m.TreeholeLetter, letter_id)
+    if letter is None:
+        return {"ok": False, "reason": "信件不存在"}
+    letter.status = "removed"
+    db.flush()
+    return {"ok": True, "letter_id": letter.id, "status": letter.status}
+
+
 # ---- 回信资格(暂定代理,后续随情绪数据化细化) ----
 
 def reply_eligibility(db, user_id: str) -> dict:

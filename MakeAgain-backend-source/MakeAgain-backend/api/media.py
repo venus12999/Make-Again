@@ -40,12 +40,18 @@ def read_upload(file,kind):
         import shutil
         ffmpeg=shutil.which('ffmpeg')
         if not ffmpeg:fail(503,'AUDIO_DECODER_UNAVAILABLE','音频解码服务未配置')
-        with tempfile.NamedTemporaryFile(suffix='.mp3') as f:
-            f.write(data);f.flush()
+        # Windows 上 NamedTemporaryFile 默认独占锁,ffmpeg 无法打开;改用 mkstemp 并显式关闭后再解码,最后清理。
+        fd,tmp_path=tempfile.mkstemp(suffix='.mp3')
+        try:
+            with os.fdopen(fd,'wb') as f:
+                f.write(data);f.flush()
             try:
-                run=subprocess.run([ffmpeg,'-v','error','-xerror','-i',f.name,'-t','181','-f','s16le','-ac','1','-ar','16000','pipe:1'],capture_output=True,timeout=15)
+                run=subprocess.run([ffmpeg,'-v','error','-xerror','-i',tmp_path,'-t','181','-f','s16le','-ac','1','-ar','16000','pipe:1'],capture_output=True,timeout=15)
             except subprocess.TimeoutExpired:fail(415,'INVALID_AUDIO','音频解码超时')
             if run.returncode or not run.stdout or len(run.stdout)>180*32000:fail(415,'INVALID_AUDIO','MP3 无效或时长超过限制')
+        finally:
+            try:os.remove(tmp_path)
+            except OSError:pass
         return data,'.mp3','audio/mpeg'
     fail(415,'UNSUPPORTED_AUDIO','仅支持有效的 WAV 或 MP3 音频')
 

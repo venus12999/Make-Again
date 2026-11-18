@@ -352,6 +352,7 @@ class UserState(Base):
     # 引导 / 首次关键来信 / 首份报告(用户级,不随对象走)
     first_letter_status: Mapped[str] = mapped_column(String(16), default="pending")  # pending|opened
     first_report_status: Mapped[str] = mapped_column(String(16), default="pending")  # pending|pinned
+    welcome_letter_seen_version: Mapped[int] = mapped_column(Integer, default=0)  # 已读的欢迎信版本号
 
     # 各类介绍/开关(用户级)
     home_intro_seen: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -361,9 +362,22 @@ class UserState(Base):
     tts_speed: Mapped[float] = mapped_column(Float, default=1.0)              # 语速(0.85 慢 / 1.0 正常 / 1.2 快)
     tts_vol: Mapped[float] = mapped_column(Float, default=1.0)                # 音量(0.7 小 / 1.0 中 / 1.3 大)
     echo_enabled: Mapped[bool] = mapped_column(Boolean, default=True)         # 回忆回声开关
+    # 软引导偏好(用户级):是否开启、免打扰时段(HH:MM,本地时间)
+    nudge_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    nudge_quiet_start: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    nudge_quiet_end: Mapped[str | None] = mapped_column(String(5), nullable=True)
 
     # 005 首页状态(用户级)
     dismissed_moods: Mapped[list] = mapped_column(JSON, default=list)   # 被撤下的情绪日
+    # Consent (PRD a: 注册登录后收到欢迎信，用户明确接受后才创建陪伴对象)
+    consent_accepted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    consent_version: Mapped[int] = mapped_column(Integer, default=0)
+    # 六项个人资料（云端持久化，PRD b/c）
+    concern: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expectation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    life_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 拒绝分享的字段列表（PRD: 暂不分享必须有可持久化的明确状态）
+    declined_fields: Mapped[list] = mapped_column(JSON, default=list)
     pending_events: Mapped[list] = mapped_column(JSON, default=list)    # weekly / trial / mail 待办
 
     # 结束 / 归档(遗留,已迁移 companions) ----
@@ -470,3 +484,38 @@ class ActivationRedemption(Base):
     code: Mapped[str] = mapped_column(String(64), primary_key=True)
     used_by: Mapped[str] = mapped_column(String(64), index=True)
     used_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class WelcomeLetter(Base):
+    """主创团队欢迎信（PRD a）：注册登录后展示，管理员可编辑内容与版本。
+
+    每次编辑创建新版本，旧版本保留供审计/回滚；is_active 标记当前展示版本。
+    """
+    __tablename__ = "welcome_letters"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    title: Mapped[str] = mapped_column(String(128), default="来自主创团队的信")
+    content: Mapped[str] = mapped_column(Text, default="")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class DailyMood(CompanionScoped, Base):
+    """每日心情:AI 根据聊天判断,按用户+陪伴+当地日期唯一一条当前记录。
+
+    mood 为情绪词典枚举(难过/平静/...),score 越高心情越好;reason 为模型简短依据。
+    """
+    __tablename__ = "daily_moods"
+    __table_args__ = (Index("ix_daily_moods_user_date", "user_id", "date_key"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id"), index=True)
+    date_key: Mapped[str] = mapped_column(String(10), index=True)  # YYYY-MM-DD (local)
+    mood: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    valence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    arousal: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ts: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

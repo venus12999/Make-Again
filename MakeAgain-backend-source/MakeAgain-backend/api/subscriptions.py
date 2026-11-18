@@ -1,5 +1,6 @@
 """Configured products, durable original orders and one-time message grants."""
 import json
+import uuid
 from datetime import timedelta
 from typing import Literal
 from fastapi import APIRouter,Depends,Request
@@ -195,17 +196,50 @@ class MessageJobReq(BaseModel):
     request_id:str
     delay_seconds:int=Field(default=0,ge=0,le=2592000)
 
-@router.post('/admin/subscriptions/messages/jobs')
-def message_job(req:MessageJobReq,db=Depends(get_session)):
-    t=next((t for t in templates() if t['id']==req.template_id),None)
-    if not t or t['purpose']!=req.purpose:fail(409,'TEMPLATE_PURPOSE_MISMATCH','用途与模板不一致')
-    r=db.scalar(select(MessageReceipt).where(MessageReceipt.user_id==req.user_id,MessageReceipt.template_id==req.template_id,MessageReceipt.remaining>0).order_by(MessageReceipt.created_at))
-    if not r:fail(409,'NO_MESSAGE_CREDIT','无可用提醒授权')
+def create_message_job(db, user_id, template_id, purpose, delay_seconds=0, request_id=None):
+    """Shared helper: validate template/purpose/consent and reserve one credit, then enqueue a message Job."""
+    t = next((t for t in templates() if t['id'] == template_id), None)
+    if not t or t['purpose'] != purpose:
+        fail(409, 'TEMPLATE_PURPOSE_MISMATCH', '用途与模板不一致')
+    r = db.scalar(select(MessageReceipt).where(MessageReceipt.user_id == user_id, MessageReceipt.template_id == template_id, MessageReceipt.remaining > 0).order_by(MessageReceipt.created_at))
+    if not r:
+        fail(409, 'NO_MESSAGE_CREDIT', '无可用提醒授权')
     # Reserve exactly one user-authorized opportunity. Template data is approved config, never private text.
-    r.remaining-=1
-    j=Job(kind='message',user_id=req.user_id,dedupe_key='message:'+req.request_id,
-          payload={'template_id':req.template_id,'purpose':req.purpose,'receipt_id':r.id},due_at=m.utcnow()+timedelta(seconds=req.delay_seconds))
-    db.add(j);db.flush();return {'ok':True,'id':j.id,'status':j.status}
+    r.remaining -= 1
+    rid = request_id or (db.info.get('request_id') if hasattr(db, 'info') else None) or uuid.uuid4().hex
+    j = Job(kind='message', user_id=user_id, dedupe_key='message:' + rid,
+            payload={'template_id': template_id, 'purpose': purpose, 'receipt_id': r.id},
+            due_at=m.utcnow() + timedelta(seconds=delay_seconds))
+    db.add(j)
+    db.flush()
+    return j
+
+
+@router.post('/admin/subscriptions/messages/jobs')
+def message_job(req: MessageJobReq, db=Depends(get_session)):
+    j = create_message_job(db, req.user_id, req.template_id, req.purpose, req.delay_seconds, req.request_id)
+    return {'ok': True, 'id': j.id, 'status': j.status}
+
+
+class NudgePushReq(BaseModel):
+    user_id: str
+    template_id: str
+    purpose: str
+    delay_seconds: int = Field(default=0, ge=0, le=2592000)
+    request_id: str | None = None
+
+
+@router.post('/admin/nudge/push')
+def nudge_push(req: NudgePushReq, db=Depends(get_session)):
+    """Nudge 推送接通:管理员在确认 nudge 候选与用户授权后,调度一条微信订阅消息。
+
+    推送内容仅来自审核通过的固定模板配置,不携带私人聊天/记忆正文。
+    """
+    from memory import store as _store
+    _store.get_or_create_user(db, req.user_id)
+    # Nudge 候选仅作触发依据;模板/授权校验仍由 create_message_job 完成。
+    j = create_message_job(db, req.user_id, req.template_id, req.purpose, req.delay_seconds, req.request_id)
+    return {'ok': True, 'id': j.id, 'status': j.status, 'nudge_aware': True}
 
 @router.get('/admin/jobs')
 def jobs(limit:int=50,db=Depends(get_session)):

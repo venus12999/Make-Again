@@ -60,7 +60,8 @@ def _collect_facts(db, user_id: str, since: datetime, limit: int = 40) -> list[s
                     if float(conf) < min_conf:
                         continue
                 except (TypeError, ValueError):
-                    pass
+                    # 不可解析的置信度按 0 处理,不进入画像合并。
+                    continue
             text = str(f.get("fact") or "").strip()
             if text and text not in seen:
                 seen.add(text)

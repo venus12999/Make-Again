@@ -78,14 +78,17 @@ def run_one():
             job.updated_at=m.utcnow();db.finish()
         except Exception as exc:
             from gateway.messages import MessageError
-            db.rollback();job=db.get(Job,job_id)
+            db.rollback();db.info.pop('job_intents',None);job=db.get(Job,job_id)
             current_user=db.get(m.User,job.user_id)
             current_companion=db.get(m.Companion,job.companion_id) if job.companion_id else None
             inactive=not current_user or current_user.account_status!='active' or (current_companion and current_companion.archived_at)
             retryable=not isinstance(exc,MessageError) or exc.retryable
-            job.status='cancelled' if inactive and job.kind!='message' else 'unknown' if isinstance(exc,MessageError) and exc.unknown else 'retry' if retryable and job.attempts<3 else 'failed'
+            job.status='cancelled' if inactive else 'unknown' if isinstance(exc,MessageError) and exc.unknown else 'retry' if retryable and job.attempts<3 else 'failed'
             job.error_code='ACCOUNT_OR_COMPANION_INACTIVE' if job.status=='cancelled' else exc.code if isinstance(exc,MessageError) else type(exc).__name__
-            job.due_at=m.utcnow()+timedelta(seconds=60*2**job.attempts);job.updated_at=m.utcnow()
+            if job.status=='retry':
+                job.due_at=m.utcnow()+timedelta(seconds=60*2**(job.attempts-1));job.updated_at=m.utcnow()
+            else:
+                job.updated_at=m.utcnow()
             if job.kind=='report' and job.status!='cancelled':
                 interview=db.get(m.InterviewSession,job.payload['session_id'])
                 if interview:
@@ -150,7 +153,12 @@ def main():
         def stop(*_):
             nonlocal stopped
             stopped=True
-        signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
+        for _sig in (signal.SIGTERM, signal.SIGINT):
+            try: signal.signal(_sig, stop)
+            except (ValueError, OSError): pass
+        if hasattr(signal, "SIGBREAK"):
+            try: signal.signal(signal.SIGBREAK, stop)
+            except (ValueError, OSError): pass
         count=0;last_reconcile=0
         while not stopped:
             if time.monotonic()-last_reconcile>60:

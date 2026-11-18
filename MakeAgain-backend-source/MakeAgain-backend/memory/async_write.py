@@ -8,15 +8,11 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
 
 from gateway.client import LLMClient
 from memory.db import SessionLocal
 
 logger = logging.getLogger(__name__)
-
-# 单 worker:串行执行回写,避免并发写 SQLite 争锁
-_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mem-write")
 
 
 def schedule_memory_write(user_id: str, message: str, *, type: str = "chat", extractor=None) -> None:
@@ -51,8 +47,12 @@ def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
         from agent import echo as echo_mod
         echo_mod.maybe_capture_echo(db, user_id, message, turn.get("emotion"))
         # 积累足够新事实后,后台增量合并进画像(不进热路径)
-        from memory.jobs import enqueue
+        from memory.jobs import enqueue, flush_intents
         enqueue("portrait",user_id,{})
+        try:
+            flush_intents(db)
+        except Exception:  # noqa: BLE001 flush 失败不阻塞主流程
+            logger.exception("flush_intents failed in _do_write")
     except Exception:  # noqa: BLE001 后台任务必须兜底,不能把异常抛回请求
         raise
     finally:
@@ -60,5 +60,7 @@ def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
 
 
 def flush_memory_writes() -> None:
-    """等待当前已提交的回写全部完成(供脚本/测试在退出前调用,确保落库)。"""
-    _executor.submit(lambda: None).result()
+    """兼容入口:记忆回写已改为持久化 Job,由 worker 异步完成;此处不再阻塞。
+
+    脚本/测试需要等待落库时,应轮询 durable job 状态或直接运行 worker。
+    """

@@ -15,4 +15,8 @@ class BodyLimitMiddleware:
                 size+=len(message.get('body',b''))
                 if size>maximum:raise BodyTooLarge()
             return message
-        await self.app(scope,bounded,send)
+        try:
+            await self.app(scope,bounded,send)
+        except BodyTooLarge:
+            response=JSONResponse({'code':'BODY_TOO_LARGE','message':'请求超过大小限制','retryable':False},status_code=413)
+            await response(scope, receive, send)

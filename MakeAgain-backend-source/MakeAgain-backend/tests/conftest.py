@@ -28,5 +28,8 @@ def account(c,name='tester'):
     r=c.post('/api/auth/register',json={'username':name,'password':'secure-test-password'})
     assert r.status_code==200,r.json()
     u=r.json()['user_id'];h={'Authorization':'Bearer '+r.json()['token']}
+    # Accept consent to create companion (required for business operations)
+    cr=c.post('/api/consent',headers=h,json={'user_id':u,'version':1})
+    assert cr.status_code==200,cr.json()
     s=c.get('/api/state',headers=h).json()
     return u,h,s

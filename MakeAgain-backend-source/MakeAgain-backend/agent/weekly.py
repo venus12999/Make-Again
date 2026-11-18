@@ -117,6 +117,8 @@ def _do(user_id: str, wk: str) -> None:
                 "state": result["state"],
                 "compared": result["compared"],
             })
+        from memory.jobs import flush_intents
+        flush_intents(db)
     except Exception:  # noqa: BLE001 后台任务兜底,不把异常抛回请求
         raise
     finally:

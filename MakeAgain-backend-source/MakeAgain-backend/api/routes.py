@@ -14,7 +14,7 @@ from api.media import read_upload, photo_view, item_view
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from agent import companion, daily as daily_mod, echo as echo_mod, ending as ending_mod, history as history_mod, history_summary, home as home_mod, interview as interview_mod, item as item_mod, note as note_mod, onboarding as onboarding_mod, photo as photo_mod, relationship as relationship_mod, todo as todo_mod, treehole as treehole_mod, weekly as weekly_mod
+from agent import call as call_mod, companion, daily as daily_mod, echo as echo_mod, ending as ending_mod, history as history_mod, history_summary, home as home_mod, interview as interview_mod, item as item_mod, note as note_mod, nudge as nudge_mod, onboarding as onboarding_mod, photo as photo_mod, relationship as relationship_mod, todo as todo_mod, treehole as treehole_mod, weekly as weekly_mod
 from config import get_settings
 from gateway.client import LLMClient
 from gateway.speech import SpeechClient, SpeechError
@@ -68,6 +68,12 @@ def chat(req: ChatReq, db: Session = Depends(get_session)):
     if req.session_id and req.session_id != c.chat_session_id:
         fail(409, "SESSION_MISMATCH", "请使用服务器会话", session_id=c.chat_session_id)
     result = companion.chat(db, req.user_id, req.message, LLMClient(), session_id=c.chat_session_id, no_tools=req.no_tools)
+    # PRD d.ii: 每日心情由 AI 根据聊天判断,按当地日期 upsert 当日记录。
+    _emo = result.get("emotion") if isinstance(result, dict) else None
+    if isinstance(_emo, dict) and _emo.get("emotion"):
+        store.upsert_daily_mood(db, req.user_id, mood=_emo.get("emotion"), score=_emo.get("score"),
+                                valence=_emo.get("valence"), arousal=_emo.get("arousal"),
+                                reason=_emo.get("reason"), companion_id=c.id)
     from memory.models import ChatMessage
     rows = db.scalars(select(ChatMessage).where(ChatMessage.user_id==req.user_id, ChatMessage.session_id==c.chat_session_id).order_by(ChatMessage.id.desc()).limit(2)).all()
     result.update(session_id=c.chat_session_id, companion_id=c.id, status="completed",
@@ -167,7 +173,10 @@ def speech_recognize(file: UploadFile = File(...)):
         result = _external(lambda: SpeechClient().transcribe(url))
         return {k:v for k,v in result.items() if k not in ("raw","input_url")}
     finally:
-        store.delete(full_key)
+        try:
+            store.delete(full_key)
+        except StorageError:
+            pass
 
 
 # ---- 物品纪念/寄存(聊天工具的上传落库) ----
@@ -264,6 +273,18 @@ def treehole_write_letter(req: TreeholeLetterReq, db: Session = Depends(get_sess
     return treehole_mod.write_letter(db, req.user_id, req.content, LLMClient())
 
 
+class TreeholeWithdrawReq(RequestBase):
+    user_id: str | None = None
+    letter_id: str
+
+
+@router.post("/treehole/letter/withdraw")
+def treehole_withdraw_letter(req: TreeholeWithdrawReq, db: Session = Depends(get_session)):
+    if not req.user_id or not req.letter_id:
+        fail(422, "INVALID_REQUEST", "缺少 user_id 或 letter_id")
+    return treehole_mod.withdraw_letter(db, req.user_id, req.letter_id)
+
+
 class TreeholeReplyReq(RequestBase):
     user_id: str | None = None
     letter_id: str
@@ -352,6 +373,16 @@ def treehole_admin_reply(req: TreeholeAdminReplyReq, db: Session = Depends(get_s
         raise HTTPException(404, str(e))
 
 
+class TreeholeAdminRemoveReq(RequestBase):
+    letter_id: str
+
+
+@router.post("/treehole/admin/remove")
+def treehole_admin_remove(req: TreeholeAdminRemoveReq, db: Session = Depends(get_session)):
+    """运营后台:下架来信(不再参与匹配/展示)。"""
+    return treehole_mod.remove_letter(db, req.letter_id)
+
+
 class InterviewStartReq(RequestBase):
     user_id: str | None = None
     loss_type: str = "breakup"
@@ -388,6 +419,27 @@ def interview_state(session_id: str, db: Session = Depends(get_session)):
     return interview_mod.progress(s)
 
 
+class InterviewReviseReq(RequestBase):
+    session_id: str
+    supplement: str = Field(min_length=1, max_length=2000)
+    user_id: str | None = None
+
+
+@router.post("/interview/revise")
+def interview_revise(req: InterviewReviseReq, db: Session = Depends(get_session)):
+    """用户补充叙述后重新生成报告（PRD c）。"""
+    s = store.get_interview(db, req.session_id)
+    if s is None:
+        raise HTTPException(404, "session not found")
+    if s.user_id != b07.uid(db):
+        raise HTTPException(404, "session not found")
+    try:
+        report = interview_mod.revise(db, req.session_id, req.supplement, LLMClient())
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    return {"ok": True, "session_id": req.session_id, "report": report}
+
+
 # ---- 用户引导阶段 + 初始报告看板 ----
 
 @router.post("/onboarding/{user_id}/enter-main")
@@ -421,6 +473,152 @@ def initial_report(user_id: str, companion_id: str | None = Query(None), db: Ses
 def home(user_id: str, db: Session = Depends(get_session)):
     """主界面一次返回:情绪日历 + 软引导(无触发回落通用语录) + 今日主题。"""
     return home_mod.get_home(db, user_id, LLMClient())
+
+
+@router.get("/mood/{user_id}")
+def mood_list(user_id: str, limit: int = Query(30, ge=1, le=90), companion_id: str | None = Query(None),
+              db: Session = Depends(get_session)):
+    """每日心情列表:AI 根据聊天判断,按当地日期倒序返回最近 N 天。"""
+    store.get_or_create_user(db, user_id)
+    rows = store.list_daily_moods(db, user_id, limit=limit, companion_id=companion_id)
+    return {"moods": [{
+        "date": r.date_key, "mood": r.mood, "score": r.score, "valence": r.valence,
+        "arousal": r.arousal, "reason": r.reason, "companion_id": r.companion_id,
+    } for r in rows]}
+
+
+@router.get("/mood/{user_id}/{date}")
+def mood_get(user_id: str, date: str, companion_id: str | None = Query(None),
+             db: Session = Depends(get_session)):
+    """指定日期的每日心情;无记录返回 404。"""
+    import re
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        fail(422, "INVALID_DATE", "日期格式需为 YYYY-MM-DD")
+    store.get_or_create_user(db, user_id)
+    row = store.get_daily_mood(db, user_id, date, companion_id=companion_id)
+    if row is None:
+        raise HTTPException(404, "该日期暂无心情记录")
+    return {"date": row.date_key, "mood": row.mood, "score": row.score, "valence": row.valence,
+            "arousal": row.arousal, "reason": row.reason, "companion_id": row.companion_id}
+
+
+class MoodPatchReq(RequestBase):
+    user_id: str | None = None
+    mood: str | None = None
+    score: int | None = None
+    reason: str | None = None
+    companion_id: str | None = None
+
+
+@router.patch("/mood/{user_id}/{date}")
+def mood_patch(user_id: str, date: str, req: MoodPatchReq, db: Session = Depends(get_session)):
+    """用户纠错每日心情（PRD d.ii 用户可纠错）。"""
+    import re
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        fail(422, "INVALID_DATE", "日期格式需为 YYYY-MM-DD")
+    store.get_or_create_user(db, user_id)
+    row = store.get_daily_mood(db, user_id, date, companion_id=req.companion_id)
+    if row is None:
+        raise HTTPException(404, "该日期暂无心情记录")
+    if req.mood is not None:
+        row.mood = req.mood
+    if req.score is not None:
+        row.score = req.score
+    if req.reason is not None:
+        row.reason = req.reason
+    db.flush()
+    return {"date": row.date_key, "mood": row.mood, "score": row.score, "valence": row.valence,
+            "arousal": row.arousal, "reason": row.reason, "companion_id": row.companion_id}
+
+
+@router.get("/nudge/{user_id}")
+def nudge(user_id: str, db: Session = Depends(get_session)):
+    """软引导拉取:打开 App / 刷新时调用,返回此刻应触发的软引导(无触发回落通用语录)。
+
+    与 /api/home/{user_id} 中的 nudges 字段同源,便于前端单独刷新而不重复拉取日历与主题。
+    """
+    store.get_or_create_user(db, user_id)
+    return nudge_mod.get_nudges(db, user_id, LLMClient())
+
+
+class NudgePrefsReq(RequestBase):
+    user_id: str | None = None
+    enabled: bool | None = None
+    quiet_start: str | None = None
+    quiet_end: str | None = None
+
+
+@router.get("/nudge/prefs/{user_id}")
+def nudge_prefs_get(user_id: str, db: Session = Depends(get_session)):
+    store.get_or_create_user(db, user_id)
+    return store.get_nudge_prefs(db, user_id)
+
+
+@router.post("/nudge/prefs")
+def nudge_prefs_set(req: NudgePrefsReq, db: Session = Depends(get_session)):
+    if not req.user_id:
+        fail(422, "INVALID_USER", "缺少 user_id")
+    import re
+    for field, val in (("quiet_start", req.quiet_start), ("quiet_end", req.quiet_end)):
+        if val is not None and val != "":
+            if not re.fullmatch(r"\d{2}:\d{2}", val):
+                fail(422, "INVALID_TIME", f"{field} 格式需为 HH:MM")
+            h, m = int(val[:2]), int(val[3:])
+            if h > 23 or m > 59:
+                fail(422, "INVALID_TIME", f"{field} 时间无效")
+    store.get_or_create_user(db, req.user_id)
+    return store.update_nudge_prefs(db, req.user_id, enabled=req.enabled,
+                                   quiet_start=req.quiet_start, quiet_end=req.quiet_end)
+
+
+# ---- 主创团队欢迎信（PRD a，可编辑） ----
+
+@router.get("/welcome-letter/{user_id}")
+def welcome_letter_get(user_id: str, db: Session = Depends(get_session)):
+    store.get_or_create_user(db, user_id)
+    row = store.get_active_welcome_letter(db)
+    st = store.get_or_create_user_state(db, user_id)
+    seen_version = st.welcome_letter_seen_version or 0
+    return store.welcome_letter_view(row, seen_version)
+
+
+class WelcomeLetterSeenReq(RequestBase):
+    user_id: str | None = None
+    version: int | None = None
+
+
+@router.post("/welcome-letter/seen")
+def welcome_letter_seen(req: WelcomeLetterSeenReq, db: Session = Depends(get_session)):
+    if not req.user_id:
+        fail(422, "INVALID_USER", "缺少 user_id")
+    store.get_or_create_user(db, req.user_id)
+    seen = store.mark_welcome_letter_seen(db, req.user_id, req.version or 0)
+    return {"ok": True, "seen_version": seen}
+
+
+class WelcomeLetterAdminReq(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    version: int | None = None
+    is_active: bool | None = None
+    request_id: str | None = None
+    client_request_id: str | None = None
+
+
+@router.get("/admin/welcome-letter")
+def admin_welcome_letter_get(db: Session = Depends(get_session)):
+    row = store.get_active_welcome_letter(db)
+    return store.welcome_letter_view(row, 0)
+
+
+@router.post("/admin/welcome-letter")
+def admin_welcome_letter_set(req: WelcomeLetterAdminReq, db: Session = Depends(get_session)):
+    try:
+        row = store.upsert_welcome_letter(db, title=req.title, content=req.content,
+                                         version=req.version, is_active=req.is_active)
+    except ValueError as e:
+        fail(422, "INVALID_WELCOME_LETTER", str(e))
+    return store.welcome_letter_view(row, 0)
 
 
 # ---- 周报 ----
@@ -524,7 +722,8 @@ def auth_login(req: AuthLoginReq, db: Session = Depends(get_session)):
     auth = store.get_auth_by_username(db, username)
     if auth is None or not verify_password(req.password, auth.password_salt, auth.password_hash):
         raise HTTPException(401, "用户名或密码错误")
-    if db.get(User, auth.user_id).account_status != "active": fail(403,"ACCOUNT_DISABLED","账号已停用")
+    _user = db.get(User, auth.user_id)
+    if _user is None or _user.account_status != "active": fail(403,"ACCOUNT_DISABLED","账号已停用")
     token = new_token()
     store.create_session(db, auth.user_id, token, new_expiry())
     return {"token": token, "user_id": auth.user_id, "username": auth.username}
@@ -607,6 +806,12 @@ class StatePatchReq(RequestBase):
     tts_vol: float | None = None
     echo_enabled: bool | None = None
     subject_name: str | None = None
+    relationship_type: str | None = None
+    nickname: str | None = None
+    concern: str | None = None
+    expectation: str | None = None
+    life_stage: str | None = None
+    declined_fields: list | None = None
     dismissed_moods: list | None = None
     pending_events: list | None = None
 
@@ -647,6 +852,10 @@ def _state_payload(db: Session, s: UserState, user_id: str) -> dict:
         "relationship_type_source": companion.relationship_type_source if companion else s.relationship_type_source,
         "relationship_type_confidence": companion.relationship_type_confidence if companion else s.relationship_type_confidence,
         "subject_name": companion.subject_name if companion else s.subject_name,
+        "concern": s.concern,
+        "expectation": s.expectation,
+        "life_stage": s.life_stage,
+        "declined_fields": s.declined_fields or [],
         "first_letter_status": s.first_letter_status,
         "first_report_status": s.first_report_status,
         "home_intro_seen": s.home_intro_seen,
@@ -695,18 +904,104 @@ def _destination(db: Session, s: UserState, user_id: str) -> str:
 def get_state(user_id: str = Depends(get_current_user), db: Session = Depends(get_session)):
     store.get_or_create_user(db, user_id)
     s = store.get_or_create_user_state(db, user_id)
-    c = store.get_or_create_current_companion(db,user_id)
-    db.info["companion_id"] = c.id
+    # Consent gate: do NOT create companion before consent
+    c = store.get_current_companion(db, user_id)
+    if c is not None:
+        db.info["companion_id"] = c.id
     return _state_payload(db, s, user_id)
+
+
+# ---- Consent (PRD a: 用户明确接受后才创建陪伴对象) ----
+
+@router.get("/consent")
+def get_consent(user_id: str = Depends(get_current_user), db: Session = Depends(get_session)):
+    """只读 Consent 状态，不创建任何业务对象。"""
+    store.get_or_create_user(db, user_id)
+    s = store.get_or_create_user_state(db, user_id)
+    accepted = s.consent_accepted_at is not None
+    c = store.get_current_companion(db, user_id)
+    return {
+        "accepted": accepted,
+        "accepted_at": s.consent_accepted_at.isoformat() + "Z" if s.consent_accepted_at else None,
+        "version": s.consent_version,
+        "has_companion": c is not None,
+    }
+
+
+class ConsentAcceptReq(RequestBase):
+    user_id: str | None = None
+    version: int = 1
+
+
+@router.post("/consent")
+def accept_consent(req: ConsentAcceptReq, user_id: str = Depends(get_current_user), db: Session = Depends(get_session)):
+    """用户明确接受 Consent 后，持久化状态并创建陪伴对象（幂等）。"""
+    store.get_or_create_user(db, user_id)
+    s = store.get_or_create_user_state(db, user_id)
+    if s.consent_accepted_at is None:
+        from memory.models import utcnow
+        s.consent_accepted_at = utcnow()
+        s.consent_version = req.version
+        db.flush()
+    # Create companion only after consent (idempotent)
+    c = store.get_or_create_current_companion(db, user_id)
+    db.info["companion_id"] = c.id
+    return {
+        "accepted": True,
+        "accepted_at": s.consent_accepted_at.isoformat() + "Z" if s.consent_accepted_at else None,
+        "version": s.consent_version,
+        "companion_id": c.id,
+    }
 
 
 @router.patch("/state")
 def patch_state(req: StatePatchReq, user_id: str = Depends(get_current_user), db: Session = Depends(get_session)):
-    fields = {k: v for k, v in req.model_dump().items() if v is not None and k not in ("request_id","client_request_id","companion_id")}
-    subject_name = fields.pop("subject_name", None)
-    if subject_name is not None:
+    # Consent guard: only update profile fields if consent accepted
+    s = store.get_or_create_user_state(db, user_id)
+    if s.consent_accepted_at is None:
+        # Only allow updating fields that don't require companion
+        # But profile fields require consent; reject if no consent
+        has_profile_fields = any(f in req.model_fields_set for f in ("subject_name","relationship_type","nickname","concern","expectation","life_stage","declined_fields"))
+        if has_profile_fields:
+            fail(409, "CONSENT_REQUIRED", "请先接受 Consent 后再修改资料")
+    # Use model_fields_set to distinguish omitted vs explicit null
+    fields_set = req.model_fields_set
+    fields = {k: v for k, v in req.model_dump().items() if k in fields_set and k not in ("request_id","client_request_id","companion_id","subject_name","relationship_type","nickname","concern","expectation","life_stage","declined_fields")}
+    # Profile fields: use field presence to distinguish omitted vs clear
+    subject_name = req.subject_name if "subject_name" in fields_set else None
+    relationship_type = req.relationship_type if "relationship_type" in fields_set else None
+    nickname = req.nickname if "nickname" in fields_set else None
+    concern = req.concern if "concern" in fields_set else None
+    expectation = req.expectation if "expectation" in fields_set else None
+    life_stage = req.life_stage if "life_stage" in fields_set else None
+    declined_fields = req.declined_fields if "declined_fields" in fields_set else None
+
+    companion = None
+    if s.consent_accepted_at is not None:
         companion = store.get_or_create_current_companion(db, user_id)
-        store.update_companion(db, companion.id, subject_name=subject_name.strip() or None)
+
+    if subject_name is not None or (subject_name is None and "subject_name" in fields_set):
+        if companion:
+            store.update_companion(db, companion.id, subject_name=subject_name.strip() if subject_name else None)
+    if relationship_type is not None or (relationship_type is None and "relationship_type" in fields_set):
+        if companion:
+            store.update_companion(db, companion.id, relationship_type=relationship_type.strip() if relationship_type else None)
+    if nickname is not None or (nickname is None and "nickname" in fields_set):
+        user = db.get(User, user_id)
+        if user:
+            user.nickname = nickname.strip() if nickname else None
+    # Profile fields: explicitly handle None as clear (only if field was present)
+    profile_updates = {}
+    if "concern" in fields_set:
+        profile_updates['concern'] = concern.strip() if concern else None
+    if "expectation" in fields_set:
+        profile_updates['expectation'] = expectation.strip() if expectation else None
+    if "life_stage" in fields_set:
+        profile_updates['life_stage'] = life_stage.strip() if life_stage else None
+    if "declined_fields" in fields_set:
+        profile_updates['declined_fields'] = declined_fields if declined_fields is not None else []
+    if profile_updates:
+        store.update_user_state(db, user_id, **profile_updates)
     s = store.update_user_state(db, user_id, **fields)
     return _state_payload(db, s, user_id)
 
@@ -714,6 +1009,9 @@ def patch_state(req: StatePatchReq, user_id: str = Depends(get_current_user), db
 @router.post("/relationship/infer")
 def relationship_infer(req: RelationshipInferReq, user_id: str = Depends(get_current_user), db: Session = Depends(get_session)):
     """003 首问「Ta 是谁」后调用:AI 三分类,高置信度才写库,否则返回 null 让前端弹窗兜底。"""
+    s = store.get_or_create_user_state(db, user_id)
+    if s.consent_accepted_at is None:
+        fail(409, "CONSENT_REQUIRED", "请先接受 Consent")
     result = relationship_mod.infer(LLMClient(), req.answer)
     rt, conf = result["relationship_type"], result["confidence"]
     adopted = rt is not None and conf is not None and conf >= relationship_mod.ADOPT_CONFIDENCE
@@ -730,9 +1028,12 @@ def relationship_infer(req: RelationshipInferReq, user_id: str = Depends(get_cur
 @router.post("/relationship")
 def relationship_set(req: RelationshipSetReq, user_id: str = Depends(get_current_user), db: Session = Depends(get_session)):
     """兜底弹窗 / 手动修正:显式设置陪伴类型(source=manual)。"""
+    s = store.get_or_create_user_state(db, user_id)
+    if s.consent_accepted_at is None:
+        fail(409, "CONSENT_REQUIRED", "请先接受 Consent")
     rt = store.normalize_relationship_type(req.relationship_type)
     if rt is None:
-        raise HTTPException(422, "关系类型需为 breakup / pet / relative")
+        raise HTTPException(422, "关系类型需为 breakup / pet / relative / friend")
     fields = {"relationship_type": rt, "relationship_type_source": "manual"}
     if req.subject_name is not None:
         fields["subject_name"] = req.subject_name.strip() or None
@@ -790,6 +1091,9 @@ def companions_list(user_id: str = Depends(get_current_user), db: Session = Depe
 def companions_create(req: CompanionCreateReq, user_id: str = Depends(get_current_user), db: Session = Depends(get_session)):
     """开始新的陪伴:新建对象并切换为当前(旧对象保持只读/归档不受影响)。"""
     store.get_or_create_user(db, user_id)
+    s = store.get_or_create_user_state(db, user_id)
+    if s.consent_accepted_at is None:
+        fail(409, "CONSENT_REQUIRED", "请先接受 Consent")
     rt = store.normalize_relationship_type(req.relationship_type) if req.relationship_type else None
     subject_name = (req.subject_name or "").strip() or None
     old = store.get_current_companion(db,user_id)
@@ -943,6 +1247,19 @@ class EndingContentReq(RequestBase):
 def ending_content(req: EndingContentReq, db: Session = Depends(get_session)):
     store.get_or_create_user(db, req.user_id)
     return ending_mod.memorial(db, req.user_id, LLMClient())
+
+
+class CallReq(RequestBase):
+    user_id: str | None = None
+
+
+@router.post("/call/content")
+def call_content(req: CallReq, db: Session = Depends(get_session)):
+    """模拟来电:生成一段适合朗读的短语音文案,音频由前端调用 /speech/tts 生成并播放。"""
+    if not req.user_id:
+        fail(422, "INVALID_USER", "缺少 user_id")
+    store.get_or_create_user(db, req.user_id)
+    return call_mod.call_script(db, req.user_id, LLMClient())
 
 
 # ---- 回声壁(随机捕获富有情感的句子,随机延时后回显) ----

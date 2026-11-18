@@ -44,8 +44,9 @@ def migrate(engine, session_factory):
             for idx in table.indexes:
                 idx.create(conn, checkfirst=True)
         conn.execute(text("CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TEXT NOT NULL)"))
-    from memory.db import _migrate_companions
+    from memory.db import _migrate_companions, _migrate_companion_content
     _migrate_companions()
+    _migrate_companion_content()
     with session_factory() as db:
         done = db.execute(text("SELECT 1 FROM schema_migrations WHERE version='B07'" )).scalar()
         if done:
