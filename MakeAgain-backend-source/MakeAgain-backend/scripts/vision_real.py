@@ -29,7 +29,7 @@ import httpx
 
 from config import get_settings
 from gateway.storage import ObjectStore, StorageError
-from gateway.vision import VisionClient, _tc3_authorization
+from gateway.vision import VisionClient
 
 
 def make_png(width: int = 120, height: int = 120, rgb=(200, 80, 60)) -> bytes:
@@ -57,28 +57,20 @@ def main() -> None:
     print("=" * 64)
     print("【识别】TIAA DetectLabelPro")
     print("=" * 64)
-    sid = s.vision_secret_id or s.cos_secret_id
-    skey = s.vision_secret_key or s.cos_secret_key
-    action = "DetectLabelPro"
-    payload = json.dumps({"ImageBase64": base64.b64encode(png).decode("ascii")},
-                         separators=(",", ":"))
-    ts = int(time.time())
-    auth = _tc3_authorization(sid, skey, "tiia", "tiia.tencentcloudapi.com",
-                              action, "2019-05-29", s.vision_region, payload, ts)
-    headers = {
-        "Authorization": auth,
-        "Content-Type": "application/json; charset=utf-8",
-        "Host": "tiia.tencentcloudapi.com",
-        "X-TC-Action": action,
-        "X-TC-Timestamp": str(ts),
-        "X-TC-Version": "2019-05-29",
-        "X-TC-Region": s.vision_region,
-    }
     try:
-        r = httpx.post("https://tiia.tencentcloudapi.com", headers=headers,
-                       content=payload, timeout=30.0)
-        print(f"HTTP {r.status_code}")
-        print("响应:", r.text[:600])
+        from tencentcloud.common import credential
+        from tencentcloud.common.profile.client_profile import ClientProfile
+        from tencentcloud.common.profile.http_profile import HttpProfile
+        from tencentcloud.tiia.v20190529 import tiia_client, models
+        sid = s.vision_secret_id or s.cos_secret_id
+        skey = s.vision_secret_key or s.cos_secret_key
+        cred = credential.Credential(sid, skey)
+        hp = HttpProfile(endpoint="tiia.tencentcloudapi.com", reqTimeout=30)
+        client = tiia_client.TiiaClient(cred, s.vision_region, ClientProfile(httpProfile=hp))
+        req = models.DetectLabelProRequest()
+        req.ImageBase64 = base64.b64encode(png).decode("ascii")
+        resp = client.DetectLabelPro(req)
+        print("响应:", str(resp)[:600])
     except Exception as e:  # noqa: BLE001
         print("识别请求异常:", e)
 
