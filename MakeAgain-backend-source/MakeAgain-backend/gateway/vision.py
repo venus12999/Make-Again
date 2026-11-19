@@ -6,19 +6,12 @@
 - 抠图(主体分割)不在本类:腾讯云通用抠图走「数据万象 AIPicMatting」,须对桶内对象操作,
   故放在 gateway.storage.ObjectStore.ai_matte。
 - 无凭据 / mock_vision / 调用失败时兜底:recognize 返回 None,让整条链路离线也能跑通。
-- 鉴权用腾讯云 TC3-HMAC-SHA256(服务 tiia,版本 2019-05-29);凭据复用 vision_secret_id/key,
-  空则回退 cos_secret_id/key(同一套 CAM 凭据)。
+- 云 API 调用走官方 tencentcloud SDK(签名/重试/序列化由 SDK 负责),凭据复用
+  vision_secret_id/key,空则回退 cos_secret_id/key(同一套 CAM 凭据)。
 """
 from __future__ import annotations
 
 import base64
-import hashlib
-import hmac
-import json
-import time
-from datetime import datetime, timezone
-
-import httpx
 
 from config import get_settings
 from gateway.schemas import parse_json
@@ -28,40 +21,7 @@ class VisionError(Exception):
     """视觉服务调用失败。"""
 
 
-def _tc3_authorization(secret_id: str, secret_key: str, service: str, host: str,
-                       action: str, version: str, region: str, payload: str,
-                       timestamp: int) -> str:
-    """生成腾讯云签名方法 v3(TC3-HMAC-SHA256)的 Authorization 请求头。"""
-    algorithm = "TC3-HMAC-SHA256"
-    date = datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime("%Y-%m-%d")
-    ct = "application/json; charset=utf-8"
-    canonical_headers = f"content-type:{ct}\nhost:{host}\nx-tc-action:{action.lower()}\n"
-    signed_headers = "content-type;host;x-tc-action"
-    hashed_payload = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    canonical_request = ("POST\n/\n\n" + canonical_headers + "\n"
-                         + signed_headers + "\n" + hashed_payload)
-
-    credential_scope = f"{date}/{service}/tc3_request"
-    hashed_canonical = hashlib.sha256(canonical_request.encode("utf-8")).hexdigest()
-    string_to_sign = f"{algorithm}\n{timestamp}\n{credential_scope}\n{hashed_canonical}"
-
-    def _hmac(key: bytes, msg: str) -> bytes:
-        return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
-
-    secret_date = _hmac(("TC3" + secret_key).encode("utf-8"), date)
-    secret_service = _hmac(secret_date, service)
-    secret_signing = _hmac(secret_service, "tc3_request")
-    signature = hmac.new(secret_signing, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
-
-    return (f"{algorithm} Credential={secret_id}/{credential_scope}, "
-            f"SignedHeaders={signed_headers}, Signature={signature}")
-
-
 class VisionClient:
-    _HOST = "tiia.tencentcloudapi.com"
-    _SERVICE = "tiia"
-    _VERSION = "2019-05-29"
-
     def __init__(self, settings=None):
         self.settings = settings or get_settings()
 
@@ -74,6 +34,20 @@ class VisionClient:
         skey = self.settings.vision_secret_key or self.settings.cos_secret_key
         return bool(sid and skey)
 
+    def _tiaa_client(self):
+        """懒加载官方腾讯云 SDK 客户端。"""
+        from tencentcloud.common import credential
+        from tencentcloud.common.profile.client_profile import ClientProfile
+        from tencentcloud.common.profile.http_profile import HttpProfile
+        from tencentcloud.tiia.v20190529 import tiia_client
+
+        sid = self.settings.vision_secret_id or self.settings.cos_secret_id
+        skey = self.settings.vision_secret_key or self.settings.cos_secret_key
+        cred = credential.Credential(sid, skey)
+        http_profile = HttpProfile(endpoint="tiia.tencentcloudapi.com", reqTimeout=30)
+        client_profile = ClientProfile(httpProfile=http_profile)
+        return tiia_client.TiiaClient(cred, self.settings.vision_region, client_profile)
+
     def recognize(self, image: bytes) -> str | None:
         """识别图中主体,返回置信度最高的标签;不可用/失败时返回 None。"""
         if not self.available:
@@ -84,42 +58,16 @@ class VisionClient:
             return None
 
     def _recognize_tencent(self, image: bytes) -> str | None:
-        sid = self.settings.vision_secret_id or self.settings.cos_secret_id
-        skey = self.settings.vision_secret_key or self.settings.cos_secret_key
-        region = self.settings.vision_region
-        action = "DetectLabelPro"
+        from tencentcloud.tiia.v20190529 import models
 
-        payload = json.dumps(
-            {"ImageBase64": base64.b64encode(image).decode("ascii")},
-            separators=(",", ":"),
-        )
-        timestamp = int(time.time())
-        authorization = _tc3_authorization(
-            sid, skey, self._SERVICE, self._HOST, action, self._VERSION, region,
-            payload, timestamp,
-        )
-        headers = {
-            "Authorization": authorization,
-            "Content-Type": "application/json; charset=utf-8",
-            "Host": self._HOST,
-            "X-TC-Action": action,
-            "X-TC-Timestamp": str(timestamp),
-            "X-TC-Version": self._VERSION,
-            "X-TC-Region": region,
-        }
-        try:
-            resp = httpx.post(f"https://{self._HOST}", headers=headers,
-                              content=payload, timeout=30.0)
-        except httpx.HTTPError as e:
-            raise VisionError(f"腾讯云图像识别网络错误: {e}") from e
-        if resp.status_code != 200:
-            raise VisionError(f"腾讯云图像识别返回 {resp.status_code}: {resp.text[:200]}")
-        data = resp.json()
-        labels = (data.get("Response") or {}).get("Labels") or []
+        req = models.DetectLabelProRequest()
+        req.ImageBase64 = base64.b64encode(image).decode("ascii")
+        resp = self._tiaa_client().DetectLabelPro(req)
+        labels = getattr(resp, "Labels", None) or []
         if not labels:
             return None
-        best = max(labels, key=lambda x: x.get("Confidence") or 0)
-        return best.get("Name")
+        best = max(labels, key=lambda x: getattr(x, "Confidence", 0) or 0)
+        return getattr(best, "Name", None)
 
     def ground(self, image_url: str, description: str) -> dict:
         """多模态定位:找出图中与描述最相符的物品,返回 {"label","bbox"}。
@@ -135,6 +83,32 @@ class VisionClient:
         except Exception:  # noqa: BLE001 定位失败不阻塞主链路
             return {"label": None, "bbox": None}
 
+    def _maas_client(self):
+        """懒加载官方 openai SDK,连接 MaaS 多模态兼容端点。"""
+        from openai import OpenAI
+        return OpenAI(
+            api_key=self.settings.maas_api_key,
+            base_url=self.settings.maas_base_url.rstrip("/") + "/v1",
+            timeout=60,
+            max_retries=1,
+        )
+
+    def _maas_vision_message(self, prompt: str, image_url: str) -> dict:
+        return {
+            "model": self.settings.vision_llm_model,
+            "messages": [{"role": "user", "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ]}],
+            "temperature": 0.1,
+        }
+
+    def _maas_content(self, prompt: str, image_url: str) -> str:
+        resp = self._maas_client().chat.completions.create(**self._maas_vision_message(prompt, image_url))
+        if not resp.choices:
+            return ""
+        return getattr(resp.choices[0].message, "content", None) or ""
+
     def _ground_maas(self, image_url: str, description: str) -> dict:
         query = (description or "").strip() or "主体物品"
         prompt = (
@@ -143,25 +117,7 @@ class VisionClient:
             "只输出一个 JSON，不要其它文字，格式：{\"label\":\"物品名\",\"bbox\":[x1,y1,x2,y2]}。"
             "如果图中找不到相符的物品，返回 {\"label\":\"\",\"bbox\":[]}。"
         )
-        url = self.settings.maas_base_url.rstrip("/") + "/v1/chat/completions"
-        payload = {
-            "model": self.settings.vision_llm_model,
-            "messages": [{"role": "user", "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": image_url}},
-            ]}],
-            "temperature": 0.1,
-        }
-        headers = {"Authorization": f"Bearer {self.settings.maas_api_key}",
-                   "Content-Type": "application/json"}
-        try:
-            resp = httpx.post(url, headers=headers, json=payload, timeout=60.0)
-        except httpx.HTTPError as e:
-            raise VisionError(f"定位网络错误: {e}") from e
-        if resp.status_code != 200:
-            raise VisionError(f"定位返回 {resp.status_code}: {resp.text[:200]}")
-        content = (resp.json().get("choices") or [{}])[0].get("message", {}).get("content") or ""
-        parsed, _ = parse_json(content)
+        parsed, _ = parse_json(self._maas_content(prompt, image_url))
         if not isinstance(parsed, dict):
             return {"label": None, "bbox": None}
 
@@ -200,22 +156,7 @@ class VisionClient:
             "请判断抠出的这件物品是否符合用户描述。只输出 JSON,不要其它文字,格式:"
             "{\"match\": true 或 false, \"reason\": \"一句简短中文说明(不符合时说明为什么)\"}。"
         )
-        url = self.settings.maas_base_url.rstrip("/") + "/v1/chat/completions"
-        payload = {
-            "model": self.settings.vision_llm_model,
-            "messages": [{"role": "user", "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": image_url}},
-            ]}],
-            "temperature": 0.1,
-        }
-        headers = {"Authorization": f"Bearer {self.settings.maas_api_key}",
-                   "Content-Type": "application/json"}
-        resp = httpx.post(url, headers=headers, json=payload, timeout=60.0)
-        if resp.status_code != 200:
-            raise VisionError(f"校验返回 {resp.status_code}: {resp.text[:200]}")
-        content = (resp.json().get("choices") or [{}])[0].get("message", {}).get("content") or ""
-        parsed, _ = parse_json(content)
+        parsed, _ = parse_json(self._maas_content(prompt, image_url))
         if not isinstance(parsed, dict):
             return {"match": True, "reason": ""}
         raw = parsed.get("match", True)
