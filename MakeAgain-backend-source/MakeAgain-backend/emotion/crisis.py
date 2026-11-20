@@ -53,12 +53,41 @@ def _is_third_person(text: str, idx: int) -> bool:
     return False
 
 
+# 引用语境标记：高危词前紧邻这些标记时，属于引用/转述他人内容，不是用户本人危机。
+# 用于压低"书里说有人想死""新闻里报道有人自杀"这类误报（golden set L-06 暴露）。
+# 设计上宁窄勿宽：只认明确引用动词+引号，且只看关键词前 8 字窗口，避免绕过真实危机。
+_QUOTE_MARKERS = (
+    "书里说", "书上说", "文章说", "新闻说", "报道说", "听说", "据说",
+    "歌词里", "电影里", "小说里", "别人说", "他说", "她说", "引用",
+    "“", "\"", "‘", "'",  # 引号： quoted text
+)
+
+
+def _is_quoted(text: str, idx: int) -> bool:
+    """高危词是否处于引用语境（窄窗口 + 明确标记）。开关关闭时不调用。"""
+    window = text[max(0, idx - 8):idx]
+    # 开引号后未闭合 → 关键词在引号内
+    for q in ("“", "\""):
+        if q in window and q not in text[idx:]:
+            return True
+    # 明确引用标记紧邻
+    return any(m in window for m in _QUOTE_MARKERS)
+
+
+def _quote_guard_enabled() -> bool:
+    import os
+    return os.getenv("USE_CRISIS_QUOTE_GUARD", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _matches(text: str, words: list[str]) -> list[str]:
     hit: list[str] = []
+    quote_guard = _quote_guard_enabled()
     for w in words:
         i = text.find(w)
         while i != -1:
-            if not _is_negated(text, i, w) and not _is_third_person(text, i):
+            if (not _is_negated(text, i, w)
+                    and not _is_third_person(text, i)
+                    and not (quote_guard and _is_quoted(text, i))):
                 hit.append(w)
                 break
             i = text.find(w, i + 1)
