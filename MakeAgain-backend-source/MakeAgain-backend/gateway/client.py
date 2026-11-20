@@ -60,14 +60,29 @@ class LLMClient:
         return self.settings.mock_llm
 
     def _client(self):
-        """懒加载官方 SDK(传输/SSE/重试由 SDK 负责)。"""
+        """懒加载官方 SDK(传输/SSE/重试由 SDK 负责)。
+
+        LLM_EXTRA_HEADERS(JSON) 可注入额外请求头(如 opencode-go 要求的
+        x-opencode-session);不设时为 None,对现有行为零影响。
+        """
         if self._sdk is None:
             from openai import OpenAI
+            extra_headers = None
+            raw = os.getenv("LLM_EXTRA_HEADERS", "")
+            if raw:
+                try:
+                    import json
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, dict):
+                        extra_headers = {str(k): str(v) for k, v in parsed.items()}
+                except Exception:
+                    extra_headers = None
             self._sdk = OpenAI(
                 api_key=self.settings.llm_api_key,
                 base_url=self.settings.llm_base_url.rstrip("/"),
                 timeout=self.settings.llm_timeout,
                 max_retries=2,
+                default_headers=extra_headers,
             )
         return self._sdk
 

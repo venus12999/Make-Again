@@ -242,7 +242,9 @@ def _chat_generic(db, user_id: str, message: str, client: LLMClient, session_id:
     }
     # 最近几轮对话作为「已在聊」参照:已在其中的记忆不再重复注入(克制重复引用)
     turns = session_context.get_turns(user_id, session_id)
-    recent_text = " ".join(t["content"] for t in turns)
+    # 「正在聊」的判据用最近 1 轮,而不是整个 session 历史:
+    # 用全部 6 轮会让跨天/重新打开 App 后的回忆被误判为"刚聊过"而永久召回不到。
+    recent_text = " ".join(t["content"] for t in turns[-1:])
     memories = recall.recall(db, user_id, message, recent_text=recent_text)
 
     # 今日主题(若当天已选):注入上下文,让对话延续当天主题
@@ -294,10 +296,18 @@ def _chat_generic(db, user_id: str, message: str, client: LLMClient, session_id:
     # 同步落库聊天历史(user + assistant 各一条,精确到分钟,保证历史立即可见)
     store.save_chat_turn(db, user_id, session_id, message, reply)
 
+    # 情绪分类:默认词典法(零延迟);USE_LLM_EMOTION=1 时用快速模型做结构化分类,
+    # 真实语料下词典法对复杂哀伤表达识别率低(全部落"其他"),LLM 分类更准但多一次调用。
+    import os as _os
+    _emo_client = client if _os.getenv("USE_LLM_EMOTION", "0").strip().lower() in ("1", "true", "yes", "on") else None
+    try:
+        emotion_result = classify(message, _emo_client)
+    except Exception:
+        emotion_result = classify(message)
     return {
         "reply": reply,
         "crisis": crisis,
-        "emotion": classify(message),
+        "emotion": emotion_result,
         "recalled": len(memories),
         "tone": tone["tone"],
         "tool": tool,
