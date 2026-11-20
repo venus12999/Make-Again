@@ -44,13 +44,17 @@ def enabled() -> bool:
 
 # ---- sqlite-vec vec0 连接（按 db_path 缓存，:memory: 进程内共享） ----
 _DB_PATH_ENV = "ENTITY_GRAPH_DB_PATH"
-_EMBED_DIM = 32
+_EMBED_DIM = 32             # 默认（本地 hash）维度
+_active_dim = _EMBED_DIM    # 当前 vec0 表维度；set_embedder 按 embedder 维度重建
 _SIM_THRESHOLD = 0.95  # mem0 main.py:621/1166 原值
 
-_CREATE_SQL = f"""
+
+def _create_sql(dim: int) -> str:
+    """按 embedder 维度生成 vec0 DDL（真语义 512 维时重建表，避免维度不匹配报错）。"""
+    return f"""
 CREATE VIRTUAL TABLE IF NOT EXISTS entities USING vec0(
     entity_id TEXT PRIMARY KEY,
-    embedding float[{_EMBED_DIM}] distance_metric=cosine,
+    embedding float[{dim}] distance_metric=cosine,
     data TEXT,
     data_norm TEXT,
     entity_type TEXT,
@@ -75,16 +79,65 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
             conn.enable_load_extension(True)
             sqlite_vec.load(conn)
             conn.enable_load_extension(False)
-            conn.execute(_CREATE_SQL)
+            conn.execute(_create_sql(_active_dim))
             conn.commit()
             _connections[path] = conn
         return conn
 
 
+def _infer_dim(fn) -> int | None:
+    """推断 embedder 维度：优先 .dim 属性（fastembed 单例带此属性），否则探针一次。"""
+    if fn is None:
+        return _EMBED_DIM
+    dim = getattr(fn, "dim", None)
+    if isinstance(dim, int) and dim > 0:
+        return dim
+    try:
+        n = len(list(fn("__dim_probe__")))
+        return n if n > 0 else None
+    except Exception:
+        return None
+
+
+def _rebuild_for_dim(dim: int) -> None:
+    """维度变化时重建 vec0 表（切换 embedding 模型=配置变更，旧实体数据丢弃）。"""
+    global _active_dim
+    _active_dim = dim
+    with _conn_lock:
+        for path, conn in list(_connections.items()):
+            try:
+                conn.execute("DROP TABLE IF EXISTS entities")
+                conn.execute(_create_sql(dim))
+                conn.commit()
+            except Exception as exc:  # noqa: BLE001 - 单连接失败不影响其它
+                logger.warning("entity table rebuild failed for %s: %s", path, exc)
+
+
 def set_embedder(fn) -> None:
-    """注入 (text: str) -> list[float] 的 embedding 函数；传 None 恢复默认。"""
+    """注入 (text: str) -> list[float] 的 embedding 函数；传 None 恢复默认 hash。
+
+    与 vector_index.set_embedder 联动：复用同一函数对象（fastembed 只加载一次）。
+    维度变化时自动重建 vec0 表，避免 32/512 维混用导致 KNN 查询报错。
+    """
     global _embedder
+    dim = _infer_dim(fn)
     _embedder = fn
+    if dim is not None and dim != _active_dim:
+        _rebuild_for_dim(dim)
+
+
+def enable_semantic_embedding() -> bool:
+    """复用 vector_index 的共享 fastembed 单例（不再加载第二个模型）。"""
+    from memory import vector_index
+    ok = vector_index.enable_semantic_embedding()
+    fn = vector_index.get_semantic_embedder()
+    if fn is not None:
+        set_embedder(fn)
+    return bool(ok and fn is not None)
+
+
+def current_dim() -> int:
+    return _active_dim
 
 
 def _local_embed(text: str) -> list[float]:
@@ -107,8 +160,9 @@ def _local_embed(text: str) -> list[float]:
 def _embed(text: str) -> list[float]:
     fn = _embedder or _local_embed
     vec = [float(x) for x in fn(text)]
-    if len(vec) != _EMBED_DIM:
-        raise ValueError(f"embedder must return {_EMBED_DIM} dims, got {len(vec)}")
+    if not vec:
+        raise ValueError("embedder returned empty vector")
+    # 维度由 set_embedder 的 _rebuild_for_dim 保证与 vec0 表一致（32 hash / 512 语义）
     return vec
 
 

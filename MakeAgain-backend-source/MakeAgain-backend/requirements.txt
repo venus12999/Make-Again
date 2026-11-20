@@ -27,3 +27,5 @@ jieba>=0.42,<1
 # agent-memory-core 0.1.0：WP-B 五层内核依赖，本机从源码安装验证：
 # pip install ./<agent-memory>/packages/core（PyPI 发布状态未验证，部署时需同样源码安装）
 agent-memory-core==0.1.0
+# U-012 真语义 embedding：BAAI/bge-small-zh-v1.5 中文模型（首次运行下载，HF_HOME 可配）
+fastembed>=0.4,<1
