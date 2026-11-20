@@ -21,6 +21,11 @@ CALM_EMOTIONS = {"平静", "释怀"}
 STAGES = ["低谷期", "波动期", "趋稳期", "平静期", "和解期"]
 
 
+def _mature_temporal_enabled() -> bool:
+    """R4 总开关：USE_MATURE_TEMPORAL，默认关闭（与 memory.temporal 同一变量名）。"""
+    return (os.getenv("USE_MATURE_TEMPORAL") or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _local_date(ts) -> str:
     offset = get_settings().timezone_offset_hours
     return (ts + timedelta(hours=offset)).strftime("%Y-%m-%d")
@@ -45,7 +50,8 @@ def compute_state(db, user_id: str, since=None) -> dict:
     """聚合情绪信号,返回状态指标 + 阶段(0~4 对应 STAGES)。since 为时间下界时只统计该时间之后。"""
     day_scores: dict[str, list[float]] = {}
     day_emotions: dict[str, list[str]] = {}
-    for m in store.list_memories(db, user_id, since=since):
+    mems = store.list_memories(db, user_id, since=since)
+    for m in mems:
         if not (m.emotion and "score" in m.emotion):
             continue
         d = _local_date(m.ts)
@@ -67,6 +73,17 @@ def compute_state(db, user_id: str, since=None) -> dict:
         prev_avg = _mean([s for d in days[:half] for s in day_scores[d]])
         recent_avg = _mean([s for d in days[half:] for s in day_scores[d]])
         trend = recent_avg - prev_avg
+
+    # R4 · hindsight 证据趋势增强（USE_MATURE_TEMPORAL 默认关闭）：
+    # 开启时用 compute_trend 的 STABLE/STRENGTHENING/WEAKENING/NEW/STALE 给数值趋势一个方向增量；
+    # 失败/未开启一律保留上面的基线 trend，返回字段集合不变。
+    if _mature_temporal_enabled():
+        try:
+            from memory import trends as _trends
+            signal = _trends.trend_from_memories(mems)
+            trend = _clamp(trend + _trends.TREND_SCORE_DELTA.get(signal, 0.0), -100.0, 100.0)
+        except Exception:
+            pass
 
     last14 = days[-14:]
     emos_14 = [e for d in last14 for e in day_emotions[d]]

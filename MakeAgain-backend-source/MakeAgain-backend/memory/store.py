@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import logging
+import os
+import threading
 from datetime import datetime
 
 from sqlalchemy import func, select
@@ -14,6 +18,9 @@ from memory.models import (
     Portrait, Report, StateSnapshot, TodoItem, TreeholeLetter, TreeholeReply, TreeholeSeen, User, UserAuth, UserState,
     WeeklyReport, WelcomeLetter, utcnow,
 )
+from memory.provenance_store import SQLiteManager as _ProvenanceStore
+
+logger = logging.getLogger(__name__)
 
 
 # Canonical relationship categories. Keep legacy loved_one mapped to relative.
@@ -183,6 +190,167 @@ def upsert_portrait(db: Session, user_id: str, kind: str, content: dict, status:
     return row
 
 
+# ==================== R3 溯源存储（mem0 资产移植，默认关闭） ====================
+# 资产来源（gh api 实读原文）：
+#   - mem0/memory/storage.py L11-L347  → memory/provenance_store.py（SQLiteManager 整文件）
+#   - mem0/memory/main.py L1975-2144   → 下方 _create/_update/_delete 的"先落库成功再写 history"顺序
+# 设计红线：USE_PROVENANCE 默认关闭；关闭时 add_memory 除一次纯 env 读取外与基线逐字节一致，
+#           任何溯源写失败都 swallow（fallback 回旧路径），绝不影响业务库的返回与行为。
+_PROV_ENABLED_VALUES = {"1", "true", "yes", "on"}
+_provenance_lock = threading.Lock()
+_provenance_stores: dict[str, _ProvenanceStore] = {}
+
+
+def provenance_enabled() -> bool:
+    """溯源开关：os.getenv，默认关闭。"""
+    return (os.getenv("USE_PROVENANCE") or "").strip().lower() in _PROV_ENABLED_VALUES
+
+
+def _provenance_db_path() -> str:
+    return os.getenv("PROVENANCE_DB_PATH") or ":memory:"
+
+
+def _get_provenance_store() -> _ProvenanceStore:
+    """按 db_path 缓存连接；:memory: 时同一进程内共享，保证事件链可读。"""
+    path = _provenance_db_path()
+    with _provenance_lock:
+        store = _provenance_stores.get(path)
+        if store is None:
+            store = _ProvenanceStore(path)
+            _provenance_stores[path] = store
+        return store
+
+
+def reset_provenance_cache() -> None:
+    """关闭并清空溯源连接缓存（测试/切库用，不触碰业务库）。"""
+    with _provenance_lock:
+        for store in _provenance_stores.values():
+            store.close()
+        _provenance_stores.clear()
+
+
+def _iso(dt) -> str:
+    """mem0 用 datetime.now(timezone.utc).isoformat()；本仓 ORM 存 naive UTC。"""
+    return dt.isoformat() if dt is not None else utcnow().isoformat()
+
+
+def _content_hash(data: str) -> str:
+    """mem0 main.py:1984 / :2077 的 `hashlib.md5(data.encode()).hexdigest()`。"""
+    return hashlib.md5((data or "").encode()).hexdigest()
+
+
+def _prov_record(memory_id, old_memory, new_memory, event, *, created_at, updated_at,
+                 is_deleted: int = 0, actor_id=None, role=None) -> None:
+    """history 三件套的落库后写入动作（mem0 main.py:1995-2004 / 2096-2105 / 2128-2138）。
+
+    顺序严格照抄：hash → 时间戳（由调用方算好传入）→ 业务库先落库成功 → 写 history。
+    """
+    prov = _get_provenance_store()
+    if new_memory is not None:  # DELETE 事件 new_memory=None，不刷新 hash
+        prov.set_memory_hash(str(memory_id), _content_hash(new_memory))
+    prov.add_history(
+        str(memory_id), old_memory, new_memory, event,
+        created_at=created_at, updated_at=updated_at,
+        is_deleted=is_deleted, actor_id=actor_id, role=role,
+    )
+
+
+def add_provenance_event(memory_id, old_memory, new_memory, event, **kwargs) -> bool:
+    """低层新 API：供 future reflect / 迁移补写事件用；开关关或失败返回 False。"""
+    if not provenance_enabled():
+        return False
+    try:
+        _prov_record(str(memory_id), old_memory, new_memory, event, **kwargs)
+        return True
+    except Exception:
+        logger.warning("provenance event write failed; fallback to baseline", exc_info=True)
+        return False
+
+
+def get_history(memory_id: str) -> list[dict]:
+    """R3 新 API：返回某记忆的溯源事件链（ADD/UPDATE/DELETE），供后续 reflect 用。
+
+    开关关闭时返回 []，不创建连接、不碰任何库；溯源查询失败同样回退 []。
+    """
+    if not provenance_enabled():
+        return []
+    try:
+        return _get_provenance_store().get_history(str(memory_id))
+    except Exception:
+        logger.warning("provenance history read failed; fallback to []", exc_info=True)
+        return []
+
+
+# 便于调用方语义化命名；两者完全等价。
+get_provenance_history = get_history
+
+
+def prov_update_memory(db: Session, memory_id: str, *, content: str, actor_id=None, role=None):
+    """等价 mem0 main.py:2052-2114 `_update_memory`：先更新业务库落库成功，再写 UPDATE history。
+
+    保留 created_at（= 原 entry.ts），updated_at 取当前时间；开关关闭时仍只做原本的 ORM 更新。
+    """
+    entry = db.get(MemoryEntry, str(memory_id))
+    if entry is None:
+        return None
+    prev_value = entry.content
+    created_at = _iso(entry.ts)
+    entry.content = content
+    db.commit()
+    db.refresh(entry)
+    if provenance_enabled():
+        try:
+            _prov_record(entry.id, prev_value, content, "UPDATE",
+                         created_at=created_at, updated_at=_iso(utcnow()),
+                         actor_id=actor_id, role=role)
+        except Exception:
+            logger.warning("provenance UPDATE history failed; fallback to baseline", exc_info=True)
+    return entry
+
+
+def prov_delete_memory(db: Session, memory_id: str, actor_id=None, role=None) -> bool:
+    """等价 mem0 main.py:2116-2144 `_delete_memory`：先删除落库成功，再写 DELETE history(is_deleted=1)。"""
+    entry = db.get(MemoryEntry, str(memory_id))
+    if entry is None:
+        return False
+    mid = str(entry.id)  # 先留存 id:delete+commit 后再取 ORM 属性不可靠
+    prev_value = entry.content or ""
+    created_at = _iso(entry.ts)
+    db.delete(entry)
+    db.commit()
+    if provenance_enabled():
+        try:
+            _prov_record(mid, prev_value, None, "DELETE",
+                         created_at=created_at, updated_at=_iso(utcnow()),
+                         is_deleted=1, actor_id=actor_id, role=role)
+        except Exception:
+            logger.warning("provenance DELETE history failed; fallback to baseline", exc_info=True)
+    return True
+
+
+def save_provenance_messages(messages: list[dict], session_scope: str) -> bool:
+    """mem0 storage.py:257-296 会话环形缓冲（保留最近 10 条），开关关返回 False。"""
+    if not provenance_enabled():
+        return False
+    try:
+        _get_provenance_store().save_messages(messages, session_scope)
+        return True
+    except Exception:
+        logger.warning("provenance save_messages failed; fallback", exc_info=True)
+        return False
+
+
+def get_last_provenance_messages(session_scope: str, limit: int = 10) -> list[dict]:
+    """mem0 storage.py:298-324，开关关或失败返回 []。"""
+    if not provenance_enabled():
+        return []
+    try:
+        return _get_provenance_store().get_last_messages(session_scope, limit)
+    except Exception:
+        logger.warning("provenance get_last_messages failed; fallback to []", exc_info=True)
+        return []
+
+
 def add_memory(db: Session, user_id: str, *, type: str = "chat", content: str,
                summary: str | None = None, facts: list | None = None,
                emotion: dict | None = None, importance: float = 5.0,
@@ -196,6 +364,15 @@ def add_memory(db: Session, user_id: str, *, type: str = "chat", content: str,
     db.add(entry)
     db.commit()
     db.refresh(entry)
+    # R3: mem0 main.py:1990-2004 —— 业务库 insert 成功后才写 ADD history。
+    # 开关关闭时此分支不执行；溯源写失败一律 swallow，回退基线行为。
+    if provenance_enabled():
+        try:
+            _prov_record(entry.id, None, entry.content, "ADD",
+                         created_at=_iso(entry.ts), updated_at=_iso(entry.ts),
+                         actor_id=user_id, role="user")
+        except Exception:
+            logger.warning("provenance ADD history failed; fallback to baseline", exc_info=True)
     return entry
 
 
