@@ -609,10 +609,16 @@ def _recall_dual(db, user_id: str, query: str, top_k: int | None = None,
         if entry is None:
             continue
         sd = dict(detail[mid].get("score_details") or {})
+        # G2: 端到端结果反映真实 embedding 口径（hash 或 fastembed 语义），不再硬编码。
+        try:
+            from memory.vector_index import embedding_kind as _embedding_kind
+            _kind = _embedding_kind()
+        except Exception:
+            _kind = "deterministic_hash_nonsemantic"
         sd.update({
             "vec_score": by_id[mid]["vec_score"],
             "bm25_raw": by_id[mid]["kw_score"],
-            "embedding_kind": "deterministic_hash_nonsemantic",
+            "embedding_kind": _kind,
         })
         out.append({
             "entry": entry,

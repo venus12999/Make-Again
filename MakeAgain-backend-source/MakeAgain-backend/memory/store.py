@@ -305,6 +305,17 @@ def prov_update_memory(db: Session, memory_id: str, *, content: str, actor_id=No
                          actor_id=actor_id, role=role)
         except Exception:
             logger.warning("provenance UPDATE history failed; fallback to baseline", exc_info=True)
+    # G1 (U-011)：更新记忆时五层库走 supersede——旧记录 validity interval 终止并指向新版本，
+    # current 只返最新；as_of 历史时点仍能看到旧事实。失败 swallow，回退基线。
+    if five_layer_enabled():
+        try:
+            _get_five_layer_adapter().supersede_content(
+                str(entry.id), content, user_id=str(entry.user_id), type=str(entry.type),
+                provenance=[content] if content else [],
+                valid_from=_iso(utcnow()),
+            )
+        except Exception:
+            logger.warning("five-layer supersede failed; fallback to baseline", exc_info=True)
     return entry
 
 
@@ -332,6 +343,15 @@ def prov_delete_memory(db: Session, memory_id: str, actor_id=None, role=None) ->
                          is_deleted=1, actor_id=actor_id, role=role)
         except Exception:
             logger.warning("provenance DELETE history failed; fallback to baseline", exc_info=True)
+    # G1 (U-011)：业务库删除成功后，USE_FIVE_LAYER=1 时同步软删五层库记录。
+    # 只终止 validity interval（保留记录本体 + provenance）：current 不再返回已删项，
+    # trace 仍可溯源，as_of 历史时点仍可见。失败 swallow 回退基线；开关关闭时该分支
+    # 根本不执行，删除路径与基线逐字节一致。
+    if five_layer_enabled():
+        try:
+            _get_five_layer_adapter().invalidate(mid)
+        except Exception:
+            logger.warning("five-layer invalidate failed; fallback to baseline", exc_info=True)
     return True
 
 

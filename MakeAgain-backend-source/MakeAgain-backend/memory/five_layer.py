@@ -129,6 +129,42 @@ class FiveLayerAdapter:
         self._store.supersede(old, new)
         return self.record(old)
 
+    def _free_successor_name(self, old_id: str) -> str:
+        """给 update 后继挑一个未被占用的 slug（沿用库 -2/-3 的后继命名惯例）。
+
+        MemoryEntry 更新时 id 不变，五层库的旧记录名 = id；若对同名直接 add 会被库的
+        `_enforce_update_only` 以「事实变了」拒绝，所以必须写一条新版本再 supersede。
+        """
+        base = _slug(old_id)
+        ordinal = 2
+        while True:
+            candidate = f"{base}-{ordinal}"
+            if self._store.find(candidate) is None:
+                return candidate
+            ordinal += 1
+
+    def supersede_content(self, old_id: str, new_content: str, *,
+                          user_id: str = "", type: str = DEFAULT_TYPE,
+                          subject: str | None = None,
+                          provenance: list[str] | None = None,
+                          valid_from: object = None) -> dict:
+        """update 路径：写一条新版本记录并把旧记录 supersede 到它。
+
+        返回旧记录（含 superseded_by / invalid_at）；current 只返最新版本，
+        as_of 历史时点仍可看到旧事实。若五层库此前没有该记录（开关此前关闭），
+        按 add 语义补写，不制造没有前驱的孤儿后继。写失败由调用方 swallow 回退基线。
+        """
+        excerpts = provenance if provenance is not None else [str(new_content)]
+        if not self.record(old_id):
+            self.add(old_id, new_content, user_id=user_id, type=type,
+                     subject=subject, provenance=excerpts, valid_from=valid_from)
+            return self.record(old_id)
+        successor = self._free_successor_name(old_id)
+        self.add(successor, new_content, user_id=user_id, type=type,
+                 subject=subject, provenance=excerpts, valid_from=valid_from)
+        self.supersede(old_id, successor)
+        return self.record(old_id)
+
     def invalidate(self, record_id: str, *, at: object = None,
                    successor: str | None = None) -> dict:
         """直接调用库的 record.invalidate()：软删，退出 active 集但记录仍在、仍可溯源。"""
@@ -187,6 +223,25 @@ class FiveLayerAdapter:
                     "source": "five_layer",
                 })
         return found[:limit]
+
+    def present_in_current(self, record_id: str, as_of: str | None = None) -> bool:
+        """按记录名（而非文本查询）确认它是否出现在 current / as_of 结果里。
+
+        与 current() 共用 agent-memory-core 的双时态判据；删除同步后用它精确断言
+        「current 不返已删项」，历史时点则返回 True（仍可溯源）。
+        """
+        name = _slug(record_id)
+        moment = _timestamp.parse(as_of) if as_of else None
+        eligibility = Recall(self._store)
+        with Database(self._store.layout).connect() as connection:
+            row = connection.execute(
+                "SELECT name, valid_from, invalid_at FROM records WHERE name = ?", (name,)
+            ).fetchone()
+        if row is None:
+            return False
+        if moment is None:
+            return not bool(row["invalid_at"])
+        return eligibility._current_at(row, moment)
 
     def trace(self, record_id: str) -> dict:
         """provenance 指针 → 原始消息文本（库 trace.read 的 trace_evidence 门面）。"""
