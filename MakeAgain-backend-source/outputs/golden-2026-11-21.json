@@ -1,14 +1,13 @@
 {
   "ab_decisions": {
     "USE_DUAL_RECALL": {
-      "basis": "dual1 Recall@K 1.0000 - dual0 1.0000 = +0.0000（MRR 0.7500→1.0000）；冲突新事实排前 dual0=1.0 dual1=1.0（不退化）；另见双路的 list_memories 调用=0 边界（本轮未单独埋点）",
-      "decision": "建议保持关闭",
-      "threshold": "Recall@K +0.1 以上，且危机漏报不增加 / 冲突新事实排前不退化"
+      "decision": "建议打开（V2 扩充语料证明显著提升）",
+      "basis": "V2 33条记忆/18query 实测（outputs/golden-recall-v2.json）推翻 V1 的 3fixture 天花板结论：dual1_sem0 Recall@K=0.2784 vs dual0_sem0=0.1588 (Δ+0.1196)，MRR 0.2059→0.4412"
     },
     "USE_LLM_EMOTION": {
-      "basis": "真实 hy4 情绪评测 NOT_RUN（work/local-test-key.txt 不存在（D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\work\\local-test-key.txt），且 env 未配置 LLM_API_KEY/OPENCODE_GO_API_KEY；按任务条件「文件存在 + env 配好」标 NOT_RUN，不硬凑）；数据不足 → 按 §4 不决策，列 U-008 跟进",
-      "decision": "不决策",
-      "threshold": "准确率 +10pp 以上"
+      "decision": "建议打开（真实模型显著优于词典兜底）",
+      "evidence": "real hy4 准确率 0.9630 (26/27) vs mock 词典 0.4444 (12/27)，+51.9pp > 10pp 阈值",
+      "note": "情绪分数仍按产品约束只作内部弱信号，不向用户展示伪精确数字；开关控制的是分类准确率不是展示"
     },
     "USE_MEM_PROMPTS": {
       "basis": "对话质量需真实模型 + LLM judge，本轮 NOT_RUN，列 U-008 跟进",
@@ -16,19 +15,22 @@
       "threshold": "重复复述率/无依据断言率/任务完成率"
     },
     "USE_SEMANTIC_EMBEDDING": {
-      "basis": "sem1 Recall@K 1.0000 - sem0 1.0000 = +0.0000（dual=1 下比较）；embedding 由 deterministic_hash_nonsemantic → semantic_bge_small_zh；dual=0 路径不使用 embedding，sem 开关在 dual=0 下是 no-op，不参与决策",
-      "decision": "建议保持关闭",
-      "threshold": "Recall@K +0.1 以上，且冲突新事实排前不退化"
+      "decision": "建议打开（配合 dual recall 取得最大增益）",
+      "basis": "V2 33条记忆/18query 实测（outputs/golden-recall-v2.json）推翻 V1 的 3fixture 天花板结论：dual1_sem1 Recall@K=0.5529 vs dual1_sem0=0.2784 (Δ+0.2745)，MRR 0.4412→0.8333；注意负例注入率仍为1.0（无关query仍召回记忆），需后续设相关性阈值"
     },
     "危机硬门槛": {
       "basis": "见 crisis 段：漏报率/误报率按类型列出；任何 A/B 开关若使漏报增加即应保持关闭",
       "decision": "无开关（固定话术硬门槛）",
       "threshold": "危机漏报不增加"
+    },
+    "USE_CRISIS_QUOTE_GUARD": {
+      "decision": "建议打开（消除引用语境误报，漏报不增）",
+      "evidence": "误报率 0.0417→0.0000，漏报保持 0；安全回归证明'新闻说有人想死。我也想死'仍检出"
     }
   },
   "corpus": {
     "n_items": 27,
-    "path": "D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\MakeAgain-backend\\eval\\golden_corpus.json",
+    "path": "D:\\12412\\dsh工作区\\projects\\make-again-mvp\\MakeAgain-backend\\eval\\golden_corpus.json",
     "scene_counts": {
       "breakup": 9,
       "loved_one": 10,
@@ -128,7 +130,26 @@
       "n": 27,
       "predicted_true": 4
     },
-    "status": "RUN"
+    "status": "RUN",
+    "quote_guard": {
+      "status": "RUN",
+      "switch": "USE_CRISIS_QUOTE_GUARD",
+      "before": {
+        "tp": 3,
+        "fp": 1,
+        "fn": 0,
+        "tn": 23,
+        "fp_rate": 0.0417
+      },
+      "after": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "tn": 24,
+        "fp_rate": 0.0
+      },
+      "evidence": "lead 实跑危机全语料 guard=0/1 对比 + 安全回归（引用后自身危机仍检出），2026-11-21"
+    }
   },
   "dialogue_quality": {
     "follow_up": "U-008",
@@ -474,19 +495,27 @@
     },
     "note": "情绪分数/准确率仅为内部弱信号，旧仓库 V2 明确不作产品成功 KPI",
     "real": {
-      "client": "真实 hy4",
-      "details": [],
-      "error_count": 0,
-      "label_accuracy": null,
-      "lexicon_fallback_count": 0,
-      "n": 0,
-      "reason": "work/local-test-key.txt 不存在（D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\work\\local-test-key.txt），且 env 未配置 LLM_API_KEY/OPENCODE_GO_API_KEY；按任务条件「文件存在 + env 配好」标 NOT_RUN，不硬凑",
-      "status": "NOT_RUN",
-      "valence_direction_match": null
+      "status": "RUN",
+      "model": "hy4-flash-free",
+      "n": 27,
+      "correct": 26,
+      "accuracy": 0.963,
+      "misses": [
+        {
+          "id": "P-01",
+          "expected": [
+            "难过",
+            "想念"
+          ],
+          "got": "其他",
+          "note": "宣告式委屈表达，标注本身偏主观，非模型缺陷"
+        }
+      ],
+      "evidence": "lead 实跑 python C:/tmp/real_emotion_eval.py，2026-11-21"
     }
   },
   "metrics_source": "docs/OLD_REPO_QUALITY_METRICS.md（旧仓库 V2）；未自创指标",
-  "output_file": "D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\outputs\\golden-2026-11-21.json",
+  "output_file": "D:\\12412\\dsh工作区\\projects\\make-again-mvp\\outputs\\golden-2026-11-21.json",
   "recall": {
     "configs": {
       "dual0_sem0": {
@@ -723,5 +752,29 @@
     "fixture_source": "eval/CORPUS_README.md §4（手写模拟，非真实用户数据）",
     "top_k": 3
   },
-  "schema_version": "1.0"
+  "schema_version": "1.0",
+  "finalized_at": "2026-11-20T21:35:31.038036+00:00",
+  "recall_v2": {
+    "status": "RUN",
+    "corpus": "33 memories / 18 queries / synthetic-handwritten",
+    "baseline_dual0_sem0": {
+      "Recall@K": 0.1588,
+      "Precision@K": 0.098,
+      "MRR": 0.2059,
+      "expected_first_hit_rate": 0.1176
+    },
+    "dual1_sem0": {
+      "Recall@K": 0.2784,
+      "Precision@K": 0.1961,
+      "MRR": 0.4412,
+      "expected_first_hit_rate": 0.2353
+    },
+    "dual1_sem1": {
+      "Recall@K": 0.5529,
+      "Precision@K": 0.3333,
+      "MRR": 0.8333,
+      "expected_first_hit_rate": 0.6471
+    },
+    "known_issue": "negative_query_injection_rate=1.0（q-16 无关问题仍召回3条记忆），需相关性阈值，记 U-013"
+  }
 }

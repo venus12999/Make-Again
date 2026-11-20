@@ -1,0 +1,608 @@
+{
+  "schema_version": "2.0",
+  "meta": {
+    "name": "Recall Golden Corpus V2",
+    "source": "synthetic-handwritten",
+    "source_ref": "全部条目均为语料生成者手写的模拟语料，非真实用户数据；风格真实不等于数据真实，禁止在报告中称为真实用户统计。",
+    "annotator": "语料生成者本人（标注者=生成者）；相关度为主观判定，口径与局限见 RECALL_CORPUS_README.md §4。",
+    "fixed_now": "2026-11-21T12:00:00",
+    "eval_user": "golden-eval-user",
+    "time_note": "所有 ts 使用绝对 UTC 时间；'去年/周年'等相对词按 fixed_now 解释，保证两次运行结果可复现。",
+    "intended_consumer": "eval/run_golden.py 的 build_memory_db() / recall_metrics()（适配方法见 RECALL_CORPUS_README.md §5）"
+  },
+  "memories": [
+    {
+      "id": "mem-loved-one-father",
+      "content": "外公去世后，用户收拾房间翻到外公的旧眼镜，会想起他坐在藤椅上的样子。",
+      "summary": "外公的旧眼镜触发回忆",
+      "facts": ["外公已去世", "外公留有旧眼镜", "用户看到旧眼镜会想起外公"],
+      "importance": 0.8,
+      "ts": "2025-06-01T10:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-cat-owned",
+      "content": "用户养了一只猫，名字叫橘子，陪了用户八年。",
+      "summary": "用户养猫橘子",
+      "facts": ["用户养猫", "猫名叫橘子", "陪伴八年"],
+      "importance": 0.6,
+      "ts": "2025-03-01T10:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-cat-deceased",
+      "content": "用户养的猫橘子已于 2026-11-20 去世，被埋在楼下那棵树下。",
+      "summary": "用户的猫橘子已去世",
+      "facts": ["用户的猫橘子已去世", "橘子被埋在楼下树下"],
+      "importance": 0.9,
+      "ts": "2026-11-20T10:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-b-01",
+      "content": "前任叫林远，两人 2025 年 7 月分的手，之后就没再联系。",
+      "summary": "前任姓名与分手时间",
+      "facts": ["前任叫林远", "2025-07 分手", "分手后未联系"],
+      "importance": 0.7,
+      "ts": "2025-07-15T09:00:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-02",
+      "content": "半夜醒过来习惯性想找他说话，才想起已经分手三个月了。",
+      "summary": "分手后半夜的条件反射式想念",
+      "facts": ["分手后半夜常醒", "习惯性想联系前任"],
+      "importance": 0.6,
+      "ts": "2025-10-10T02:30:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-03",
+      "content": "前任会弹吉他，喜欢在阳台唱歌给用户听。",
+      "summary": "前任会弹吉他爱唱歌",
+      "facts": ["前任会弹吉他", "前任喜欢唱歌"],
+      "importance": 0.5,
+      "ts": "2024-12-20T20:00:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-04",
+      "content": "分手后用户把联系方式都删了，决定不再主动联系。",
+      "summary": "分手后切断联系",
+      "facts": ["已删除前任联系方式", "决定不主动联系"],
+      "importance": 0.75,
+      "ts": "2025-08-01T11:00:00Z",
+      "type": "event",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-05",
+      "content": "前任爱喝冰美式，用户后来也跟着习惯了点冰美式。",
+      "summary": "冰美式习惯的由来",
+      "facts": ["前任爱喝冰美式", "用户也习惯喝冰美式"],
+      "importance": 0.4,
+      "ts": "2024-10-05T08:00:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-06",
+      "content": "用户现在和别人在一起了，可对方总问有没有真的忘掉前任。",
+      "summary": "现伴侣在意用户是否放下前任",
+      "facts": ["用户已有新伴侣", "新伴侣在意用户是否放下前任"],
+      "importance": 0.6,
+      "ts": "2026-03-12T19:00:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-07",
+      "content": "两人本来约好今年一起去看海，现在用户的计划里没有这一项了。",
+      "summary": "取消的看海约定",
+      "facts": ["曾约定一起去看海", "该计划已取消"],
+      "importance": 0.7,
+      "ts": "2025-05-02T14:00:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-08",
+      "content": "用户觉得他说走就走、连一句解释都没有，心里一直很不甘。",
+      "summary": "对方突然离开带来的不甘",
+      "facts": ["对方突然离开未解释", "用户感到不甘"],
+      "importance": 0.65,
+      "ts": "2025-07-16T22:00:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-09",
+      "content": "前任对狗毛过敏，当年两个人想养狗最后没养成。",
+      "summary": "前任狗毛过敏（干扰项：非用户养宠）",
+      "facts": ["前任对狗毛过敏", "曾想养狗未果"],
+      "importance": 0.5,
+      "ts": "2024-08-18T16:00:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-10",
+      "content": "2026 年 7 月是分手一周年，用户那阵子情绪明显低落。",
+      "summary": "分手周年（时间敏感）",
+      "facts": ["分手周年在 2026-07", "周年期间情绪低落"],
+      "importance": 0.75,
+      "ts": "2026-07-01T09:00:00Z",
+      "type": "event",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-b-11",
+      "content": "分手后用户学会做饭，从只会煮泡面到能做一桌菜。",
+      "summary": "分手后学会做饭",
+      "facts": ["分手后学会做饭", "起点是只会煮泡面"],
+      "importance": 0.55,
+      "ts": "2025-11-20T18:30:00Z",
+      "type": "chat",
+      "scene": "breakup"
+    },
+    {
+      "id": "mem-l-01",
+      "content": "奶奶的红烧肉配方写在一张泛黄的纸上，用户一直留着。",
+      "summary": "奶奶的红烧肉配方",
+      "facts": ["奶奶有红烧肉配方", "配方写在泛黄纸上"],
+      "importance": 0.7,
+      "ts": "2023-11-11T12:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-02",
+      "content": "母亲织的围巾还在衣柜最上层，天冷时用户会拿出来披一下。",
+      "summary": "母亲织的围巾",
+      "facts": ["母亲织过围巾", "围巾保存在衣柜最上层"],
+      "importance": 0.6,
+      "ts": "2024-01-08T08:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-03",
+      "content": "父亲爱喝龙井，茶杯还摆在书桌原来的位置没动过。",
+      "summary": "父亲的龙井茶杯",
+      "facts": ["父亲爱喝龙井", "茶杯仍在书桌原处"],
+      "importance": 0.65,
+      "ts": "2024-05-15T15:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-04",
+      "content": "爷爷留下的旧手表，用户一直戴在手上。",
+      "summary": "爷爷的旧手表（干扰项：爷爷非外公）",
+      "facts": ["爷爷留下旧手表", "用户常戴"],
+      "importance": 0.6,
+      "ts": "2022-09-09T07:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-05",
+      "content": "母亲于 2025-12-03 因病去世，走得很突然。",
+      "summary": "母亲去世",
+      "facts": ["母亲已去世", "去世日期 2025-12-03", "因病"],
+      "importance": 0.95,
+      "ts": "2025-12-03T06:00:00Z",
+      "type": "event",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-06",
+      "content": "母亲住院那段时间，用户和家里人每天轮流守夜。",
+      "summary": "母亲住院期间的守夜",
+      "facts": ["母亲曾住院", "用户每天轮流守夜"],
+      "importance": 0.8,
+      "ts": "2025-11-10T23:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-07",
+      "content": "2026 年 6 月是外公周年祭，用户会去墓地坐一会儿。",
+      "summary": "外公周年祭（时间敏感）",
+      "facts": ["外公周年祭在 2026-06", "用户会去墓地"],
+      "importance": 0.7,
+      "ts": "2026-06-01T10:00:00Z",
+      "type": "event",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-08",
+      "content": "姑姑从老家寄来一封信，字迹和奶奶的很像。",
+      "summary": "姑姑寄来的信",
+      "facts": ["姑姑寄过信", "字迹像奶奶"],
+      "importance": 0.4,
+      "ts": "2023-03-22T13:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-09",
+      "content": "父亲以前常带用户去河边钓鱼，一坐就是半天。",
+      "summary": "父亲带用户钓鱼",
+      "facts": ["父亲带用户钓过鱼", "地点是河边"],
+      "importance": 0.55,
+      "ts": "2021-08-14T09:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-10",
+      "content": "奶奶说话总爱带一句'慢慢来'，用户现在偶尔会不自觉地学她说。",
+      "summary": "奶奶的口头禅",
+      "facts": ["奶奶口头禅是慢慢来", "用户偶尔模仿"],
+      "importance": 0.5,
+      "ts": "2023-05-19T17:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-11",
+      "content": "用户一直内疚没来得及见母亲最后一面。",
+      "summary": "未见母亲最后一面的内疚",
+      "facts": ["用户没见到母亲最后一面", "因此长期内疚"],
+      "importance": 0.85,
+      "ts": "2025-12-05T21:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-l-12",
+      "content": "用户最近慢慢释怀了，但看到旧物还是会想念。",
+      "summary": "释怀中夹杂想念",
+      "facts": ["用户逐渐释怀", "看到旧物仍会想念"],
+      "importance": 0.6,
+      "ts": "2026-05-18T20:00:00Z",
+      "type": "chat",
+      "scene": "loved_one"
+    },
+    {
+      "id": "mem-p-01",
+      "content": "用户还养了一只狗，叫豆豆，是只小土狗。",
+      "summary": "用户的狗豆豆（干扰项：狗非猫）",
+      "facts": ["用户养狗", "狗名叫豆豆"],
+      "importance": 0.55,
+      "ts": "2024-06-10T10:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-p-02",
+      "content": "橘子最爱趴在阳台晒太阳，一晒就是一下午。",
+      "summary": "橘子爱晒太阳",
+      "facts": ["橘子爱晒太阳", "常在阳台"],
+      "importance": 0.5,
+      "ts": "2025-04-22T13:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-p-03",
+      "content": "橘子被埋在楼下那棵老槐树下。",
+      "summary": "橘子的埋葬地点",
+      "facts": ["橘子埋在楼下老槐树下"],
+      "importance": 0.7,
+      "ts": "2026-11-20T15:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-p-04",
+      "content": "用户以前养过一只鹦鹉，叫小蓝，后来送人了。",
+      "summary": "曾养鹦鹉小蓝",
+      "facts": ["曾养鹦鹉小蓝", "后来送人"],
+      "importance": 0.4,
+      "ts": "2022-05-30T11:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-p-05",
+      "content": "用户养了几条金鱼，放在客厅的鱼缸里。",
+      "summary": "客厅鱼缸里的金鱼",
+      "facts": ["用户养金鱼", "鱼缸在客厅"],
+      "importance": 0.35,
+      "ts": "2023-02-14T09:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-p-06",
+      "content": "用户其实对猫毛轻度过敏，但一直坚持养着橘子。",
+      "summary": "用户猫毛过敏（干扰项：主体是用户）",
+      "facts": ["用户轻度猫毛过敏", "仍坚持养橘子"],
+      "importance": 0.45,
+      "ts": "2025-03-02T10:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    },
+    {
+      "id": "mem-p-07",
+      "content": "橘子去世后，用户把它的饭盆洗干净收了起来。",
+      "summary": "收起橘子的饭盆",
+      "facts": ["橘子去世后饭盆被洗净收好"],
+      "importance": 0.6,
+      "ts": "2026-11-21T08:00:00Z",
+      "type": "chat",
+      "scene": "pet"
+    }
+  ],
+  "queries": [
+    {
+      "id": "q-01",
+      "scene": "loved_one",
+      "memory_query": "我是靠着什么想起外公的？",
+      "relevance": {
+        "mem-loved-one-father": "high",
+        "mem-l-07": "medium",
+        "mem-l-04": "irrelevant"
+      },
+      "memory_expect": ["mem-loved-one-father", "mem-l-07"],
+      "expected_first": "mem-loved-one-father",
+      "boundary": null,
+      "note": "主答是旧眼镜；mem-l-07 同为外公相关可作中相关；爷爷手表是不同逝者，不相关。"
+    },
+    {
+      "id": "q-02",
+      "scene": "pet",
+      "memory_query": "现在养猫吗？",
+      "relevance": {
+        "mem-cat-deceased": "high",
+        "mem-cat-owned": "irrelevant",
+        "mem-p-01": "irrelevant",
+        "mem-p-06": "irrelevant"
+      },
+      "memory_expect": ["mem-cat-deceased"],
+      "expected_first": "mem-cat-deceased",
+      "boundary": "冲突事实-只召回新事实",
+      "note": "猫已于 2026-11-20 去世，旧事实'养猫橘子'被 mem-cat-deceased supersede；'现在'问当前状态，旧事实不应作为答案召回。"
+    },
+    {
+      "id": "q-03",
+      "scene": "pet",
+      "memory_query": "我养的猫还在吗？",
+      "relevance": {
+        "mem-cat-deceased": "high",
+        "mem-cat-owned": "medium",
+        "mem-p-01": "irrelevant"
+      },
+      "memory_expect": ["mem-cat-deceased", "mem-cat-owned"],
+      "expected_first": "mem-cat-deceased",
+      "boundary": "冲突事实-新事实排前",
+      "note": "新事实必须在旧事实之前（用于 recall_metrics 的 conflict_new_fact_first_rate）；旧养猫事实仅作历史背景的中相关。"
+    },
+    {
+      "id": "q-04",
+      "scene": "pet",
+      "memory_query": "橘子喜欢待在哪儿？",
+      "relevance": {
+        "mem-p-02": "high",
+        "mem-cat-owned": "medium",
+        "mem-cat-deceased": "irrelevant"
+      },
+      "memory_expect": ["mem-p-02", "mem-cat-owned"],
+      "expected_first": "mem-p-02",
+      "boundary": null,
+      "note": "主答是爱晒太阳；养猫事实提供背景；去世事实与'喜欢待哪儿'无关。"
+    },
+    {
+      "id": "q-05",
+      "scene": "pet",
+      "memory_query": "我养过哪些宠物？",
+      "relevance": {
+        "mem-cat-owned": "high",
+        "mem-cat-deceased": "high",
+        "mem-p-01": "high",
+        "mem-p-04": "medium",
+        "mem-p-05": "medium",
+        "mem-b-09": "irrelevant"
+      },
+      "memory_expect": ["mem-cat-owned", "mem-cat-deceased", "mem-p-01", "mem-p-04", "mem-p-05"],
+      "expected_first": "mem-cat-owned",
+      "boundary": "相似主题干扰",
+      "note": "mem-b-09 讲的是'前任对狗毛过敏、没养成狗'，不是用户养宠，属相似主题干扰项，不应召回。"
+    },
+    {
+      "id": "q-06",
+      "scene": "breakup",
+      "memory_query": "去年我经历了什么？",
+      "relevance": {
+        "mem-l-05": "high",
+        "mem-b-11": "high",
+        "mem-b-04": "medium",
+        "mem-l-06": "medium",
+        "mem-loved-one-father": "medium",
+        "mem-l-07": "irrelevant",
+        "mem-cat-deceased": "irrelevant"
+      },
+      "memory_expect": ["mem-l-05", "mem-b-11", "mem-b-04", "mem-l-06", "mem-loved-one-father"],
+      "expected_first": "mem-l-05",
+      "boundary": "时间敏感-去年",
+      "note": "固定 now=2026-11-21，'去年'=2025；2026 年的外公周年祭(2026-06)与猫去世(2026-11)不应召回。"
+    },
+    {
+      "id": "q-07",
+      "scene": "breakup",
+      "memory_query": "我们为什么分手？",
+      "relevance": {
+        "mem-b-08": "high",
+        "mem-b-04": "medium",
+        "mem-b-01": "medium",
+        "mem-b-06": "irrelevant"
+      },
+      "memory_expect": ["mem-b-08", "mem-b-04", "mem-b-01"],
+      "expected_first": "mem-b-08",
+      "boundary": null,
+      "note": "主因是对方突然离开不解释；现伴侣记忆与分手原因无关。"
+    },
+    {
+      "id": "q-08",
+      "scene": "breakup",
+      "memory_query": "前任叫什么名字？",
+      "relevance": {
+        "mem-b-01": "high",
+        "mem-b-09": "medium",
+        "mem-b-06": "irrelevant"
+      },
+      "memory_expect": ["mem-b-01"],
+      "expected_first": "mem-b-01",
+      "boundary": "相似主题干扰",
+      "note": "mem-b-06 是现伴侣，不能当前任召回；mem-b-09 提到前任但不含姓名，仅中相关。"
+    },
+    {
+      "id": "q-09",
+      "scene": "loved_one",
+      "memory_query": "奶奶做饭有什么拿手的？",
+      "relevance": {
+        "mem-l-01": "high",
+        "mem-l-10": "medium",
+        "mem-l-04": "irrelevant",
+        "mem-loved-one-father": "irrelevant"
+      },
+      "memory_expect": ["mem-l-01", "mem-l-10"],
+      "expected_first": "mem-l-01",
+      "boundary": "相似主题干扰",
+      "note": "爷爷手表、外公眼镜都是不同逝者，不能因'长辈旧物'语义相近就混召。"
+    },
+    {
+      "id": "q-10",
+      "scene": "loved_one",
+      "memory_query": "外公的旧物是什么？",
+      "relevance": {
+        "mem-loved-one-father": "high",
+        "mem-l-07": "medium"
+      },
+      "memory_expect": ["mem-loved-one-father", "mem-l-07"],
+      "expected_first": "mem-loved-one-father",
+      "boundary": null,
+      "note": "旧眼镜是主答；周年祭提供外公相关背景。"
+    },
+    {
+      "id": "q-11",
+      "scene": "loved_one",
+      "memory_query": "爷爷留了什么给我？",
+      "relevance": {
+        "mem-l-04": "high",
+        "mem-loved-one-father": "irrelevant",
+        "mem-l-03": "irrelevant"
+      },
+      "memory_expect": ["mem-l-04"],
+      "expected_first": "mem-l-04",
+      "boundary": "相似主题干扰",
+      "note": "爷爷、外公、父亲是三位不同逝者，'长辈遗物'语义高度相似，须精准区分。"
+    },
+    {
+      "id": "q-12",
+      "scene": "loved_one",
+      "memory_query": "妈妈留下什么？",
+      "relevance": {
+        "mem-l-02": "high",
+        "mem-l-05": "medium",
+        "mem-l-11": "medium",
+        "mem-l-01": "irrelevant"
+      },
+      "memory_expect": ["mem-l-02", "mem-l-05", "mem-l-11"],
+      "expected_first": "mem-l-02",
+      "boundary": null,
+      "note": "围巾是母亲留下的实物；去世与内疚是母亲相关背景；奶奶配方不相关。"
+    },
+    {
+      "id": "q-13",
+      "scene": "loved_one",
+      "memory_query": "最近有什么周年纪念？",
+      "relevance": {
+        "mem-l-07": "high",
+        "mem-b-10": "high",
+        "mem-l-05": "irrelevant"
+      },
+      "memory_expect": ["mem-l-07", "mem-b-10"],
+      "expected_first": "mem-l-07",
+      "boundary": "时间敏感-周年",
+      "note": "外公周年(2026-06)、分手周年(2026-07)在固定 now 下都已过/临近，均属'最近周年'；母亲去世日非周年。"
+    },
+    {
+      "id": "q-14",
+      "scene": "pet",
+      "memory_query": "我对什么过敏？",
+      "relevance": {
+        "mem-p-06": "high",
+        "mem-b-09": "medium"
+      },
+      "memory_expect": ["mem-p-06", "mem-b-09"],
+      "expected_first": "mem-p-06",
+      "boundary": "相似主题干扰",
+      "note": "用户的猫毛过敏 vs 前任的狗毛过敏，主体不同；用户本人的过敏主答是 mem-p-06。"
+    },
+    {
+      "id": "q-15",
+      "scene": "breakup",
+      "memory_query": "我现在有对象吗？",
+      "relevance": {
+        "mem-b-06": "high",
+        "mem-b-01": "irrelevant",
+        "mem-b-04": "irrelevant"
+      },
+      "memory_expect": ["mem-b-06"],
+      "expected_first": "mem-b-06",
+      "boundary": "冲突事实-新旧关系",
+      "note": "现伴侣才是当前状态；前任与'已删联系方式'不能作为'现在有对象'的答案。"
+    },
+    {
+      "id": "q-16",
+      "scene": "pet",
+      "memory_query": "今天晚饭吃什么？",
+      "relevance": {
+        "mem-cat-owned": "irrelevant",
+        "mem-l-01": "irrelevant",
+        "mem-b-01": "irrelevant"
+      },
+      "memory_expect": [],
+      "expected_first": null,
+      "boundary": "无关记忆-负例",
+      "note": "与所有记忆无关的 query，期望 top-k 不命中任何记忆。注意：当前 recall_metrics 会跳过空 memory_expect，负例查询的'不召回'判定需 runner 支持（见 README §5 的 gap 说明）。"
+    },
+    {
+      "id": "q-17",
+      "scene": "pet",
+      "memory_query": "橘子埋在哪里？",
+      "relevance": {
+        "mem-cat-deceased": "high",
+        "mem-p-03": "medium",
+        "mem-cat-owned": "irrelevant"
+      },
+      "memory_expect": ["mem-cat-deceased", "mem-p-03"],
+      "expected_first": "mem-cat-deceased",
+      "boundary": null,
+      "note": "去世记忆含埋葬地点为主答；mem-p-03 是地点细节作中相关；养猫旧事实不相关。"
+    },
+    {
+      "id": "q-18",
+      "scene": "loved_one",
+      "memory_query": "父亲平时爱喝什么？",
+      "relevance": {
+        "mem-l-03": "high",
+        "mem-l-04": "irrelevant",
+        "mem-loved-one-father": "irrelevant"
+      },
+      "memory_expect": ["mem-l-03"],
+      "expected_first": "mem-l-03",
+      "boundary": "相似主题干扰",
+      "note": "父亲的龙井是主答；爷爷手表、外公眼镜是不同逝者，不相关。"
+    }
+  ]
+}
