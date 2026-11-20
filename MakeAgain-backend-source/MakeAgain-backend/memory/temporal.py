@@ -12,13 +12,59 @@
 """
 from __future__ import annotations
 
+import os
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, Dict, Optional
 
 from config import get_settings
 from memory import store
 from memory.facts import facts_text
 from memory.recall import _relevance, _tokens
+
+
+# ============================================================================
+# R4 · 时序替换总开关 USE_MATURE_TEMPORAL（os.getenv，默认关闭）
+# 关闭时 parse_time_ref / _temporal_reflect 走原来的纯词典路径，行为与基线逐字节一致；
+# 开启时用 dateparser 精确解析中文相对时间，失败/未覆盖再回退原词典路径。
+# ============================================================================
+
+def mature_temporal_enabled() -> bool:
+    """总开关：默认关闭；只有 1/true/yes/on（忽略大小写与空白）才开启。"""
+    return (os.getenv("USE_MATURE_TEMPORAL") or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+# 资产来源（gh api 实读原文）：getzep/graphiti  graphiti_core/prompts/extract_edges.py
+#   - L60-L71  EdgeTimestamps 的 valid_at / invalid_at Field(description)
+#   - L270-L286 extract_timestamps() 的 Rules（未来计划用陈述时间、软 deadline 不作失效、
+#     只有日期补 00:00:00、ISO8601+Z、不幻觉）——原文复制，作为 LLM 时序 prompt 增强素材。
+# 本模块本身零 LLM，故这里只落地为常量；调用方拼 prompt 时可直接注入。
+_EDGE_TIMESTAMP_FIELD_DESCRIPTIONS = {
+    "valid_at": (
+        "When the fact became true. Future-tense plans/promises use the reference time, "
+        "not the future occurrence date. ISO 8601 with Z suffix (e.g., 2025-04-30T00:00:00Z)"
+    ),
+    "invalid_at": (
+        "When the fact stopped being true. Soft deadlines are not invalid_at values. "
+        "ISO 8601 with Z suffix (e.g., 2025-04-30T00:00:00Z)"
+    ),
+}
+
+_GRAPHITI_TEMPORAL_RULES = (
+    'Resolve relative expressions ("last week", "2 years ago", "yesterday") using REFERENCE TIME.',
+    'If the fact is ongoing (present tense), set valid_at to REFERENCE TIME.',
+    'If the fact is a future-tense plan, promise, scheduled event, or deadline, set valid_at to '
+    'REFERENCE TIME. Do NOT set valid_at to the future occurrence date.',
+    'Preserve future occurrence dates and deadlines in the fact text. Do NOT use a soft deadline '
+    '("by March 2026", "by the end of Q3 2025") as invalid_at.',
+    'Use a future date as invalid_at only when the fact describes an ongoing state that ends then '
+    '(for example, "is unavailable until December 25, 2024" or "works at Acme until January 15, 2027").',
+    'If a change or end is expressed, set invalid_at to the relevant time.',
+    'Leave both null if no time is stated or resolvable.',
+    'If only a date is mentioned (no time), assume 00:00:00.',
+    'Use ISO 8601 with Z suffix (e.g., 2025-04-30T00:00:00Z).',
+    'Do NOT hallucinate or infer dates from unrelated events.',
+)
 
 
 # ---- 触发信号:回想过去状态 / 讲现在状态·变化(宁缺毋滥,只为一个紧凑块) ----
@@ -84,8 +130,8 @@ def _cn_to_int(s: str) -> int | None:
     return None
 
 
-def parse_time_ref(query: str) -> dict | None:
-    """解析用户话里的时间参照。
+def _legacy_parse_time_ref(query: str) -> dict | None:
+    """基线逐字节保留：纯词典时间参照解析（开关关闭 / 新路径失败时回退到这里）。
 
     返回 {lo, hi, text}:lo/hi 为相对天数窗口(ts 兜底,可 None);text 为要匹配 time fact 的词。
     无时间参照返回 None。
@@ -107,6 +153,131 @@ def parse_time_ref(query: str) -> dict | None:
                 hi = b if hi is None else max(hi, b)
         return {"lo": lo, "hi": hi, "text": words}
     return None
+
+
+# ---- R4 · dateparser 精确解析（DIRECT_INSTALL，开关开启才调用）----
+# 资产来源（gh api 实读原文）：scrapinghub/dateparser
+#   dateparser/data/date_translation_data/zh.py L146-L205：
+#     "1 day ago": ["昨天"] / "1 month ago": ["上个月"] / "1 year ago": ["去年"] /
+#     "2 day ago": ["前天"] / "3 day ago": ["大前天"] /
+#     "\\1 year ago": ["(\\d++[.,]?\\d*+)年前"] / "\\1 month ago": ["(\\d++...)个月前"]
+#   注意：中文数字（「三年前」）不在 dateparser 的 \d+ 词条内，故用基线 _cn_to_int 只做
+#   数字归一化/校验，真正时间计算交给 dateparser.parse(text, languages=['zh'])。
+_DP_STANDARD_WORDS = (
+    "大前天", "前天", "昨天", "今天", "去年", "前年",
+    "上上个月", "上个月", "上个星期", "上周",
+)
+
+
+def _dateparser_parse(text: str, anchor: datetime):
+    """唯一的 dateparser 调用点，便于测试注入失败以验证回退。"""
+    import dateparser  # 延迟导入：开关关闭时环境里没有 dateparser 也不影响基线
+    return dateparser.parse(text, languages=["zh"], settings={"RELATIVE_BASE": anchor})
+
+
+def _dp_age_days(parsed: datetime, anchor: datetime) -> float:
+    """把 dateparser 的绝对日期换算成基线形态的相对天数（可 None 的窗口）。"""
+    return float(max(0, (anchor.date() - parsed.date()).days))
+
+
+def _mature_parse_time_ref(query: str) -> dict | None:
+    """dateparser 路径。解析不出来返回 None，由 parse_time_ref 回退基线词典。"""
+    text = query or ""
+    anchor = datetime.now()
+
+    # 1) 「X 天/周/个月/年 前」：中文数字归一化后交给 dateparser 精确计算。
+    m = _TIME_REL_RE.search(text)
+    if m:
+        n = _cn_to_int(m.group("num"))
+        if n is not None:
+            phrase = f"{n}{m.group('unit')}前"
+            try:
+                parsed = _dateparser_parse(phrase, anchor)
+            except Exception:
+                parsed = None
+            if parsed is not None:
+                age = _dp_age_days(parsed, anchor)
+                return {"lo": age, "hi": age, "text": []}
+            return None
+
+    # 2) 标准中文时间词：整词交给 dateparser；长词优先，避免「上个月」吃掉「上上个月」。
+    hits = sorted({w for w in _DP_STANDARD_WORDS if w in text}, key=len, reverse=True)
+    hits = [w for w in hits if not any(w != other and w in other for other in hits)]
+    if hits:
+        ages = []
+        for w in hits:
+            try:
+                parsed = _dateparser_parse(w, anchor)
+            except Exception:
+                parsed = None
+            if parsed is not None:
+                ages.append(_dp_age_days(parsed, anchor))
+        if ages:
+            words = [w for w in _TEXT_TIME_WORDS if w in text]
+            for w in hits:
+                if w not in words:
+                    words.append(w)
+            lo = hi = min(ages)
+            return {"lo": lo, "hi": hi, "text": words}
+    return None
+
+
+def parse_time_ref(query: str) -> dict | None:
+    """解析用户话里的时间参照；签名与返回形态 {lo, hi, text} 与基线一致。
+
+    开关关闭 → 基线纯词典路径（逐字节一致）；开启 → dateparser 精确解析，
+    任何失败/未覆盖 → 回退基线词典路径（含标准词校验）。
+    """
+    if not mature_temporal_enabled():
+        return _legacy_parse_time_ref(query)
+    try:
+        ref = _mature_parse_time_ref(query)
+    except Exception:
+        ref = None
+    if ref is not None:
+        return ref
+    return _legacy_parse_time_ref(query)
+
+
+# ---- mem0 过期判定资产移植（开关开启才生效；基线不认识 expiration_date）----
+# 资产来源（gh api 实读原文）：mem0ai/mem0  mem0/memory/main.py L427-L451
+# 逐字节复制 _normalize_expiration_date / _payload_is_expired，仅按本模块 import 风格调整类型标注。
+
+def _normalize_expiration_date(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value).isoformat()
+        except ValueError as exc:
+            raise ValueError("expiration_date must be a valid date in YYYY-MM-DD format.") from exc
+    raise ValueError("expiration_date must be a date string in YYYY-MM-DD format.")
+
+
+def _payload_is_expired(payload: Optional[Dict[str, Any]]) -> bool:
+    if not payload:
+        return False
+    expiration_date = payload.get("expiration_date")
+    if not expiration_date:
+        return False
+    try:
+        return date.fromisoformat(str(expiration_date)) < datetime.now(timezone.utc).date()
+    except ValueError:
+        return False
+
+
+def payload_is_expired(payload) -> bool:
+    """过期判定入口。开关关闭时基线没有任何过期概念→恒 False；开启时走 mem0 移植判定。"""
+    if not mature_temporal_enabled():
+        return False
+    try:
+        return _payload_is_expired(payload)
+    except Exception:
+        return False
 
 
 # ---- 召回 ----
