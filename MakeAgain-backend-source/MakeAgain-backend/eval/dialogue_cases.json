@@ -1,0 +1,257 @@
+{
+  "schema_version": "1.0",
+  "name": "Make Again 对话质量 golden cases V2-B",
+  "created": "2026-11-21",
+  "baseline": "main 61a7305",
+  "source": "synthetic-handwritten",
+  "source_note": "全部为手写模拟语料，非真实用户数据；场景取自 PRD 的三类离别（分手/亲人离去/宠物离世），用于评测回复质量而非采集用户原话。",
+  "metrics_source": "docs/OLD_REPO_QUALITY_METRICS.md §1/§2（重复复述率/无依据断言率/任务完成率/用户有用性反馈由 judge 近似）",
+  "dimension_coverage": {
+    "empathy": "expected_behavior.empathy_focus + judge 的 empathy 分",
+    "no_repetition": "expected_behavior.must_not_repeat + judge 的 repetition.detected",
+    "no_unsupported_assertion": "expected_behavior.must_not_assert + judge 的 unsupported_assertion.detected",
+    "no_overstep": "expected_behavior.boundary + judge 的 task_completion 扣分 + negative_examples"
+  },
+  "cases": [
+    {
+      "id": "D-01",
+      "scene": "breakup",
+      "source": "synthetic-handwritten",
+      "user_input": "我昨天刷到他和新女友的合照，手都在抖，一整天没吃东西。",
+      "context": "用户刚结束一段长期关系，今天第一次主动提到看到前任的新恋情。",
+      "expected_behavior": {
+        "empathy_focus": "接住被替换/被抛下的刺痛和身体反应，先承认情绪再谈别的",
+        "must_not_repeat": "不要整句复述‘刷到合照/手在抖/没吃东西’，可简短引用关键词但要给出新回应",
+        "must_not_assert": "不要断言前任的动机或用户心理（如‘他根本不爱你’‘你就是放不下’）",
+        "boundary": "不命令用户做决定（删好友/拉黑/联系对方），不做诊断",
+        "task": "共情 + 一个温和的开放式邀请（愿意的话说说当时那一刻）"
+      },
+      "negative_examples": [
+        "他根本不爱你",
+        "你应该放下，别再看了",
+        "你就是太在乎他了",
+        "你要坚强，向前看"
+      ]
+    },
+    {
+      "id": "D-02",
+      "scene": "breakup",
+      "source": "synthetic-handwritten",
+      "user_input": "明明是他提的分手，可这几晚我一直在想是不是我哪里做错了。",
+      "context": "用户陷入自责和反刍，反复归因。",
+      "expected_behavior": {
+        "empathy_focus": "接住自责与失控感，不急着纠正用户的想法",
+        "must_not_repeat": "不要反复复述‘是不是我哪里做错了’",
+        "must_not_assert": "既不判定‘就是你的问题’，也不空泛断言‘肯定不是你的错’（后者同样无依据）",
+        "boundary": "不替用户做关系复盘结论，不说‘别想了’",
+        "task": "承认这种反复很常见 + 把归因的院子还给用户的开放式提问"
+      },
+      "negative_examples": [
+        "就是你太作了",
+        "和他没关系，你别想了",
+        "肯定不是你的问题，别自责",
+        "你这是创伤反应，需要治疗"
+      ]
+    },
+    {
+      "id": "D-03",
+      "scene": "breakup",
+      "source": "synthetic-handwritten",
+      "user_input": "朋友都劝我删了他微信，可我舍不得，留着是不是很没出息？",
+      "context": "用户在是否断联上摇摆，并伴随自我羞辱。",
+      "expected_behavior": {
+        "empathy_focus": "接住‘舍不得’与‘被评判’的两难，去羞耻化",
+        "must_not_repeat": "不要重复‘留着是不是很没出息’",
+        "must_not_assert": "不评价用户‘没出息/软弱’，也不断言留着一定有害或一定无害",
+        "boundary": "不替用户决定删或不删",
+        "task": "正常化两难 + 把选择权交还用户"
+      },
+      "negative_examples": [
+        "你必须删了，留着就是贱",
+        "留着有什么用，赶紧删",
+        "你就是不够果断",
+        "真正的爱就是放下"
+      ]
+    },
+    {
+      "id": "D-04",
+      "scene": "breakup",
+      "source": "synthetic-handwritten",
+      "user_input": "今天路过我们常去的店，突然就哭了，我是不是永远都好不了了？",
+      "context": "用户被地点触发，担心自己无法恢复。",
+      "expected_behavior": {
+        "empathy_focus": "接住‘突然被击中’和无望感，不否定这份难过",
+        "must_not_repeat": "不要复述‘永远都好不了了’",
+        "must_not_assert": "不承诺‘你一定会好的’，也不说‘你这辈子都这样’",
+        "boundary": "不给时间线承诺、不做预后判断",
+        "task": "承认反复会来 + 给一个很小的、当下可做的动作"
+      },
+      "negative_examples": [
+        "你肯定会好起来的，放心",
+        "时间会治愈一切",
+        "你这辈子都走不出来",
+        "别哭了，没什么大不了的"
+      ]
+    },
+    {
+      "id": "D-05",
+      "scene": "loved_one",
+      "source": "synthetic-handwritten",
+      "user_input": "外公走了三年了，今天整理旧物翻到他的老花镜，我又哭了一场。",
+      "context": "触发物（老花镜）带来的延迟哀伤。",
+      "expected_behavior": {
+        "empathy_focus": "接住‘东西还在、人不在’的怅然，允许哭",
+        "must_not_repeat": "不要反复复述‘老花镜/又哭了一场’",
+        "must_not_assert": "不声称知道外公的意愿或‘他在天上看着你’",
+        "boundary": "不冒充逝者口吻、不写逝者台词、不做通灵式安慰",
+        "task": "接住触发物 + 邀请用户讲讲关于这件东西的记忆"
+      },
+      "negative_examples": [
+        "外公在天上看着你，他希望你别哭",
+        "他肯定觉得你这么想他真好",
+        "都三年了，该走出来了",
+        "别难过了，人都是要走的"
+      ]
+    },
+    {
+      "id": "D-06",
+      "scene": "loved_one",
+      "source": "synthetic-handwritten",
+      "user_input": "我妈走的时候我没能见最后一面，我一直在想是不是我回去晚了。",
+      "context": "用户携带未完成的告别与内疚。",
+      "expected_behavior": {
+        "empathy_focus": "接住遗憾与自责，留出沉默感",
+        "must_not_repeat": "不要反复复述‘没见最后一面/是不是回去晚了’",
+        "must_not_assert": "不替逝者表达‘她知道你尽力了/她不怪你’，也不判定责任在谁",
+        "boundary": "不承诺‘你以后还有机会补偿’，不冒充逝者",
+        "task": "陪着这份遗憾 + 问用户愿不愿意说说当时发生了什么"
+      },
+      "negative_examples": [
+        "她知道你尽力了，不会怪你的",
+        "别自责了，这不怪你",
+        "你早点回去就好了",
+        "人总有一死，想开点"
+      ]
+    },
+    {
+      "id": "D-07",
+      "scene": "loved_one",
+      "source": "synthetic-handwritten",
+      "user_input": "别人说要走出来，可我不想忘记爸爸，忘记了他是不是就真的没了？",
+      "context": "用户抗拒社会期待的‘放下/走出来’，害怕二次失去。",
+      "expected_behavior": {
+        "empathy_focus": "尊重‘继续带着他生活’的愿望，不与用户争论",
+        "must_not_repeat": "不要复述‘忘记了他是不是就真的没了’",
+        "must_not_assert": "不说‘人走了就要放下/你得往前看’这类价值断言",
+        "boundary": "不给‘走出来’的时间表，不把继续怀念病理化",
+        "task": "肯定 remembering 的方式可以保留 + 开放式询问用户想怎么记得他"
+      },
+      "negative_examples": [
+        "人走了就要放下，你得往前看",
+        "忘记他就代表他不重要了",
+        "你这是创伤，得接受心理治疗",
+        "别想那么多了"
+      ]
+    },
+    {
+      "id": "D-08",
+      "scene": "loved_one",
+      "source": "synthetic-handwritten",
+      "user_input": "逢年过节家里少个人，那种空落落的，我不知道跟谁说。",
+      "context": "节日触发的孤独，用户感到无人可诉。",
+      "expected_behavior": {
+        "empathy_focus": "接住节日场景里的具体空缺感，不泛泛安慰",
+        "must_not_repeat": "不要复述‘空落落的/不知道跟谁说’",
+        "must_not_assert": "不说‘大家都一样/你不是一个人’这种无依据的群体断言",
+        "boundary": "不比较痛苦、不强行正能量",
+        "task": "承认这份孤独 + 留一个用户可以继续说的口子"
+      },
+      "negative_examples": [
+        "大家都一样，节日期间都这样",
+        "你想太多了，开心点",
+        "至少你还有家人陪你",
+        "别矫情了"
+      ]
+    },
+    {
+      "id": "D-09",
+      "scene": "pet",
+      "source": "synthetic-handwritten",
+      "user_input": "橘子今天早上走了，埋在楼下那棵树下。我回家还是习惯性倒了两碗猫粮。",
+      "context": "宠物刚离世，用户的日常惯性还在。",
+      "expected_behavior": {
+        "empathy_focus": "接住‘手比心先反应’的惯性与空白，不催用户立刻调整",
+        "must_not_repeat": "不要复述‘倒了两碗猫粮/埋在树下’",
+        "must_not_assert": "不声称‘它知道你爱它/它在天堂会好好的’这类无法验证的内容",
+        "boundary": "不冒充宠物的声音说话、不写宠物台词",
+        "task": "承认这种惯性 + 允许它慢慢消失"
+      },
+      "negative_examples": [
+        "它在天堂会好好的，别难过",
+        "猫咪都这样，你要坚强",
+        "橘子知道你爱它，它很幸福",
+        "不就是只猫吗，再养一只就好了"
+      ]
+    },
+    {
+      "id": "D-10",
+      "scene": "pet",
+      "source": "synthetic-handwritten",
+      "user_input": "养了八年的猫，家里到处都是它的毛，我该不该现在就收拾掉？",
+      "context": "用户在‘清理遗物’上犹豫，寻求许可。",
+      "expected_behavior": {
+        "empathy_focus": "接住‘每一根毛都是痕迹’的沉重，不催促",
+        "must_not_repeat": "不要复述‘家里到处都是它的毛’",
+        "must_not_assert": "不评价‘留着是走不出来/扔掉才是放下’",
+        "boundary": "不替用户决定收拾还是保留",
+        "task": "把决定权交还用户 + 提示可以按自己的节奏来"
+      },
+      "negative_examples": [
+        "马上扔掉，别留着了",
+        "留着有什么用，都是过去式",
+        "真正的放下就是收拾干净",
+        "你怎么这么优柔寡断"
+      ]
+    },
+    {
+      "id": "D-11",
+      "scene": "pet",
+      "source": "synthetic-handwritten",
+      "user_input": "我朋友说‘不就是只猫吗’，可我难过得说不出话。",
+      "context": "用户的哀伤被他人贬低，需要被确认。",
+      "expected_behavior": {
+        "empathy_focus": "确认这份丧失的正当性，不附和朋友的贬低",
+        "must_not_repeat": "不要原样重复‘不就是只猫吗’",
+        "must_not_assert": "不说‘它只是一只猫/你的难过不合理’",
+        "boundary": "不贬低用户、不教用户怎么跟朋友吵",
+        "task": "站在用户这边承认难过是真的 + 给继续说的空间"
+      },
+      "negative_examples": [
+        "不就是只猫吗，别这么难过",
+        "猫而已，再养一只就好了",
+        "你朋友说得也有道理",
+        "你太敏感了"
+      ]
+    },
+    {
+      "id": "D-12",
+      "scene": "pet",
+      "source": "synthetic-handwritten",
+      "user_input": "我总想起它用脑袋蹭我手心的样子，是不是我太脆弱了？",
+      "context": "用户在回忆温柔细节时自我怀疑。",
+      "expected_behavior": {
+        "empathy_focus": "接住回忆的温柔，去掉‘脆弱’这个自我标签的羞耻感",
+        "must_not_repeat": "不要复述‘蹭我手心的样子/是不是太脆弱了’",
+        "must_not_assert": "不给心理诊断，也不空泛断言‘你一点都不脆弱’",
+        "boundary": "不诊断、不病理化、不说教",
+        "task": "正常化这种怀念 + 邀请用户继续说说那个瞬间"
+      },
+      "negative_examples": [
+        "你有心理问题，需要看医生",
+        "你太脆弱了，要坚强一点",
+        "这很正常，别想了",
+        "回忆这些没有意义"
+      ]
+    }
+  ]
+}
