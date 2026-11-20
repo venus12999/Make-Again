@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import os
+import threading
 from pathlib import Path
 
 import httpx
@@ -14,6 +16,42 @@ from config import get_settings
 
 class StorageError(Exception):
     """对象存储调用失败。"""
+
+
+# ---- 本地抠图(rembg)降级 ----
+# rembg 2.x 的 new_session() 默认模型是 bria-rmbg(RMBG 2.0),属商用付费许可,禁止使用。
+# 这里只放行许可安全(学术/开源、可商用)的模型,且创建 session 永远显式指定模型名,
+# 绝不走 new_session() 的无参默认行为。
+_LOCAL_MATTE_SAFE_MODELS = frozenset({"u2netp", "isnet-general-use"})
+_LOCAL_MATTE_DEFAULT_MODEL = "u2netp"
+
+_local_matte_session = None
+_local_matte_session_model: str | None = None
+_local_matte_lock = threading.Lock()
+
+
+def _local_matte_enabled() -> bool:
+    """USE_LOCAL_MATTE=1/true/yes/on 时开启本地抠图;默认关闭(首次要下模型,便于回滚)。"""
+    return os.getenv("USE_LOCAL_MATTE", "0").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _local_matte_model_name() -> str:
+    """读取模型名并按白名单校验;非白名单值(尤其 bria-rmbg)一律退回安全默认。"""
+    name = os.getenv("LOCAL_MATTE_MODEL", _LOCAL_MATTE_DEFAULT_MODEL).strip().lower()
+    return name if name in _LOCAL_MATTE_SAFE_MODELS else _LOCAL_MATTE_DEFAULT_MODEL
+
+
+def _get_local_matte_session():
+    """懒加载单例 session:模型相同就复用,避免每次抠图都重复载入 ONNX 模型。"""
+    global _local_matte_session, _local_matte_session_model
+    model = _local_matte_model_name()
+    if _local_matte_session is None or _local_matte_session_model != model:
+        with _local_matte_lock:
+            if _local_matte_session is None or _local_matte_session_model != model:
+                from rembg import new_session
+                _local_matte_session = new_session(model)
+                _local_matte_session_model = model
+    return _local_matte_session
 
 
 class ObjectStore:
@@ -91,14 +129,11 @@ class ObjectStore:
             except OSError as e:
                 raise StorageError(f"本地删除失败: {e}")
 
-    def ai_matte(self, full_key: str) -> bytes:
+    def _ai_matte_ci(self, full_key: str) -> bytes:
         """数据万象通用抠图(主体分割):对桶内对象做 AIPicMatting,返回透明底 PNG 字节。
 
-        需桶已开通并绑定数据万象;本地兜底 / 未开通 / 失败时抛 StorageError,
-        由调用方回退为「存原图」。
+        需桶已开通并绑定数据万象;失败一律抛 StorageError。
         """
-        if not self._cos:
-            raise StorageError("本地存储兜底不支持数据万象抠图")
         try:
             url = self._cos.get_presigned_url(
                 Bucket=self._bucket, Key=full_key, Method="GET",
@@ -113,6 +148,44 @@ class ObjectStore:
         if resp.status_code != 200:
             raise StorageError(f"数据万象抠图返回 {resp.status_code}: {resp.text[:200]}")
         return resp.content
+
+    def _ai_matte_local(self, full_key: str) -> bytes:
+        """本地 rembg 抠图:从本地存储读原图,返回 RGBA PNG 字节(契约与云抠图一致)。"""
+        from rembg import remove
+
+        root = Path(self.settings.storage_local_dir).resolve()
+        src = (root / full_key).resolve()
+        try:
+            src.relative_to(root)
+        except ValueError as e:
+            raise StorageError(f"非法存储 key: {full_key}") from e
+        try:
+            raw = src.read_bytes()
+        except OSError as e:
+            raise StorageError(f"本地抠图读取原图失败: {e}") from e
+        try:
+            return remove(raw, session=_get_local_matte_session())
+        except Exception as e:  # noqa: BLE001
+            raise StorageError(f"本地 rembg 抠图失败: {e}") from e
+
+    def ai_matte(self, full_key: str) -> bytes:
+        """主体分割抠图,返回透明底 PNG 字节(调用方继续 _trim_alpha_png 收紧透明边)。
+
+        优先级:有 COS 且非 mock → 数据万象 AIPicMatting;
+        无 COS / mock_storage / 云调用失败 → 若 USE_LOCAL_MATTE 开启,改用本地 rembg
+        (许可安全模型白名单,懒加载单例 session);否则抛 StorageError,
+        由 agent/item.py 回退为「存原图」。开关默认关闭,首次下载模型前可随时回滚。
+        """
+        if self._cos and not self.settings.mock_storage:
+            try:
+                return self._ai_matte_ci(full_key)
+            except StorageError:
+                if not _local_matte_enabled():
+                    raise
+                return self._ai_matte_local(full_key)
+        if _local_matte_enabled():
+            return self._ai_matte_local(full_key)
+        raise StorageError("本地存储兜底不支持数据万象抠图;如需本地抠图请设置 USE_LOCAL_MATTE=1")
 
     def ai_crop(self, full_key: str, box: list[float]) -> bytes:
         """数据万象裁切:按像素框 [x1,y1,x2,y2] 裁桶内对象,返回裁切后图片字节(imageMogr2/cut)。"""

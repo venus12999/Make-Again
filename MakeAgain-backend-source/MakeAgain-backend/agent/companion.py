@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timedelta
 
 from agent import item as item_mod
@@ -36,6 +37,11 @@ SYSTEM_PROMPT = """你是「重逢」,一位温柔、耐心、不评判的 AI �
 
 {context}
 """
+
+
+def _use_pydantic_ai() -> bool:
+    """USE_PYDANTIC_AI 开关：默认关闭，逐字读取环境变量，可随时回滚。"""
+    return os.getenv("USE_PYDANTIC_AI", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _dict_text(d: dict) -> str:
@@ -199,7 +205,13 @@ def chat(db, user_id: str, message: str, client: LLMClient, session_id: str | No
 
     no_tools=True 表示本轮是工具动作的收尾(前端「确定/取消」后补的那句),
     不再触发工具卡片,只生成一句自然的回应。
+
+    USE_PYDANTIC_AI=1 时路由到 agent_v2 的 pydantic-ai typed-tools 编排;
+    默认关闭,关闭时下面的原有逻辑逐字节不变。
     """
+    if _use_pydantic_ai():
+        from agent.agent_v2 import chat_v2
+        return chat_v2(db, user_id, message, client, session_id, no_tools=no_tools)
     store.get_or_create_user(db, user_id)
     lt = store.effective_loss_type(db, user_id)
     if lt == "breakup":

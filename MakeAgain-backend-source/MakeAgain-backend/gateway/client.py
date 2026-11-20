@@ -3,14 +3,43 @@
 传输层(WHTTP/SSE/重试/取消)交给官方 openai SDK,这里只做业务层封装:
 - mock 模式:无 key 时返回确定性占位回复,保证链路离线可跑通;生产禁止 mock。
 - chat / chat_json / chat_stream 接口保持不变,24 个调用方无需改动。
+- USE_INSTRUCTOR=1 时 chat_json 走 instructor(动态模型校验 + 自动重试),
+  失败或未开启则回退到原 chat()+parse_json;开关默认关闭,可随时回滚。
 """
 from __future__ import annotations
 
 import json
+import os
+from functools import lru_cache
 from typing import Any, Iterator
 
 from config import get_settings
 from gateway.schemas import parse_json
+
+
+@lru_cache(maxsize=1)
+def _structured_model():
+    """构造 instructor 用的「动态 Pydantic 模型」。
+
+    chat_json 的调用方(约 15 处)各有不同的字段契约,这里不预设字段,只用一个
+    extra='allow' 的动态模型约束「顶层是非空 JSON 对象」;字段级校验仍留给调用方。
+    instructor 负责 schema 注入、解析/校验失败后的重试。
+    """
+    from pydantic import BaseModel, ConfigDict, create_model, model_validator
+
+    def _nonempty(values):
+        if not isinstance(values, dict) or not values:
+            raise ValueError("structured output must be a non-empty JSON object")
+        return values
+
+    class _Object(BaseModel):
+        model_config = ConfigDict(extra="allow")
+
+    return create_model(
+        "StructuredOutput",
+        __base__=_Object,
+        __validators__={"_nonempty": model_validator(mode="before")(_nonempty)},
+    )
 
 
 class LLMError(Exception):
@@ -88,9 +117,65 @@ class LLMClient:
         } if usage else {"prompt_tokens": 0, "completion_tokens": 0}
         return {"content": content, "usage": usage_dict, "tool_calls": tool_calls}
 
+    def _use_instructor(self) -> bool:
+        """USE_INSTRUCTOR 开关:os.getenv("USE_INSTRUCTOR","0"),默认关闭可回滚。"""
+        return os.getenv("USE_INSTRUCTOR", "0").strip().lower() in {"1", "true", "yes", "on"}
+
+    def _chat_json_instructor(self, messages: list[dict], temperature: float,
+                              max_tokens: int | None, model: str | None) -> tuple[dict, dict]:
+        """instructor 路径:动态模型校验 + 失败自动重试,返回同样的契约。
+
+        mock 模式不会走到这里;instructor 未安装或任何异常时,chat_json 回退到 parse_json。
+        """
+        import instructor
+
+        # instructor 包裹官方 SDK:传输仍走 self._client() 的 base_url/key/timeout。
+        wrapped = instructor.from_openai(self._client())
+        kwargs: dict[str, Any] = {
+            "model": model or self.settings.llm_model,
+            "messages": messages,
+            "temperature": temperature,
+            "response_model": _structured_model(),
+            "max_retries": 2,
+            "strict": False,  # 允许动态模型携带任意额外字段
+        }
+        if max_tokens:
+            kwargs["max_tokens"] = max_tokens
+
+        parsed_obj, completion = wrapped.chat.completions.create_with_completion(**kwargs)
+        payload = parsed_obj.model_dump() if hasattr(parsed_obj, "model_dump") else dict(parsed_obj)
+
+        usage = getattr(completion, "usage", None)
+        usage_dict = {
+            "prompt_tokens": getattr(usage, "prompt_tokens", 0),
+            "completion_tokens": getattr(usage, "completion_tokens", 0),
+        } if usage else {"prompt_tokens": 0, "completion_tokens": 0}
+
+        # TOOLS 模式下正文常为空,原始 JSON 在 tool_calls.arguments;都取不到就用解析结果兜底。
+        raw = ""
+        try:
+            message = completion.choices[0].message
+            raw = getattr(message, "content", None) or ""
+            if not raw and getattr(message, "tool_calls", None):
+                raw = message.tool_calls[0].function.arguments
+        except (AttributeError, IndexError, TypeError):
+            pass
+        if not raw:
+            raw = json.dumps(payload, ensure_ascii=False)
+        return payload, {"usage": usage_dict, "raw": raw}
+
     def chat_json(self, messages: list[dict], temperature: float = 0.2,
                   max_tokens: int | None = None, model: str | None = None) -> tuple[Any | None, dict]:
-        """要求模型返回 JSON 并解析;失败时 parsed 为 None,附带原始文本。"""
+        """要求模型返回 JSON 并解析;失败时 parsed 为 None,附带原始文本。
+
+        USE_INSTRUCTOR=1 时先走 instructor(动态模型校验 + 重试);任何失败都回退到
+        原有 chat() + parse_json 路径,保证约 15 处调用方的返回契约零改动。
+        """
+        if self._use_instructor() and not self.mock:
+            try:
+                return self._chat_json_instructor(messages, temperature, max_tokens, model)
+            except Exception:  # noqa: BLE001 - 开关可回滚:instructor 失败一律回退
+                pass
         result = self.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
         parsed, raw = parse_json(result["content"])
         return parsed, {"usage": result["usage"], "raw": raw}
