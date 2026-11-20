@@ -1,0 +1,1541 @@
+{
+  "dual0_sem0": {
+    "n_queries": 17,
+    "n_negative": 1,
+    "Recall@K": 0.1588,
+    "Precision@K": 0.098,
+    "MRR": 0.2059,
+    "expected_first_hit_rate": 0.1176,
+    "negative_query_injection_rate": 1.0,
+    "per_query": [
+      {
+        "id": "q-01",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-02",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-03",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-04",
+        "negative": false,
+        "expected": [
+          "mem-p-02",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-cat-deceased",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-p-02",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-05",
+        "negative": false,
+        "expected": [
+          "mem-cat-owned",
+          "mem-cat-deceased",
+          "mem-p-01",
+          "mem-p-04",
+          "mem-p-05"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.2,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-owned",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-06",
+        "negative": false,
+        "expected": [
+          "mem-l-05",
+          "mem-b-11",
+          "mem-b-04",
+          "mem-l-06",
+          "mem-loved-one-father"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-05",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-07",
+        "negative": false,
+        "expected": [
+          "mem-b-08",
+          "mem-b-04",
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-08",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-08",
+        "negative": false,
+        "expected": [
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-01",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-09",
+        "negative": false,
+        "expected": [
+          "mem-l-01",
+          "mem-l-10"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-01",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-10",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-11",
+        "negative": false,
+        "expected": [
+          "mem-l-04"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-04",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-12",
+        "negative": false,
+        "expected": [
+          "mem-l-02",
+          "mem-l-05",
+          "mem-l-11"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-cat-deceased",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-02",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-13",
+        "negative": false,
+        "expected": [
+          "mem-l-07",
+          "mem-b-10"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-07",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-14",
+        "negative": false,
+        "expected": [
+          "mem-p-06",
+          "mem-b-09"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-p-06",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-15",
+        "negative": false,
+        "expected": [
+          "mem-b-06"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-06",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-16",
+        "negative": true,
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ]
+      },
+      {
+        "id": "q-17",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-cat-deceased",
+          "mem-p-07"
+        ],
+        "hits": [
+          "mem-p-03",
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 2,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.6667,
+        "reciprocal_rank": 0.5,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-18",
+        "negative": false,
+        "expected": [
+          "mem-l-03"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-03",
+        "first_is_expected": false
+      }
+    ],
+    "status": "RUN",
+    "dual": 0,
+    "sem": 0,
+    "indexed": 33
+  },
+  "dual0_sem1": {
+    "n_queries": 17,
+    "n_negative": 1,
+    "Recall@K": 0.1588,
+    "Precision@K": 0.098,
+    "MRR": 0.2059,
+    "expected_first_hit_rate": 0.1176,
+    "negative_query_injection_rate": 1.0,
+    "per_query": [
+      {
+        "id": "q-01",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-02",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-03",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-04",
+        "negative": false,
+        "expected": [
+          "mem-p-02",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-cat-deceased",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-p-02",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-05",
+        "negative": false,
+        "expected": [
+          "mem-cat-owned",
+          "mem-cat-deceased",
+          "mem-p-01",
+          "mem-p-04",
+          "mem-p-05"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.2,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-owned",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-06",
+        "negative": false,
+        "expected": [
+          "mem-l-05",
+          "mem-b-11",
+          "mem-b-04",
+          "mem-l-06",
+          "mem-loved-one-father"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-05",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-07",
+        "negative": false,
+        "expected": [
+          "mem-b-08",
+          "mem-b-04",
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-08",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-08",
+        "negative": false,
+        "expected": [
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-01",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-09",
+        "negative": false,
+        "expected": [
+          "mem-l-01",
+          "mem-l-10"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-01",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-10",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-11",
+        "negative": false,
+        "expected": [
+          "mem-l-04"
+        ],
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-04",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-12",
+        "negative": false,
+        "expected": [
+          "mem-l-02",
+          "mem-l-05",
+          "mem-l-11"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-cat-deceased",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-02",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-13",
+        "negative": false,
+        "expected": [
+          "mem-l-07",
+          "mem-b-10"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-07",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-14",
+        "negative": false,
+        "expected": [
+          "mem-p-06",
+          "mem-b-09"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-p-06",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-15",
+        "negative": false,
+        "expected": [
+          "mem-b-06"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-03",
+          "mem-p-07"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-06",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-16",
+        "negative": true,
+        "retrieved": [
+          "mem-p-07",
+          "mem-cat-deceased",
+          "mem-p-03"
+        ]
+      },
+      {
+        "id": "q-17",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-cat-deceased",
+          "mem-p-07"
+        ],
+        "hits": [
+          "mem-p-03",
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 2,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.6667,
+        "reciprocal_rank": 0.5,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-18",
+        "negative": false,
+        "expected": [
+          "mem-l-03"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-p-07",
+          "mem-p-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-03",
+        "first_is_expected": false
+      }
+    ],
+    "status": "RUN",
+    "dual": 0,
+    "sem": 1,
+    "indexed": 33
+  },
+  "dual1_sem0": {
+    "n_queries": 17,
+    "n_negative": 1,
+    "Recall@K": 0.2784,
+    "Precision@K": 0.1961,
+    "MRR": 0.4412,
+    "expected_first_hit_rate": 0.2353,
+    "negative_query_injection_rate": 1.0,
+    "per_query": [
+      {
+        "id": "q-01",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-loved-one-father",
+          "mem-l-09",
+          "mem-l-10"
+        ],
+        "hits": [
+          "mem-loved-one-father"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-02",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased"
+        ],
+        "retrieved": [
+          "mem-b-09",
+          "mem-p-02",
+          "mem-cat-owned"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-03",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-l-02",
+          "mem-p-01"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-04",
+        "negative": false,
+        "expected": [
+          "mem-p-02",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-b-06",
+          "mem-p-02",
+          "mem-l-01"
+        ],
+        "hits": [
+          "mem-p-02"
+        ],
+        "first_relevant_rank": 2,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 0.5,
+        "expected_first": "mem-p-02",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-05",
+        "negative": false,
+        "expected": [
+          "mem-cat-owned",
+          "mem-cat-deceased",
+          "mem-p-01",
+          "mem-p-04",
+          "mem-p-05"
+        ],
+        "retrieved": [
+          "mem-p-01",
+          "mem-p-02",
+          "mem-l-08"
+        ],
+        "hits": [
+          "mem-p-01"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.2,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-owned",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-06",
+        "negative": false,
+        "expected": [
+          "mem-l-05",
+          "mem-b-11",
+          "mem-b-04",
+          "mem-l-06",
+          "mem-loved-one-father"
+        ],
+        "retrieved": [
+          "mem-b-05",
+          "mem-l-12",
+          "mem-b-11"
+        ],
+        "hits": [
+          "mem-b-11"
+        ],
+        "first_relevant_rank": 3,
+        "recall_at_k": 0.2,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 0.3333,
+        "expected_first": "mem-l-05",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-07",
+        "negative": false,
+        "expected": [
+          "mem-b-08",
+          "mem-b-04",
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-b-02",
+          "mem-l-05",
+          "mem-l-10"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-08",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-08",
+        "negative": false,
+        "expected": [
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-b-01",
+          "mem-l-09",
+          "mem-b-06"
+        ],
+        "hits": [
+          "mem-b-01"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-b-01",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-09",
+        "negative": false,
+        "expected": [
+          "mem-l-01",
+          "mem-l-10"
+        ],
+        "retrieved": [
+          "mem-b-11",
+          "mem-b-01",
+          "mem-l-03"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-01",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-10",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-loved-one-father",
+          "mem-l-12",
+          "mem-p-02"
+        ],
+        "hits": [
+          "mem-loved-one-father"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-11",
+        "negative": false,
+        "expected": [
+          "mem-l-04"
+        ],
+        "retrieved": [
+          "mem-b-11",
+          "mem-b-06",
+          "mem-l-09"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-04",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-12",
+        "negative": false,
+        "expected": [
+          "mem-l-02",
+          "mem-l-05",
+          "mem-l-11"
+        ],
+        "retrieved": [
+          "mem-b-05",
+          "mem-b-02",
+          "mem-l-02"
+        ],
+        "hits": [
+          "mem-l-02"
+        ],
+        "first_relevant_rank": 3,
+        "recall_at_k": 0.3333,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 0.3333,
+        "expected_first": "mem-l-02",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-13",
+        "negative": false,
+        "expected": [
+          "mem-l-07",
+          "mem-b-10"
+        ],
+        "retrieved": [
+          "mem-l-12",
+          "mem-l-06",
+          "mem-b-01"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-07",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-14",
+        "negative": false,
+        "expected": [
+          "mem-p-06",
+          "mem-b-09"
+        ],
+        "retrieved": [
+          "mem-p-04",
+          "mem-l-06",
+          "mem-b-09"
+        ],
+        "hits": [
+          "mem-b-09"
+        ],
+        "first_relevant_rank": 3,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 0.3333,
+        "expected_first": "mem-p-06",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-15",
+        "negative": false,
+        "expected": [
+          "mem-b-06"
+        ],
+        "retrieved": [
+          "mem-b-10",
+          "mem-b-05",
+          "mem-l-10"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-b-06",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-16",
+        "negative": true,
+        "retrieved": [
+          "mem-l-10",
+          "mem-b-05",
+          "mem-p-02"
+        ]
+      },
+      {
+        "id": "q-17",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-cat-owned",
+          "mem-p-02"
+        ],
+        "hits": [
+          "mem-p-03"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-18",
+        "negative": false,
+        "expected": [
+          "mem-l-03"
+        ],
+        "retrieved": [
+          "mem-b-07",
+          "mem-b-05",
+          "mem-l-09"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-l-03",
+        "first_is_expected": false
+      }
+    ],
+    "status": "RUN",
+    "dual": 1,
+    "sem": 0,
+    "indexed": 33
+  },
+  "dual1_sem1": {
+    "n_queries": 17,
+    "n_negative": 1,
+    "Recall@K": 0.5529,
+    "Precision@K": 0.3333,
+    "MRR": 0.8333,
+    "expected_first_hit_rate": 0.6471,
+    "negative_query_injection_rate": 1.0,
+    "per_query": [
+      {
+        "id": "q-01",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-loved-one-father",
+          "mem-p-01",
+          "mem-b-02"
+        ],
+        "hits": [
+          "mem-loved-one-father"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-02",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased"
+        ],
+        "retrieved": [
+          "mem-cat-owned",
+          "mem-l-05",
+          "mem-b-09"
+        ],
+        "hits": [],
+        "first_relevant_rank": null,
+        "recall_at_k": 0.0,
+        "precision_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-03",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-cat-deceased",
+          "mem-b-03",
+          "mem-l-08"
+        ],
+        "hits": [
+          "mem-cat-deceased"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-04",
+        "negative": false,
+        "expected": [
+          "mem-p-02",
+          "mem-cat-owned"
+        ],
+        "retrieved": [
+          "mem-p-02",
+          "mem-loved-one-father",
+          "mem-p-03"
+        ],
+        "hits": [
+          "mem-p-02"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-p-02",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-05",
+        "negative": false,
+        "expected": [
+          "mem-cat-owned",
+          "mem-cat-deceased",
+          "mem-p-01",
+          "mem-p-04",
+          "mem-p-05"
+        ],
+        "retrieved": [
+          "mem-p-04",
+          "mem-p-02",
+          "mem-p-06"
+        ],
+        "hits": [
+          "mem-p-04"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.2,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-owned",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-06",
+        "negative": false,
+        "expected": [
+          "mem-l-05",
+          "mem-b-11",
+          "mem-b-04",
+          "mem-l-06",
+          "mem-loved-one-father"
+        ],
+        "retrieved": [
+          "mem-b-10",
+          "mem-l-08",
+          "mem-l-05"
+        ],
+        "hits": [
+          "mem-l-05"
+        ],
+        "first_relevant_rank": 3,
+        "recall_at_k": 0.2,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 0.3333,
+        "expected_first": "mem-l-05",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-07",
+        "negative": false,
+        "expected": [
+          "mem-b-08",
+          "mem-b-04",
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-b-10",
+          "mem-b-11",
+          "mem-b-04"
+        ],
+        "hits": [
+          "mem-b-04"
+        ],
+        "first_relevant_rank": 3,
+        "recall_at_k": 0.3333,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 0.3333,
+        "expected_first": "mem-b-08",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-08",
+        "negative": false,
+        "expected": [
+          "mem-b-01"
+        ],
+        "retrieved": [
+          "mem-b-01",
+          "mem-b-03",
+          "mem-p-01"
+        ],
+        "hits": [
+          "mem-b-01"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-b-01",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-09",
+        "negative": false,
+        "expected": [
+          "mem-l-01",
+          "mem-l-10"
+        ],
+        "retrieved": [
+          "mem-l-01",
+          "mem-b-11",
+          "mem-l-03"
+        ],
+        "hits": [
+          "mem-l-01"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-l-01",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-10",
+        "negative": false,
+        "expected": [
+          "mem-loved-one-father",
+          "mem-l-07"
+        ],
+        "retrieved": [
+          "mem-l-04",
+          "mem-loved-one-father",
+          "mem-p-05"
+        ],
+        "hits": [
+          "mem-loved-one-father"
+        ],
+        "first_relevant_rank": 2,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 0.5,
+        "expected_first": "mem-loved-one-father",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-11",
+        "negative": false,
+        "expected": [
+          "mem-l-04"
+        ],
+        "retrieved": [
+          "mem-l-04",
+          "mem-l-08",
+          "mem-b-02"
+        ],
+        "hits": [
+          "mem-l-04"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-l-04",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-12",
+        "negative": false,
+        "expected": [
+          "mem-l-02",
+          "mem-l-05",
+          "mem-l-11"
+        ],
+        "retrieved": [
+          "mem-l-02",
+          "mem-l-05",
+          "mem-b-06"
+        ],
+        "hits": [
+          "mem-l-02",
+          "mem-l-05"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.6667,
+        "precision_at_k": 0.6667,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-l-02",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-13",
+        "negative": false,
+        "expected": [
+          "mem-l-07",
+          "mem-b-10"
+        ],
+        "retrieved": [
+          "mem-l-07",
+          "mem-b-06",
+          "mem-l-08"
+        ],
+        "hits": [
+          "mem-l-07"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-l-07",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-14",
+        "negative": false,
+        "expected": [
+          "mem-p-06",
+          "mem-b-09"
+        ],
+        "retrieved": [
+          "mem-p-06",
+          "mem-b-02",
+          "mem-l-08"
+        ],
+        "hits": [
+          "mem-p-06"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-p-06",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-15",
+        "negative": false,
+        "expected": [
+          "mem-b-06"
+        ],
+        "retrieved": [
+          "mem-b-06",
+          "mem-l-08",
+          "mem-p-01"
+        ],
+        "hits": [
+          "mem-b-06"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-b-06",
+        "first_is_expected": true
+      },
+      {
+        "id": "q-16",
+        "negative": true,
+        "retrieved": [
+          "mem-b-11",
+          "mem-l-05",
+          "mem-p-02"
+        ]
+      },
+      {
+        "id": "q-17",
+        "negative": false,
+        "expected": [
+          "mem-cat-deceased",
+          "mem-p-03"
+        ],
+        "retrieved": [
+          "mem-p-03",
+          "mem-p-02",
+          "mem-p-01"
+        ],
+        "hits": [
+          "mem-p-03"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 0.5,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-cat-deceased",
+        "first_is_expected": false
+      },
+      {
+        "id": "q-18",
+        "negative": false,
+        "expected": [
+          "mem-l-03"
+        ],
+        "retrieved": [
+          "mem-l-03",
+          "mem-l-06",
+          "mem-b-05"
+        ],
+        "hits": [
+          "mem-l-03"
+        ],
+        "first_relevant_rank": 1,
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.3333,
+        "reciprocal_rank": 1.0,
+        "expected_first": "mem-l-03",
+        "first_is_expected": true
+      }
+    ],
+    "status": "RUN",
+    "dual": 1,
+    "sem": 1,
+    "indexed": 33
+  }
+}
