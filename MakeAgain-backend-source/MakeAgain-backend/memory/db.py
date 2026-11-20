@@ -165,7 +165,10 @@ def _migrate_companion_content() -> None:
             db.close()
 
 
-def init_db() -> None:
+# The body of _init_db_legacy() below is byte-for-byte the original init_db()
+# implementation.  It remains the default path (USE_ALEMBIC unset/off) and is
+# therefore fully rollbackable; see init_db() at the end of this file.
+def _init_db_legacy() -> None:
     from memory import models, b07_models  # noqa: F401
     Base.metadata.create_all(engine)
     _migrate_sqlite()
@@ -180,6 +183,65 @@ def init_db() -> None:
             _seed_db.commit()
     except Exception:
         pass
+
+
+# ---- Opt-in Alembic route (PR-A) -------------------------------------------------
+# Default OFF: nothing below changes behaviour unless USE_ALEMBIC is truthy.
+# Keeping the legacy chain above untouched guarantees a one-variable rollback.
+
+def _use_alembic_enabled() -> bool:
+    return os.getenv("USE_ALEMBIC", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _alembic_config():
+    """Build an Alembic Config pointing at alembic.ini next to this package."""
+    from pathlib import Path
+
+    from alembic.config import Config
+
+    ini_path = Path(__file__).resolve().parents[1] / "alembic.ini"
+    return Config(str(ini_path))
+
+
+def _needs_alembic_stamp() -> bool:
+    """True when a legacy-migrated DB has no Alembic ledger yet.
+
+    Such a database is already on the current schema (schema_migrations B07),
+    so it must be stamped at head instead of re-running create_all/backfill.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if not inspector.has_table("schema_migrations") or inspector.has_table("alembic_version"):
+        return False
+    with engine.connect() as conn:
+        migrated = conn.execute(
+            text("SELECT 1 FROM schema_migrations WHERE version='B07' LIMIT 1")
+        ).scalar()
+    return bool(migrated)
+
+
+def _init_db_via_alembic() -> None:
+    from alembic import command
+
+    cfg = _alembic_config()
+    if _needs_alembic_stamp():
+        # Existing/legacy database: adopt the current revision without touching rows.
+        command.stamp(cfg, "head")
+    command.upgrade(cfg, "head")
+
+
+def init_db() -> None:
+    """Initialize the database.
+
+    Default (USE_ALEMBIC unset/off): exactly the original idempotent chain.
+    Opt-in (USE_ALEMBIC=1): Alembic-driven, with an automatic stamp for databases
+    that were already migrated by the legacy chain.
+    """
+    if _use_alembic_enabled():
+        _init_db_via_alembic()
+    else:
+        _init_db_legacy()
 
 
 def get_session():

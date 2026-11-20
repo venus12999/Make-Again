@@ -3,6 +3,10 @@
 The small tables with old user-only unique constraints are rebuilt transactionally
 with the same columns plus companion-aware constraints. Unattributable preexisting
 rows remain NULL (never guessed into a later companion).
+
+PR-A: this function is intentionally left callable as-is; the Alembic baseline
+revision (alembic/versions/b0001_baseline.py) invokes it with the application
+engine and session factory so the business backfill is never rewritten in DDL.
 """
 from datetime import timezone
 from zoneinfo import ZoneInfo
