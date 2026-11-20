@@ -146,6 +146,7 @@ def main():
     sub.add_parser('reconcile-orders')
     p=sub.add_parser('worker');p.add_argument('--max-jobs',type=int,default=100);p.add_argument('--forever',action='store_true');p.add_argument('--poll-seconds',type=float,default=3)
     sub.add_parser('recover-stopped-worker')
+    p=sub.add_parser('huey-trial-worker');p.add_argument('--max-tasks',type=int,default=10)
     args=parser.parse_args();validate_runtime();init_db()
     if args.command=='init-admin':init_admin(args.username)
     elif args.command=='worker':
@@ -170,6 +171,11 @@ def main():
         print(f'Processed {count} jobs; stopped cleanly')
     elif args.command=='reconcile-orders':print(f'Reconciled {reconcile_orders()} original orders')
     elif args.command=='recover-stopped-worker':recover_jobs()
+    elif args.command=='huey-trial-worker':
+        from memory.jobs import huey_trial_enabled,run_trial_worker
+        if not huey_trial_enabled():
+            raise RuntimeError('USE_HUEY_TRIAL is off; enable it to run the trial consumer')
+        print(f'Huey trial processed {run_trial_worker(args.max_tasks)} tasks')
     else:print('Migration complete')
 
 if __name__=='__main__':main()
