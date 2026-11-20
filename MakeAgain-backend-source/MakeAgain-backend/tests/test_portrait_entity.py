@@ -211,6 +211,14 @@ def test_v5_link_facts_interface(db):
 def test_v6_byte_for_byte_rollback(monkeypatch):
     monkeypatch.setenv("USE_ENTITY_PORTRAIT", "0")
     assert portrait.entity_portrait_enabled() is False
+    # 该 oracle 依赖主仓基线 commit。同步到队友仓库后历史里没有该 SHA，
+    # 此时优雅跳过（不是功能失败），避免跨仓库误判。
+    probe = subprocess.run(
+        ["git", "cat-file", "-e", BASE_REF],
+        cwd=str(REPO_ROOT), capture_output=True,
+    )
+    if probe.returncode != 0:
+        pytest.skip(f"baseline commit {BASE_REF} not present in this repo history (synced copy)")
     src = subprocess.check_output(
         ["git", "show", f"{BASE_REF}:MakeAgain-backend/memory/portrait.py"],
         cwd=str(REPO_ROOT), text=True, encoding="utf-8",
