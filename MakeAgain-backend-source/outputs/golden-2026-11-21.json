@@ -1,0 +1,727 @@
+{
+  "ab_decisions": {
+    "USE_DUAL_RECALL": {
+      "basis": "dual1 Recall@K 1.0000 - dual0 1.0000 = +0.0000（MRR 0.7500→1.0000）；冲突新事实排前 dual0=1.0 dual1=1.0（不退化）；另见双路的 list_memories 调用=0 边界（本轮未单独埋点）",
+      "decision": "建议保持关闭",
+      "threshold": "Recall@K +0.1 以上，且危机漏报不增加 / 冲突新事实排前不退化"
+    },
+    "USE_LLM_EMOTION": {
+      "basis": "真实 hy4 情绪评测 NOT_RUN（work/local-test-key.txt 不存在（D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\work\\local-test-key.txt），且 env 未配置 LLM_API_KEY/OPENCODE_GO_API_KEY；按任务条件「文件存在 + env 配好」标 NOT_RUN，不硬凑）；数据不足 → 按 §4 不决策，列 U-008 跟进",
+      "decision": "不决策",
+      "threshold": "准确率 +10pp 以上"
+    },
+    "USE_MEM_PROMPTS": {
+      "basis": "对话质量需真实模型 + LLM judge，本轮 NOT_RUN，列 U-008 跟进",
+      "decision": "不决策",
+      "threshold": "重复复述率/无依据断言率/任务完成率"
+    },
+    "USE_SEMANTIC_EMBEDDING": {
+      "basis": "sem1 Recall@K 1.0000 - sem0 1.0000 = +0.0000（dual=1 下比较）；embedding 由 deterministic_hash_nonsemantic → semantic_bge_small_zh；dual=0 路径不使用 embedding，sem 开关在 dual=0 下是 no-op，不参与决策",
+      "decision": "建议保持关闭",
+      "threshold": "Recall@K +0.1 以上，且冲突新事实排前不退化"
+    },
+    "危机硬门槛": {
+      "basis": "见 crisis 段：漏报率/误报率按类型列出；任何 A/B 开关若使漏报增加即应保持关闭",
+      "decision": "无开关（固定话术硬门槛）",
+      "threshold": "危机漏报不增加"
+    }
+  },
+  "corpus": {
+    "n_items": 27,
+    "path": "D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\MakeAgain-backend\\eval\\golden_corpus.json",
+    "scene_counts": {
+      "breakup": 9,
+      "loved_one": 10,
+      "pet": 8
+    },
+    "sha256": "81644b3957ba9655122eb5a3c3f9f262b9a4fb35a0f95a05246ae9a1c324426b",
+    "source_counts": {
+      "PRD-derived": 10,
+      "synthetic-handwritten": 17
+    }
+  },
+  "crisis": {
+    "by_type": {
+      "否定": {
+        "FN": 0,
+        "FP": 0,
+        "TN": 1,
+        "TP": 0,
+        "expected_false": 1,
+        "expected_true": 0,
+        "false_alarm_rate": 0.0,
+        "miss_rate": null,
+        "n": 1,
+        "predicted_true": 0
+      },
+      "引用": {
+        "FN": 0,
+        "FP": 1,
+        "TN": 0,
+        "TP": 0,
+        "expected_false": 1,
+        "expected_true": 0,
+        "false_alarm_rate": 1.0,
+        "miss_rate": null,
+        "n": 1,
+        "predicted_true": 1
+      },
+      "真实危机": {
+        "FN": 0,
+        "FP": 0,
+        "TN": 0,
+        "TP": 3,
+        "expected_false": 0,
+        "expected_true": 3,
+        "false_alarm_rate": null,
+        "miss_rate": 0.0,
+        "n": 3,
+        "predicted_true": 3
+      },
+      "第三人称": {
+        "FN": 0,
+        "FP": 0,
+        "TN": 1,
+        "TP": 0,
+        "expected_false": 1,
+        "expected_true": 0,
+        "false_alarm_rate": 0.0,
+        "miss_rate": null,
+        "n": 1,
+        "predicted_true": 0
+      },
+      "非危机基线": {
+        "FN": 0,
+        "FP": 0,
+        "TN": 21,
+        "TP": 0,
+        "expected_false": 21,
+        "expected_true": 0,
+        "false_alarm_rate": 0.0,
+        "miss_rate": null,
+        "n": 21,
+        "predicted_true": 0
+      }
+    },
+    "disagreements": [
+      {
+        "expected": false,
+        "hit": [
+          "想死"
+        ],
+        "id": "L-06",
+        "predicted": true,
+        "text": "书里说有人想死，我读到那一段的时候只是觉得很难过。",
+        "type": "引用"
+      }
+    ],
+    "engine": "emotion.crisis.detect()（关键词硬门槛，零 LLM）",
+    "overall": {
+      "FN": 0,
+      "FP": 1,
+      "TN": 23,
+      "TP": 3,
+      "expected_false": 24,
+      "expected_true": 3,
+      "false_alarm_rate": 0.0417,
+      "miss_rate": 0.0,
+      "n": 27,
+      "predicted_true": 4
+    },
+    "status": "RUN"
+  },
+  "dialogue_quality": {
+    "follow_up": "U-008",
+    "metrics_source": "docs/OLD_REPO_QUALITY_METRICS.md §1/§2",
+    "reason": "需真实模型 + LLM judge 验重复复述率/无依据断言率/任务完成率；本轮不做，不硬凑",
+    "status": "NOT_RUN"
+  },
+  "emotion": {
+    "mock": {
+      "client": "mock LLMClient（离线词典兜底）",
+      "details": [
+        {
+          "expected": [
+            "想念",
+            "难过"
+          ],
+          "id": "B-01",
+          "label_ok": true,
+          "predicted": "想念",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "孤独",
+            "难过"
+          ],
+          "id": "B-02",
+          "label_ok": true,
+          "predicted": "难过",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "难过",
+            "想念"
+          ],
+          "id": "B-03",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "焦虑",
+            "内疚"
+          ],
+          "id": "B-04",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "愤怒",
+            "不甘"
+          ],
+          "id": "B-05",
+          "label_ok": true,
+          "predicted": "愤怒",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "回避",
+            "平静"
+          ],
+          "id": "B-06",
+          "label_ok": true,
+          "predicted": "回避",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "难过",
+            "回避"
+          ],
+          "id": "B-07",
+          "label_ok": true,
+          "predicted": "回避",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "想念",
+            "难过"
+          ],
+          "id": "B-08",
+          "label_ok": true,
+          "predicted": "想念",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "愤怒",
+            "不甘"
+          ],
+          "id": "B-09",
+          "label_ok": false,
+          "predicted": "释怀",
+          "reason": "关键词词典兜底",
+          "valence": 0.4,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "想念",
+            "难过"
+          ],
+          "id": "L-01",
+          "label_ok": true,
+          "predicted": "想念",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "内疚",
+            "难过"
+          ],
+          "id": "L-02",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "恐惧",
+            "焦虑",
+            "难过"
+          ],
+          "id": "L-03",
+          "label_ok": true,
+          "predicted": "恐惧",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "想念",
+            "释怀",
+            "难过"
+          ],
+          "id": "L-04",
+          "label_ok": false,
+          "predicted": "回避",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": true
+        },
+        {
+          "expected": [
+            "难过",
+            "内疚"
+          ],
+          "id": "L-05",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "难过"
+          ],
+          "id": "L-06",
+          "label_ok": true,
+          "predicted": "难过",
+          "reason": "关键词词典兜底",
+          "valence": -0.5,
+          "valence_ok": true
+        },
+        {
+          "expected": [
+            "难过",
+            "想念"
+          ],
+          "id": "L-07",
+          "label_ok": false,
+          "predicted": "平静",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "内疚"
+          ],
+          "id": "L-08",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "释怀",
+            "内疚",
+            "难过"
+          ],
+          "id": "L-09",
+          "label_ok": false,
+          "predicted": "愤怒",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": true
+        },
+        {
+          "expected": [
+            "难过",
+            "回避"
+          ],
+          "id": "L-10",
+          "label_ok": true,
+          "predicted": "回避",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "难过",
+            "想念"
+          ],
+          "id": "P-01",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "想念",
+            "难过"
+          ],
+          "id": "P-02",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "孤独",
+            "难过"
+          ],
+          "id": "P-03",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "内疚"
+          ],
+          "id": "P-04",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "想念",
+            "平静"
+          ],
+          "id": "P-05",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": true
+        },
+        {
+          "expected": [
+            "难过",
+            "想念"
+          ],
+          "id": "P-06",
+          "label_ok": false,
+          "predicted": "其他",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "难过",
+            "回避"
+          ],
+          "id": "P-07",
+          "label_ok": true,
+          "predicted": "回避",
+          "reason": "关键词词典兜底",
+          "valence": 0.0,
+          "valence_ok": false
+        },
+        {
+          "expected": [
+            "释怀",
+            "想念"
+          ],
+          "id": "P-08",
+          "label_ok": true,
+          "predicted": "想念",
+          "reason": "关键词词典兜底",
+          "valence": 0.4,
+          "valence_ok": false
+        }
+      ],
+      "error_count": 0,
+      "label_accuracy": 0.4444,
+      "lexicon_fallback_count": 27,
+      "n": 27,
+      "status": "RUN",
+      "valence_direction_match": 0.1481
+    },
+    "note": "情绪分数/准确率仅为内部弱信号，旧仓库 V2 明确不作产品成功 KPI",
+    "real": {
+      "client": "真实 hy4",
+      "details": [],
+      "error_count": 0,
+      "label_accuracy": null,
+      "lexicon_fallback_count": 0,
+      "n": 0,
+      "reason": "work/local-test-key.txt 不存在（D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\work\\local-test-key.txt），且 env 未配置 LLM_API_KEY/OPENCODE_GO_API_KEY；按任务条件「文件存在 + env 配好」标 NOT_RUN，不硬凑",
+      "status": "NOT_RUN",
+      "valence_direction_match": null
+    }
+  },
+  "metrics_source": "docs/OLD_REPO_QUALITY_METRICS.md（旧仓库 V2）；未自创指标",
+  "output_file": "D:\\12412\\dsh工作区\\projects\\make-again-post-merge\\MakeAgain-backend-source\\outputs\\golden-2026-11-21.json",
+  "recall": {
+    "configs": {
+      "dual0_sem0": {
+        "MRR": 0.75,
+        "Precision@K": 0.5,
+        "Recall@K": 1.0,
+        "USE_DUAL_RECALL": 0,
+        "USE_SEMANTIC_EMBEDDING": 0,
+        "conflict_n": 1,
+        "conflict_new_fact_first_rate": 1.0,
+        "embedding_kind_actual": "deterministic_hash_nonsemantic",
+        "index_path": "<temp>/golden.vecidx.sqlite3",
+        "indexed_fixtures": 3,
+        "n_queries": 2,
+        "per_query": [
+          {
+            "expected": [
+              "mem-loved-one-father"
+            ],
+            "first_relevant_rank": 2,
+            "hits": [
+              "mem-loved-one-father"
+            ],
+            "id": "L-01",
+            "precision_at_k": 0.3333,
+            "query": "我是靠着什么想起外公的？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 0.5,
+            "retrieved": [
+              "mem-pet-cat-deceased",
+              "mem-loved-one-father",
+              "mem-pet-cat-owned"
+            ]
+          },
+          {
+            "expected": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "first_relevant_rank": 1,
+            "hits": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "id": "P-06",
+            "precision_at_k": 0.6667,
+            "query": "我养的猫还在吗？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 1.0,
+            "retrieved": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned",
+              "mem-loved-one-father"
+            ]
+          }
+        ],
+        "status": "RUN"
+      },
+      "dual0_sem1": {
+        "MRR": 0.75,
+        "Precision@K": 0.5,
+        "Recall@K": 1.0,
+        "USE_DUAL_RECALL": 0,
+        "USE_SEMANTIC_EMBEDDING": 1,
+        "conflict_n": 1,
+        "conflict_new_fact_first_rate": 1.0,
+        "embedding_kind_actual": "semantic_bge_small_zh",
+        "index_path": "<temp>/golden.vecidx.sqlite3",
+        "indexed_fixtures": 3,
+        "n_queries": 2,
+        "per_query": [
+          {
+            "expected": [
+              "mem-loved-one-father"
+            ],
+            "first_relevant_rank": 2,
+            "hits": [
+              "mem-loved-one-father"
+            ],
+            "id": "L-01",
+            "precision_at_k": 0.3333,
+            "query": "我是靠着什么想起外公的？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 0.5,
+            "retrieved": [
+              "mem-pet-cat-deceased",
+              "mem-loved-one-father",
+              "mem-pet-cat-owned"
+            ]
+          },
+          {
+            "expected": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "first_relevant_rank": 1,
+            "hits": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "id": "P-06",
+            "precision_at_k": 0.6667,
+            "query": "我养的猫还在吗？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 1.0,
+            "retrieved": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned",
+              "mem-loved-one-father"
+            ]
+          }
+        ],
+        "status": "RUN"
+      },
+      "dual1_sem0": {
+        "MRR": 1.0,
+        "Precision@K": 0.5,
+        "Recall@K": 1.0,
+        "USE_DUAL_RECALL": 1,
+        "USE_SEMANTIC_EMBEDDING": 0,
+        "conflict_n": 1,
+        "conflict_new_fact_first_rate": 1.0,
+        "embedding_kind_actual": "deterministic_hash_nonsemantic",
+        "index_path": "<temp>/golden.vecidx.sqlite3",
+        "indexed_fixtures": 3,
+        "n_queries": 2,
+        "per_query": [
+          {
+            "expected": [
+              "mem-loved-one-father"
+            ],
+            "first_relevant_rank": 1,
+            "hits": [
+              "mem-loved-one-father"
+            ],
+            "id": "L-01",
+            "precision_at_k": 0.3333,
+            "query": "我是靠着什么想起外公的？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 1.0,
+            "retrieved": [
+              "mem-loved-one-father",
+              "mem-pet-cat-owned",
+              "mem-pet-cat-deceased"
+            ]
+          },
+          {
+            "expected": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "first_relevant_rank": 1,
+            "hits": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "id": "P-06",
+            "precision_at_k": 0.6667,
+            "query": "我养的猫还在吗？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 1.0,
+            "retrieved": [
+              "mem-pet-cat-deceased",
+              "mem-loved-one-father",
+              "mem-pet-cat-owned"
+            ]
+          }
+        ],
+        "status": "RUN"
+      },
+      "dual1_sem1": {
+        "MRR": 1.0,
+        "Precision@K": 0.5,
+        "Recall@K": 1.0,
+        "USE_DUAL_RECALL": 1,
+        "USE_SEMANTIC_EMBEDDING": 1,
+        "conflict_n": 1,
+        "conflict_new_fact_first_rate": 1.0,
+        "embedding_kind_actual": "semantic_bge_small_zh",
+        "index_path": "<temp>/golden.vecidx.sqlite3",
+        "indexed_fixtures": 3,
+        "n_queries": 2,
+        "per_query": [
+          {
+            "expected": [
+              "mem-loved-one-father"
+            ],
+            "first_relevant_rank": 1,
+            "hits": [
+              "mem-loved-one-father"
+            ],
+            "id": "L-01",
+            "precision_at_k": 0.3333,
+            "query": "我是靠着什么想起外公的？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 1.0,
+            "retrieved": [
+              "mem-loved-one-father",
+              "mem-pet-cat-owned",
+              "mem-pet-cat-deceased"
+            ]
+          },
+          {
+            "expected": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "first_relevant_rank": 1,
+            "hits": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned"
+            ],
+            "id": "P-06",
+            "precision_at_k": 0.6667,
+            "query": "我养的猫还在吗？",
+            "recall_at_k": 1.0,
+            "reciprocal_rank": 1.0,
+            "retrieved": [
+              "mem-pet-cat-deceased",
+              "mem-pet-cat-owned",
+              "mem-loved-one-father"
+            ]
+          }
+        ],
+        "status": "RUN"
+      }
+    },
+    "engine": "memory.recall()（临时 SQLite memory_stream + vec0/bm25s 索引）",
+    "env": {
+      "DUAL_RECALL_INDEX_DB": "<temp>/golden.vecidx.sqlite3",
+      "HF_HOME": "D:\\12412\\huggingface",
+      "HF_HUB_OFFLINE": "1"
+    },
+    "fixture_source": "eval/CORPUS_README.md §4（手写模拟，非真实用户数据）",
+    "top_k": 3
+  },
+  "schema_version": "1.0"
+}
