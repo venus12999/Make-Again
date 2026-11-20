@@ -25,6 +25,17 @@ def schedule_memory_write(user_id: str, message: str, *, type: str = "chat", ext
     enqueue("memory",user_id,{"message":message,"type":type,"extractor":extractor.__module__ if extractor else None})
 
 
+def schedule_trial_echo(user_id: str, message: str, *, fail_times: int = 0) -> None:
+    """Huey 试点的可选入口：在当前事务内投一个 trial_echo intent。
+
+    开关 USE_HUEY_TRIAL 关闭时是纯 no-op；现有 schedule_memory_write 链路不变。
+    """
+    from memory.jobs import enqueue, huey_trial_enabled
+    if not huey_trial_enabled():
+        return
+    enqueue("trial_echo", user_id, {"message": message, "fail_times": fail_times})
+
+
 def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
     from memory import extract, portrait, reflect, store
 
