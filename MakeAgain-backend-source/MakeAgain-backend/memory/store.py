@@ -318,6 +318,13 @@ def prov_delete_memory(db: Session, memory_id: str, actor_id=None, role=None) ->
     created_at = _iso(entry.ts)
     db.delete(entry)
     db.commit()
+    # WP-A 集成：删除记忆时同步清理向量/关键词索引（级联一致，避免召回到已删项）。
+    if os.getenv("USE_DUAL_RECALL", "").strip().lower() in {"1", "true", "yes", "on"}:
+        try:
+            from memory.recall import purge_memory
+            purge_memory(mid, db=db)
+        except Exception:
+            logger.warning("dual-recall purge failed; fallback to baseline", exc_info=True)
     if provenance_enabled():
         try:
             _prov_record(mid, prev_value, None, "DELETE",
@@ -348,6 +355,72 @@ def get_last_provenance_messages(session_scope: str, limit: int = 10) -> list[di
         return _get_provenance_store().get_last_messages(session_scope, limit)
     except Exception:
         logger.warning("provenance get_last_messages failed; fallback to []", exc_info=True)
+
+
+# ------------------------------------------------------- WP-B 五层内核（并存第二存储）
+# 设计红线（同 R3 provenance）：USE_FIVE_LAYER 默认关闭；关闭时 add_memory 除一次纯 env
+# 读取外与基线逐字节一致；五层写失败一律 swallow（fallback 回旧路径），绝不影响业务库
+# 的返回与行为。第二存储由 memory/five_layer.py 适配 agent-memory-core v0.1.0。
+_FIVE_LAYER_ENABLED_VALUES = {"1", "true", "yes", "on"}
+_five_layer_lock = threading.Lock()
+_five_layer_adapters: dict[str, object] = {}
+
+
+def five_layer_enabled() -> bool:
+    """五层内核开关：os.getenv，默认关闭。"""
+    return (os.getenv("USE_FIVE_LAYER") or "").strip().lower() in _FIVE_LAYER_ENABLED_VALUES
+
+
+def _get_five_layer_adapter():
+    """按 root 缓存 adapter；延迟 import，开关关闭时根本不加载 agent_memory。"""
+    from memory.five_layer import FiveLayerAdapter, default_root
+
+    root = default_root()
+    with _five_layer_lock:
+        adapter = _five_layer_adapters.get(root)
+        if adapter is None:
+            adapter = FiveLayerAdapter(root)
+            _five_layer_adapters[root] = adapter
+        return adapter
+
+
+def reset_five_layer_cache() -> None:
+    """清空五层 adapter 缓存（测试/切库用，不触碰业务库）。"""
+    with _five_layer_lock:
+        _five_layer_adapters.clear()
+
+
+def five_layer_current(query: str, as_of: str | None = None, limit: int = 8) -> list[dict]:
+    """查五层库的当前事实（supersede 后只剩最新）；开关关或失败返回 []。"""
+    if not five_layer_enabled():
+        return []
+    try:
+        return _get_five_layer_adapter().current(query, as_of=as_of, limit=limit)
+    except Exception:
+        logger.warning("five-layer current failed; fallback to []", exc_info=True)
+        return []
+
+
+def five_layer_trace(record_id: str) -> dict:
+    """provenance 指针回读原消息；开关关或失败返回 {}。"""
+    if not five_layer_enabled():
+        return {}
+    try:
+        return _get_five_layer_adapter().trace(record_id)
+    except Exception:
+        logger.warning("five-layer trace failed; fallback to {}", exc_info=True)
+        return {}
+
+
+def five_layer_settle() -> dict:
+    """调用 agent-memory-core 的 Manage.sleep() 衰减巩固；开关关或失败返回 {}。"""
+    if not five_layer_enabled():
+        return {}
+    try:
+        return _get_five_layer_adapter().settle()
+    except Exception:
+        logger.warning("five-layer settle failed; fallback to {}", exc_info=True)
+        return {}
         return []
 
 
@@ -373,6 +446,24 @@ def add_memory(db: Session, user_id: str, *, type: str = "chat", content: str,
                          actor_id=user_id, role="user")
         except Exception:
             logger.warning("provenance ADD history failed; fallback to baseline", exc_info=True)
+    # WP-B: 业务库 insert 成功后并存写五层库（Source→Fact）；开/关两条路径数据不打架。
+    # 与 R3 同纪律：开关关闭时此分支不执行，五层写失败 swallow，回退基线行为。
+    if five_layer_enabled():
+        try:
+            _get_five_layer_adapter().add(
+                str(entry.id), entry.content, user_id=user_id, type=type,
+                provenance=[entry.content], valid_from=entry.ts,
+            )
+        except Exception:
+            logger.warning("five-layer dual write failed; fallback to baseline", exc_info=True)
+    # WP-A 集成：USE_DUAL_RECALL 开启时，业务库写入成功后同步建向量/关键词索引。
+    # 不接这行则双路召回查不到新记忆（刻意不自动全量读库）。失败 swallow 回退基线。
+    if os.getenv("USE_DUAL_RECALL", "").strip().lower() in {"1", "true", "yes", "on"}:
+        try:
+            from memory.recall import index_memory
+            index_memory(entry, db=db)
+        except Exception:
+            logger.warning("dual-recall index failed; fallback to baseline", exc_info=True)
     return entry
 
 

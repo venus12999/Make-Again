@@ -4,6 +4,10 @@ R1 多路融合(开关 USE_RECALL_FUSION,默认关闭):
   关闭 / 新路径异常 → _recall_legacy():与 main@45f3351 的实现逐字节一致。
   开启 → 三路候选(recency / importance / relevance)→ rrf 融合
        → score_and_rank 精排 → MMR 去冗余,返回值仍是 list[dict],调用方零改动。
+WP-A 双路召回(USE_DUAL_RECALL,默认关闭):关闭=上面 R1/legacy 路径逐字节不变;
+开启=不调用 list_memories 全量读取,走 vec0 语义路 + bm25s 关键词路 → rrf 融合
+→ score_and_rank 精排 → MMR 去冗余,返回仍是 list[dict]。
+embedding 是确定性 hash(非语义模型),详见 memory/vector_index.py 文件头声明。
 
 复制资产(全部经 gh api 实读源码、base64 解码,按行号复制):
   - rrf()                      graphiti `graphiti_core/search/search_utils.py:1551-1566`
@@ -27,6 +31,8 @@ from typing import Any, Dict, List, Optional
 from config import get_settings
 from memory.facts import facts_text
 from memory.store import list_memories
+from memory.models import MemoryEntry
+from memory.vector_index import embed_text, get_index_for
 
 logger = logging.getLogger(__name__)
 _TOKEN_RE = re.compile(r"[一-鿿]|[a-zA-Z0-9]+")
@@ -93,8 +99,18 @@ def _use_recall_fusion_enabled() -> bool:
     return os.getenv("USE_RECALL_FUSION", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _use_dual_recall_enabled() -> bool:
+    """WP-A 双路召回开关,默认关闭。关闭时本模块行为与基线 cde75f8 完全一致。"""
+    return os.getenv("USE_DUAL_RECALL", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def recall(db, user_id: str, query: str, top_k: int | None = None, recent_text: str | None = None) -> list[dict]:
     """对外入口:签名/返回形态不变。开关关闭或融合失败 → 原路径 fallback。"""
+    if _use_dual_recall_enabled():
+        try:
+            return _recall_dual(db, user_id, query, top_k=top_k, recent_text=recent_text)
+        except Exception as exc:
+            logger.warning("dual recall failed, fallback to R1/legacy path: %s", exc)
     if not _use_recall_fusion_enabled():
         return _recall_legacy(db, user_id, query, top_k=top_k, recent_text=recent_text)
     try:
@@ -443,4 +459,166 @@ def _recall_fusion(db, user_id: str, query: str, top_k: int | None = None,
          "score_details": detail[mid].get("score_details")}
         for mid in final_ids
     ]
+    return out
+
+
+# ---------------------------------------------------------------------------
+# WP-A:向量 + 关键词双路召回（开关 USE_DUAL_RECALL）
+#
+# 与 R1 _recall_fusion 的本质区别：这里**完全不调用 list_memories**。
+# 候选来自 sqlite-vec vec0 的 KNN 与 bm25s 的 BM25 检索；命中 id 后再用
+# db.get(MemoryEntry, id) 做点查拿真实 ORM 对象（返回契约与基线一致）。
+# 索引由 index_memory() / rebuild_index() 写入，由 purge_memory() 级联清理。
+# ---------------------------------------------------------------------------
+def _dual_entry_payload(entry) -> tuple:
+    """从 ORM 对象或 dict 抽索引所需字段（与基线召回使用的文本口径一致）。"""
+    if isinstance(entry, dict):
+        user_id = str(entry.get("user_id") or "")
+        text = f"{facts_text(entry.get('facts'))} {entry.get('summary') or ''} {entry.get('content') or ''}"
+        mid = str(entry.get("id") or "")
+        ts, importance = entry.get("ts"), entry.get("importance")
+    else:
+        user_id = str(getattr(entry, "user_id", "") or "")
+        text = (f"{facts_text(getattr(entry, 'facts', None))} "
+                f"{getattr(entry, 'summary', None) or ''} {getattr(entry, 'content', '') or ''}")
+        mid = str(getattr(entry, "id", "") or "")
+        ts, importance = getattr(entry, "ts", None), getattr(entry, "importance", 5.0)
+    if isinstance(ts, str):
+        try:
+            ts = datetime.fromisoformat(ts)
+        except ValueError:
+            ts = None
+    return mid, user_id, text, ts, (float(importance) if importance is not None else 5.0)
+
+
+def index_memory(entry, db=None) -> bool:
+    """供 store.add_memory 写后调用的 upsert（幂等）。返回是否成功；失败只告警不影响业务。"""
+    try:
+        mid, uid, text, ts, imp = _dual_entry_payload(entry)
+        if not mid:
+            return False
+        get_index_for(db).upsert(mid, uid, text, ts=ts, importance=imp, embedding=embed_text(text))
+        return True
+    except Exception as exc:
+        logger.warning("dual index upsert failed: %s", exc)
+        return False
+
+
+def purge_memory(memory_id: str, db=None) -> bool:
+    """供 store 删除路径调用：级联清理 vec0 向量 + bm25s 元数据，返回是否删到行。"""
+    try:
+        return get_index_for(db).purge(memory_id)
+    except Exception as exc:
+        logger.warning("dual index purge failed: %s", exc)
+        return False
+
+
+def rebuild_index(db, user_id: str, entries: list) -> int:
+    """bootstrap：从调用方传入的 entries 重建某用户索引；本函数不调用 list_memories。"""
+    idx = get_index_for(db)
+    idx.clear_user(user_id)
+    return sum(1 for e in entries if index_memory(e, db=db))
+
+
+def _recall_dual(db, user_id: str, query: str, top_k: int | None = None,
+                 recent_text: str | None = None) -> list[dict]:
+    """vec0 语义路 + bm25s 关键词路 → rrf → score_and_rank → MMR。"""
+    s = get_settings()
+    top_k = top_k or s.recall_top_k
+    idx = get_index_for(db)
+    qvec = embed_text(query)
+    fetch_k = max(top_k * 4, 20)
+
+    vec_hits = idx.vector_search(qvec, user_id, fetch_k)
+    kw_hits = idx.keyword_search(query, user_id, fetch_k)
+    if not vec_hits and not kw_hits:
+        logger.debug("dual recall: empty index for user %s (call rebuild_index/index_memory)", user_id)
+        return []
+
+    cand_ids = list(dict.fromkeys([h["id"] for h in vec_hits] + [h["id"] for h in kw_hits]))
+    meta = idx.get_meta(cand_ids)
+    if not meta:
+        return []
+
+    q_tokens = _tokens(query)
+    recent_tokens = _tokens(recent_text) if recent_text else set()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    vec_scores = {h["id"]: h["score"] for h in vec_hits}
+    kw_scores = {h["id"]: h["score"] for h in kw_hits}
+
+    # 复用 graphiti rrf()：两路有序 id 列表融合
+    fused_ids, fused_scores = rrf([[h["id"] for h in vec_hits], [h["id"] for h in kw_hits]])
+    fused_map = dict(zip(fused_ids, fused_scores))
+    fused_ids = [mid for mid in fused_ids if mid in meta]
+    if not fused_ids:
+        return []
+
+    cands: list[dict] = []
+    for mid in fused_ids:
+        m = meta[mid]
+        entry_tokens = m["tokens"]
+        if recent_tokens and _overlap_fraction(entry_tokens, recent_tokens) >= s.recall_recent_overlap_threshold:
+            continue
+        ts = m["ts"] or now
+        days = max(0.0, (now - ts).total_seconds() / 86400.0)
+        cands.append({
+            "id": mid,
+            "tokens": entry_tokens,
+            "recency": math.exp(-days / 30.0),
+            "relevance": _relevance(q_tokens, entry_tokens),
+            "vec_score": vec_scores.get(mid, 0.0),
+            "kw_score": kw_scores.get(mid, 0.0),
+            "embedding": m["embedding"],
+        })
+    if not cands:
+        return []
+    by_id = {c["id"]: c for c in cands}
+
+    # RRF 分数归一到 [0,1] 作为 semantic_score（复用 mem0 score_and_rank）
+    max_fused = max(fused_map.values()) or 1.0
+    semantic = [
+        {"id": c["id"], "score": min(fused_map.get(c["id"], 0.0) / max_fused, 1.0), "payload": c}
+        for c in cands
+    ]
+    # bm25s 原始分 → mem0 sigmoid 归一化
+    midpoint, steepness = get_bm25_params(query, lemmatized=" ".join(sorted(q_tokens)))
+    bm25_scores = {
+        c["id"]: normalize_bm25(c["kw_score"], midpoint, steepness)
+        for c in cands if c["kw_score"] > 0.0
+    }
+    entity_boosts = _compute_entity_boosts(q_tokens, cands)
+    threshold = float(os.getenv("USE_DUAL_RECALL_THRESHOLD", "0") or 0)
+    ranked = score_and_rank(semantic, bm25_scores, entity_boosts, threshold, len(semantic), explain=True)
+    if not ranked:
+        return []
+
+    # MMR 去冗余（复用 graphiti 贪心选型）；向量来自索引，不再全量读取记忆
+    detail = {r["id"]: r for r in ranked}
+    order = sorted(
+        [r["id"] for r in ranked],
+        key=lambda mid: (detail[mid]["score"], by_id[mid]["recency"]),
+        reverse=True,
+    )
+    vectors = {mid: by_id[mid]["embedding"] for mid in order
+               if len(by_id[mid]["embedding"]) == len(qvec)}
+    final_ids = _mmr_diverse_top_k(qvec, vectors, order, top_k) if vectors else order[:top_k]
+
+    out: list[dict] = []
+    for mid in final_ids:
+        entry = db.get(MemoryEntry, mid)  # 点查，不是 list_memories 全量读取
+        if entry is None:
+            continue
+        sd = dict(detail[mid].get("score_details") or {})
+        sd.update({
+            "vec_score": by_id[mid]["vec_score"],
+            "bm25_raw": by_id[mid]["kw_score"],
+            "embedding_kind": "deterministic_hash_nonsemantic",
+        })
+        out.append({
+            "entry": entry,
+            "score": detail[mid]["score"],
+            "recency": by_id[mid]["recency"],
+            "relevance": by_id[mid]["relevance"],
+            "score_details": sd,
+        })
     return out
