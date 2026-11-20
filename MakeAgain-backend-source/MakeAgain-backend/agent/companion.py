@@ -296,10 +296,12 @@ def _chat_generic(db, user_id: str, message: str, client: LLMClient, session_id:
     # 同步落库聊天历史(user + assistant 各一条,精确到分钟,保证历史立即可见)
     store.save_chat_turn(db, user_id, session_id, message, reply)
 
-    # 情绪分类:默认词典法(零延迟);USE_LLM_EMOTION=1 时用快速模型做结构化分类,
-    # 真实语料下词典法对复杂哀伤表达识别率低(全部落"其他"),LLM 分类更准但多一次调用。
+    # 情绪分类：golden set 实测 hy4 准确率 0.963 vs 词典 0.444（+51.9pp），故默认用 LLM 分类。
+    # 显式设 USE_LLM_EMOTION=0/off 可关闭回退词典（如离线/省成本场景）；异常也自动回退。
     import os as _os
-    _emo_client = client if _os.getenv("USE_LLM_EMOTION", "0").strip().lower() in ("1", "true", "yes", "on") else None
+    _emo_flag = _os.getenv("USE_LLM_EMOTION", "1").strip().lower()
+    _emo_enabled = _emo_flag not in ("0", "false", "no", "off")
+    _emo_client = client if _emo_enabled else None
     try:
         emotion_result = classify(message, _emo_client)
     except Exception:

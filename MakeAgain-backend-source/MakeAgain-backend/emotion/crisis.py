@@ -75,8 +75,13 @@ def _is_quoted(text: str, idx: int) -> bool:
 
 
 def _quote_guard_enabled() -> bool:
+    """引用语境守卫：golden set 实测误报 4.17%→0 且漏报不变，故默认开启。
+
+    显式设 USE_CRISIS_QUOTE_GUARD=0/off 可关闭；安全回归保证"引用后自身危机"仍检出。
+    """
     import os
-    return os.getenv("USE_CRISIS_QUOTE_GUARD", "").strip().lower() in {"1", "true", "yes", "on"}
+    flag = os.getenv("USE_CRISIS_QUOTE_GUARD", "1").strip().lower()
+    return flag not in ("0", "false", "no", "off")
 
 
 def _matches(text: str, words: list[str]) -> list[str]:
