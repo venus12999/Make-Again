@@ -1,7 +1,8 @@
 """WeChat Pay API v3: RSA request/response signatures and AES-GCM notifications.
 Official merchant protocol: https://pay.wechatpay.cn/doc/v3/merchant/4012791861
 """
-import base64,json,secrets,time
+import base64,json,secrets,time,hashlib,threading
+from collections import OrderedDict
 from pathlib import Path
 import httpx
 from cryptography.hazmat.primitives import hashes,serialization
@@ -11,6 +12,66 @@ from cryptography import x509
 from config import get_settings
 
 class PaymentError(Exception):pass
+
+
+# --- Webhook replay ledger (defense in depth) ---------------------------------
+# The authoritative "grant at most once" guard lives in
+# api/subscriptions.py::apply_paid (paid_at / transaction_id fences).  This
+# gateway-level ledger makes verifiable replays observable and gives W0 a hook
+# to reject them without touching subscriptions.py.  It is intentionally NOT
+# enforced as an exception here: WeChat expects a SUCCESS ack for a replay, and
+# turning it into a 401 would cause endless provider retries.  Only signatures
+# that already passed verify() may enter the ledger, so forged headers can
+# never poison it.
+_NOTIFY_DEDUPE_MAX = 4096
+_notify_seen = OrderedDict()
+_notify_lock = threading.Lock()
+
+
+def notification_fingerprint(headers, body):
+    """Stable idempotency key for one provider notification (no secret bytes)."""
+    getter = getattr(headers, 'get', lambda _k: None)
+
+    def text(key):
+        value = getter(key)
+        if isinstance(value, bytes):
+            value = value.decode('latin-1')
+        return value or ''
+
+    payload_hash = hashlib.sha256(body).hexdigest()
+    return '{}|{}|{}|{}'.format(text('Wechatpay-Serial'), text('Wechatpay-Nonce'),
+                                payload_hash, text('Wechatpay-Signature')[:24])
+
+
+def _record_notification(headers, body):
+    """Return True when this exact signed notification was already accepted."""
+    key = notification_fingerprint(headers, body)
+    with _notify_lock:
+        duplicate = key in _notify_seen
+        _notify_seen[key] = _notify_seen.get(key, 0) + 1
+        _notify_seen.move_to_end(key)
+        while len(_notify_seen) > _NOTIFY_DEDUPE_MAX:
+            _notify_seen.popitem(last=False)
+        return duplicate
+
+
+def notification_is_duplicate(headers, body):
+    """Read-only replay check; use after a successful notification() call."""
+    with _notify_lock:
+        return notification_fingerprint(headers, body) in _notify_seen
+
+
+def notification_replay_count(headers, body):
+    """How many times this exact signed notification has been accepted."""
+    with _notify_lock:
+        return _notify_seen.get(notification_fingerprint(headers, body), 0)
+
+
+def reset_notification_ledger():
+    """Test-only isolation helper."""
+    with _notify_lock:
+        _notify_seen.clear()
+
 
 def configured(s=None):
     s=s or get_settings()
@@ -60,6 +121,7 @@ class WeChatPay:
             'paySign':self.sign(f'{self.s.wechat_appid}\n{ts}\n{nonce}\n{package}\n')}}
     def notification(self,headers,body):
         self.verify(headers,body)
+        _record_notification(headers,body)  # post-verify replay observation; never raises
         try:
             data=json.loads(body)
             if data['event_type']!='TRANSACTION.SUCCESS':raise ValueError()

@@ -83,3 +83,14 @@ CRISIS_MESSAGE = (
     "全国 24 小时心理援助热线 400-161-9995,紧急情况请拨打 120 或 110。\n"
     "我在这里陪着你,但专业的帮助更重要。"
 )
+
+
+def detect_with_flow(text: str, user_id: str, **kwargs) -> dict:
+    """W0 集成入口：在硬门槛之上叠加 WP4 危机闭环。
+
+    - 开关 USE_CRISIS_FLOW 默认关闭，此时等价于旧的 detect + CRISIS_MESSAGE，可回滚；
+    - 开启后返回分级话术 / 确认轮 / 人工复核入口 / 冷却期 / 事件记录等增量字段；
+    - 本函数不改动 detect 的任何行为，现有调用方若继续用 detect() 完全不受影响。
+    """
+    from emotion import crisis_flow  # 局部 import：避免模块加载期循环依赖
+    return crisis_flow.handle_crisis(text, user_id, **kwargs)

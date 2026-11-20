@@ -4,8 +4,13 @@
 """
 from __future__ import annotations
 
+import io
+import os
 import threading
+import time
+from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlparse
 
 import httpx
 
@@ -49,6 +54,74 @@ def _extract(obj: Any, *keys: str) -> Any:
             if found is not None:
                 return found
     return None
+
+
+# ---- 本地 ASR(faster-whisper)----
+# 开关默认关闭:首次使用需下载模型,默认关便于回滚。开启后本地失败一律回退远程 MaaS,
+# 两端都拿不到文本时抛 SpeechError,绝不返回空串假装成功。
+_LOCAL_ASR_SAFE_MODELS = frozenset({"tiny", "base", "small", "medium", "large-v3"})
+_LOCAL_ASR_DEFAULT_MODEL = "tiny"
+_LOCAL_ASR_MODELS: dict[str, Any] = {}
+_LOCAL_ASR_LOCK = threading.Lock()
+
+
+def _local_asr_enabled() -> bool:
+    """USE_LOCAL_ASR=1/true/yes/on 时开启本地 ASR;默认关闭。"""
+    return os.getenv("USE_LOCAL_ASR", "0").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _local_asr_model_name() -> str:
+    """读取模型名并做白名单校验;非白名单值一律退回 tiny(小体积优先)。"""
+    name = os.getenv("LOCAL_ASR_MODEL", _LOCAL_ASR_DEFAULT_MODEL).strip().lower()
+    return name if name in _LOCAL_ASR_SAFE_MODELS else _LOCAL_ASR_DEFAULT_MODEL
+
+
+def _get_local_asr_model():
+    """懒加载单例:同名模型只加载一次;LOCAL_ASR_MODEL 变化时重新加载。"""
+    name = _local_asr_model_name()
+    model = _LOCAL_ASR_MODELS.get(name)
+    if model is None:
+        with _LOCAL_ASR_LOCK:
+            model = _LOCAL_ASR_MODELS.get(name)
+            if model is None:
+                from faster_whisper import WhisperModel
+                # CPU + int8:无 GPU 依赖、内存占用最小,适合本地优先的延迟目标。
+                model = WhisperModel(name, device="cpu", compute_type="int8")
+                _LOCAL_ASR_MODELS[name] = model
+    return model, name
+
+
+def _local_asr_audio_source(input_url: str, settings):
+    """把 input_url 解析成 faster-whisper 可读的本地路径或内存字节流。"""
+    if not isinstance(input_url, str) or not input_url.strip():
+        raise SpeechError("ASR input_url 为空")
+    raw = input_url.strip()
+    if raw.startswith("local://"):
+        key = unquote(raw[len("local://"):]).lstrip("/")
+        root = Path(settings.storage_local_dir).resolve()
+        path = (root / key).resolve()
+        if root not in path.parents or not path.is_file():
+            raise SpeechError(f"本地音频不存在: {key}")
+        return path
+    # 先按本地文件判断:Windows 盘符路径(D:\x.wav)会被 urlparse 误判成 scheme。
+    if Path(raw).is_file():
+        return Path(raw)
+    parsed = urlparse(raw)
+    if parsed.scheme in ("http", "https"):
+        resp = _get_shared_client().get(raw)
+        if resp.status_code != 200:
+            raise SpeechError(f"下载音频失败: HTTP {resp.status_code}")
+        if not resp.content:
+            raise SpeechError("下载的音频为空")
+        bio = io.BytesIO(resp.content)
+        bio.name = Path(unquote(parsed.path)).name or "audio"
+        return bio
+    if parsed.scheme in ("", "file"):
+        path = Path(unquote(parsed.path if parsed.scheme == "file" else raw))
+        if not path.is_file():
+            raise SpeechError(f"本地音频不存在: {path}")
+        return path
+    raise SpeechError(f"不支持的音频地址: {raw[:120]}")
 
 
 class SpeechClient:
@@ -116,8 +189,23 @@ class SpeechClient:
         return {"audio_url": url, "mock": False, "raw": data}
 
     def transcribe(self, input_url: str) -> dict:
-        """音频/视频 URL → 转写文本,返回 {text, mock, raw};text 优先取 output.text 全文。"""
+        """音频/视频 URL → 转写文本,返回 {text, mock, raw};text 优先取 output.text 全文。
+
+        USE_LOCAL_ASR=1 时先用 faster-whisper 本地转写;本地失败/无模型/空结果
+        一律回退远程 MaaS。开启本地引擎后若两端都拿不到文本,抛 SpeechError,
+        绝不返回空串假装成功。开关关闭时行为与改造前完全一致。
+        """
+        local_enabled = _local_asr_enabled()
+        local_error: Exception | None = None
+        if local_enabled:
+            try:
+                return self._transcribe_local(input_url)
+            except Exception as e:  # 本地引擎任何异常都不得中断业务,回退远程
+                local_error = e
+
         if self.mock:
+            if local_enabled:
+                raise SpeechError(f"本地 ASR 失败且处于 mock 模式,无法回退远程: {local_error}")
             return {"text": "", "mock": True, "input_url": input_url}
 
         payload = {"model": self.settings.asr_model, "input_url": input_url}
@@ -127,4 +215,37 @@ class SpeechClient:
             text = data["output"].get("text")
         if not text:
             text = _extract(data, "text", "transcript")
+        if local_enabled and not text:
+            raise SpeechError(f"本地 ASR 与远程 MaaS 均未返回文本(本地错误: {local_error})")
         return {"text": text or "", "mock": False, "raw": data}
+
+    def _transcribe_local(self, input_url: str) -> dict:
+        """本地 faster-whisper 转写。失败抛 SpeechError,由 transcribe 回退远程。"""
+        started = time.perf_counter()
+        try:
+            audio = _local_asr_audio_source(input_url, self.settings)
+            model, model_name = _get_local_asr_model()
+            model_loaded = time.perf_counter()
+            language = os.getenv("LOCAL_ASR_LANGUAGE", "").strip() or None
+            segments, info = model.transcribe(audio, language=language, beam_size=5)
+            text = "".join(seg.text for seg in segments).strip()
+        except SpeechError:
+            raise
+        except Exception as e:
+            raise SpeechError(f"本地 ASR 失败: {e}") from e
+        if not text:
+            raise SpeechError("本地 ASR 转写结果为空")
+        finished = time.perf_counter()
+        return {
+            "text": text,
+            "mock": False,
+            "raw": {
+                "engine": "local",
+                "model": model_name,
+                "language": getattr(info, "language", None) or language,
+                "duration": getattr(info, "duration", None),
+                "load_ms": round((model_loaded - started) * 1000, 1),
+                "transcribe_ms": round((finished - model_loaded) * 1000, 1),
+                "total_ms": round((finished - started) * 1000, 1),
+            },
+        }
