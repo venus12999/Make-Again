@@ -1,0 +1,361 @@
+{
+  "schema_version": "1.0",
+  "baseline_commit": "26b9393",
+  "baseline_ref": "main@26b9393",
+  "description": "Prompt 资产清单：id/version/来源文件/来源行号/字符数/sha256/描述。text 本体在 prompts_registry.py，单一真源。",
+  "total": 22,
+  "prompts": [
+    {
+      "id": "companion.system",
+      "version": "1.0.0",
+      "source_file": "agent/companion.py",
+      "source_constant": "SYSTEM_PROMPT",
+      "source_dict_key": null,
+      "source_lines": [
+        21,
+        39
+      ],
+      "source_line_count": 19,
+      "char_count": 1478,
+      "sha256": "3a63d120198f2a96a5f3e3316e1373d6dac1c78969e1c5c1311733eaac1167a7",
+      "description": "通用陪伴系统提示：危机检测→记忆召回→卡片工具→异步回写的总纲",
+      "reexport": "SYSTEM_PROMPT = registry.get('companion.system')"
+    },
+    {
+      "id": "breakup.system",
+      "version": "1.0.0",
+      "source_file": "agent/breakup.py",
+      "source_constant": "BREAKUP_SYSTEM_PROMPT",
+      "source_dict_key": null,
+      "source_lines": [
+        29,
+        69
+      ],
+      "source_line_count": 41,
+      "char_count": 2596,
+      "sha256": "d1ec3322b110c9348cadc7852e94ebb88ccc7af5664ae26acf694d9139dfd104",
+      "description": "分手 CBT 引擎系统提示：先共情后给答案、认知重构、平衡归因、受害者保护",
+      "reexport": "BREAKUP_SYSTEM_PROMPT = registry.get('breakup.system')"
+    },
+    {
+      "id": "breakup.micro_gate",
+      "version": "1.0.0",
+      "source_file": "agent/breakup.py",
+      "source_constant": "MICRO_GATE_RULE",
+      "source_dict_key": null,
+      "source_lines": [
+        72,
+        76
+      ],
+      "source_line_count": 5,
+      "char_count": 132,
+      "sha256": "93964a7dee7de2e54351e3e9d57f970b42677fc3cc1c06da34bad79b94572ce0",
+      "description": "分手会话内用户门控（User Gate + 冷却）规则",
+      "reexport": "MICRO_GATE_RULE = registry.get('breakup.micro_gate')"
+    },
+    {
+      "id": "loved_one.system",
+      "version": "1.0.0",
+      "source_file": "agent/loved_one.py",
+      "source_constant": "LOVED_ONE_SYSTEM_PROMPT",
+      "source_dict_key": null,
+      "source_lines": [
+        31,
+        98
+      ],
+      "source_line_count": 68,
+      "char_count": 4305,
+      "sha256": "62b5a38c33c4b9e0148899f57784f2269a1e594003f1481bf0b463270406e90a",
+      "description": "亲友离世哀伤双过程引擎系统提示：意义重建、内疚处理、持续联结",
+      "reexport": "LOVED_ONE_SYSTEM_PROMPT = registry.get('loved_one.system')"
+    },
+    {
+      "id": "loved_one.micro_gate",
+      "version": "1.0.0",
+      "source_file": "agent/loved_one.py",
+      "source_constant": "MICRO_GATE_RULE",
+      "source_dict_key": null,
+      "source_lines": [
+        101,
+        106
+      ],
+      "source_line_count": 6,
+      "char_count": 200,
+      "sha256": "13a936a5115c4056303b4945dd8600191271060651a63ac6d5b812cfec5f5f87",
+      "description": "亲友离世会话内用户门控规则",
+      "reexport": "MICRO_GATE_RULE = registry.get('loved_one.micro_gate')"
+    },
+    {
+      "id": "pet.system",
+      "version": "1.0.0",
+      "source_file": "agent/pet.py",
+      "source_constant": "PET_SYSTEM_PROMPT",
+      "source_dict_key": null,
+      "source_lines": [
+        32,
+        97
+      ],
+      "source_line_count": 66,
+      "char_count": 3779,
+      "sha256": "c3c93382e877e152282b25c155cb68dd5f92ffce80fc03efaa323b40dc8dc952",
+      "description": "宠物离世哀伤引擎系统提示：给哀伤正名、安乐内疚、不催再养、纪念",
+      "reexport": "PET_SYSTEM_PROMPT = registry.get('pet.system')"
+    },
+    {
+      "id": "pet.micro_gate",
+      "version": "1.0.0",
+      "source_file": "agent/pet.py",
+      "source_constant": "MICRO_GATE_RULE",
+      "source_dict_key": null,
+      "source_lines": [
+        100,
+        105
+      ],
+      "source_line_count": 6,
+      "char_count": 200,
+      "sha256": "13a936a5115c4056303b4945dd8600191271060651a63ac6d5b812cfec5f5f87",
+      "description": "宠物离世会话内用户门控规则",
+      "reexport": "MICRO_GATE_RULE = registry.get('pet.micro_gate')"
+    },
+    {
+      "id": "interview.step",
+      "version": "1.0.0",
+      "source_file": "agent/interview.py",
+      "source_constant": "STEP_SYSTEM",
+      "source_dict_key": null,
+      "source_lines": [
+        253,
+        290
+      ],
+      "source_line_count": 38,
+      "char_count": 3277,
+      "sha256": "b9717a6bd7675a12c405cbe7fbd4b6c730463fe0eba45239663a70901221d6f9",
+      "description": "访谈引导员单步决策提示（followup/next/complete + JSON schema）",
+      "reexport": "STEP_SYSTEM = registry.get('interview.step')"
+    },
+    {
+      "id": "interview.bridge",
+      "version": "1.0.0",
+      "source_file": "agent/interview.py",
+      "source_constant": "BRIDGE_SYSTEM",
+      "source_dict_key": null,
+      "source_lines": [
+        293,
+        298
+      ],
+      "source_line_count": 6,
+      "char_count": 222,
+      "sha256": "d1672c0652f06d53578036f1503f029330b70e241bc9a80b11b33d1d6ef07889",
+      "description": "访谈维度切换时的自然过渡句提示",
+      "reexport": "BRIDGE_SYSTEM = registry.get('interview.bridge')"
+    },
+    {
+      "id": "interview.report",
+      "version": "1.0.0",
+      "source_file": "agent/interview.py",
+      "source_constant": "REPORT_SYSTEM",
+      "source_dict_key": null,
+      "source_lines": [
+        301,
+        313
+      ],
+      "source_line_count": 13,
+      "char_count": 763,
+      "sha256": "d43f7a12ba5279b37b0543aee1615c0cf2e885981d4396cc19f20f1aa72ca1c6",
+      "description": "通用访谈反馈报告生成提示（JSON schema）",
+      "reexport": "REPORT_SYSTEM = registry.get('interview.report')"
+    },
+    {
+      "id": "interview.report_breakup",
+      "version": "1.0.0",
+      "source_file": "agent/interview.py",
+      "source_constant": "REPORT_SYSTEM_BREAKUP",
+      "source_dict_key": null,
+      "source_lines": [
+        316,
+        354
+      ],
+      "source_line_count": 39,
+      "char_count": 1993,
+      "sha256": "9c87592f4eb1aa94d7765a47e1b1a91dd40cdf82857ee3d02f92f07a4827a9ca",
+      "description": "分手场景反馈报告提示（含关系复盘 relationship_analysis）",
+      "reexport": "REPORT_SYSTEM_BREAKUP = registry.get('interview.report_breakup')"
+    },
+    {
+      "id": "interview.report_loved_one",
+      "version": "1.0.0",
+      "source_file": "agent/interview.py",
+      "source_constant": "REPORT_SYSTEM_LOVED_ONE",
+      "source_dict_key": null,
+      "source_lines": [
+        357,
+        392
+      ],
+      "source_line_count": 36,
+      "char_count": 1988,
+      "sha256": "fa7bf2d1d9c884cd8049ac65b299541307842f3ff64e0025e318b2fbcced01ab",
+      "description": "亲友离世场景反馈报告提示（含哀伤叙事 grief_analysis）",
+      "reexport": "REPORT_SYSTEM_LOVED_ONE = registry.get('interview.report_loved_one')"
+    },
+    {
+      "id": "interview.report_pet",
+      "version": "1.0.0",
+      "source_file": "agent/interview.py",
+      "source_constant": "REPORT_SYSTEM_PET",
+      "source_dict_key": null,
+      "source_lines": [
+        395,
+        433
+      ],
+      "source_line_count": 39,
+      "char_count": 2208,
+      "sha256": "5bdbf786ee08ca9d02b36576e9b5e3b6e88f6fe431e076cd154d8584d7b35131",
+      "description": "宠物离世场景反馈报告提示（含 pet_grief_analysis）",
+      "reexport": "REPORT_SYSTEM_PET = registry.get('interview.report_pet')"
+    },
+    {
+      "id": "daily.theme_guide",
+      "version": "1.0.0",
+      "source_file": "agent/daily.py",
+      "source_constant": "THEME_GUIDE_SYSTEM",
+      "source_dict_key": null,
+      "source_lines": [
+        55,
+        68
+      ],
+      "source_line_count": 14,
+      "char_count": 364,
+      "sha256": "f51f5c0c7afcb934a231b1c85418860928329dd95e049d3394e6bc34b7fd228f",
+      "description": "每日疗愈主题的个性化开场引导提示",
+      "reexport": "THEME_GUIDE_SYSTEM = registry.get('daily.theme_guide')"
+    },
+    {
+      "id": "nudge.system",
+      "version": "1.0.0",
+      "source_file": "agent/nudge.py",
+      "source_constant": "NUDGE_SYSTEM",
+      "source_dict_key": null,
+      "source_lines": [
+        148,
+        166
+      ],
+      "source_line_count": 19,
+      "char_count": 625,
+      "sha256": "ddfc3231bbb3729fa1d47e52aad30aa1c9b5b9cbce0cd467ea44707f587dd917",
+      "description": "软引导提醒文案生成提示（时间/情绪节点/真实记忆）",
+      "reexport": "NUDGE_SYSTEM = registry.get('nudge.system')"
+    },
+    {
+      "id": "tone.shared_rule",
+      "version": "1.0.0",
+      "source_file": "emotion/tone.py",
+      "source_constant": "SHARED_RULE",
+      "source_dict_key": null,
+      "source_lines": [
+        26,
+        32
+      ],
+      "source_line_count": 7,
+      "char_count": 201,
+      "sha256": "b75c45ca2aeff24b06eae4617c43d61f09d20905f77e53b10c81bbff0cf7b2ae",
+      "description": "全局语气红线：不引导放大伤感、不编造时间对比",
+      "reexport": "SHARED_RULE = registry.get('tone.shared_rule')"
+    },
+    {
+      "id": "tone.soothe",
+      "version": "1.0.0",
+      "source_file": "emotion/tone.py",
+      "source_constant": "TONE_PROMPTS",
+      "source_dict_key": "soothe",
+      "source_lines": [
+        36,
+        37
+      ],
+      "source_line_count": 2,
+      "char_count": 69,
+      "sha256": "aed96d99104f1a732d8f4e744a68860b11fa5d6a92a36d5e35c38d49ae250b3c",
+      "description": "温柔安抚型语气定位提示",
+      "reexport": "SOOTHE: registry.get('tone.soothe'),"
+    },
+    {
+      "id": "tone.guide",
+      "version": "1.0.0",
+      "source_file": "emotion/tone.py",
+      "source_constant": "TONE_PROMPTS",
+      "source_dict_key": "guide",
+      "source_lines": [
+        40,
+        41
+      ],
+      "source_line_count": 2,
+      "char_count": 70,
+      "sha256": "c91165eb5a32290aecc98c5e2cfd5df190fa7b16e3a3c540968b1a906e06dec9",
+      "description": "智者引导型语气定位提示",
+      "reexport": "GUIDE: registry.get('tone.guide'),"
+    },
+    {
+      "id": "tone.analyze",
+      "version": "1.0.0",
+      "source_file": "emotion/tone.py",
+      "source_constant": "TONE_PROMPTS",
+      "source_dict_key": "analyze",
+      "source_lines": [
+        44,
+        48
+      ],
+      "source_line_count": 5,
+      "char_count": 188,
+      "sha256": "b98b11769afdf7eb889d84a8d969b3ad98271275de3002ca53c5a82701c69c42",
+      "description": "旁观者分析型语气定位提示（分手场景平衡归因）",
+      "reexport": "ANALYZE: registry.get('tone.analyze'),"
+    },
+    {
+      "id": "crisis.message",
+      "version": "1.0.0",
+      "source_file": "emotion/crisis.py",
+      "source_constant": "CRISIS_MESSAGE",
+      "source_dict_key": null,
+      "source_lines": [
+        114,
+        119
+      ],
+      "source_line_count": 6,
+      "char_count": 124,
+      "sha256": "fa60972e3669e6f33cf6703245653a4408b1d869da6e4bdff96e43f78234c6b6",
+      "description": "危机硬门槛固定话术（心理援助热线/紧急电话）",
+      "reexport": "CRISIS_MESSAGE = registry.get('crisis.message')"
+    },
+    {
+      "id": "call.system",
+      "version": "1.0.0",
+      "source_file": "agent/call.py",
+      "source_constant": "_SYSTEM",
+      "source_dict_key": null,
+      "source_lines": [
+        14,
+        14
+      ],
+      "source_line_count": 1,
+      "char_count": 52,
+      "sha256": "453eec73cb26418708bc5f78c7e76519fdab266e76ffbe2f904402b98d5ac5b1",
+      "description": "模拟来电语音文案生成系统提示",
+      "reexport": "_SYSTEM = registry.get('call.system')"
+    },
+    {
+      "id": "ending.system",
+      "version": "1.0.0",
+      "source_file": "agent/ending.py",
+      "source_constant": "_SYSTEM",
+      "source_dict_key": null,
+      "source_lines": [
+        13,
+        13
+      ],
+      "source_line_count": 1,
+      "char_count": 50,
+      "sha256": "958a3e097f995c2557695dff2f6c93be38377f32d87fb2703326844dd253eb5a",
+      "description": "结束仪式纪念文案生成系统提示",
+      "reexport": "_SYSTEM = registry.get('ending.system')"
+    }
+  ]
+}

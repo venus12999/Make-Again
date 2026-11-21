@@ -7,11 +7,12 @@
 - 仅生成文本与披露信息;音频由前端调用 /speech/tts 生成并播放,不在服务端保存音频资产。
 """
 from __future__ import annotations
+from agent import prompts_registry as registry
 
 from gateway.client import LLMClient
 from memory import store
 
-_SYSTEM = "你是「重逢」的陪伴者。用户正在经历一段失去,你打来一通简短的电话,用温柔、克制的语气陪 TA 说几句话。"
+_SYSTEM = registry.get('call.system')
 
 _FALLBACK = {
     "pet": "我还在你身边,只是换了一种方式陪着你。慢慢来,不急。",
