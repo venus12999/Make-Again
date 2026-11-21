@@ -15,6 +15,36 @@ from memory.db import SessionLocal
 logger = logging.getLogger(__name__)
 
 
+def link_facts_for_entry(db, memory_id, user_id: str, facts, *,
+                         entities=None, entity_extractor=None) -> list:
+    """WP-1 接线接口：已落库记忆的 facts → 实体图回填 → 写回业务库（持久化）。
+
+    给 confirm 路由在 ``confirm_candidate`` 之后补做（pending 阶段没有 memory_id，
+    extract 侧无法链接，跳过）：拿到 candidate 的 memory_id 与其 facts 调用本接口即可。
+
+    - ``USE_ENTITY_PORTRAIT`` 关闭：extract 层原样返回，本函数零写库 → 逐字节回退；
+    - 失败 swallow：返回原 facts，不抛异常、不破坏主链路。
+    """
+    if not memory_id:
+        return facts
+    from memory import extract, store
+
+    linked = extract.link_facts_for_memory(
+        facts, memory_id=memory_id, user_id=user_id,
+        entities=entities, entity_extractor=entity_extractor,
+    )
+    if linked is facts:
+        return facts
+    try:
+        entry = db.get(store.MemoryEntry, str(memory_id))
+        if entry is not None:
+            entry.facts = linked
+            db.commit()
+    except Exception:  # noqa: BLE001 - 回填失败不能破坏已落库的记忆
+        logger.warning("persist linked facts failed for memory_id=%s", memory_id, exc_info=True)
+    return linked
+
+
 def schedule_memory_write(user_id: str, message: str, *, type: str = "chat", extractor=None) -> None:
     """提交一次后台回写,立即返回。抽取失败不影响主流程。
 
@@ -40,6 +70,31 @@ def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
     from memory import extract, portrait, reflect, store
 
     db = SessionLocal()
+    # WP-2：memory job worker 的 scope 守卫接主链路。
+    # companion scope 来自当前 job：admin_cli.run_one 从 job.companion_id 注入
+    # db.info['companion_id']，SessionLocal() 返回的就是该受管会话。用 isolation
+    # 的库层能力先算 scope（companion 归属 / consent / 归档只读），任一不满足即
+    # ScopeDenied 拒绝本次后台写入，绝不落库——UC-4 从"库层能力"变"端到端生效"。
+    # USE_SCOPE_GUARD 关闭时整段跳过，写入链路与接线前逐字节一致（安全地基可回退）。
+    from memory.jobs import scope_guard_enabled
+    # 只对 worker 受管会话生效：admin_cli 与 worker 测试都设 db.info['borrowed']=True。
+    # 直接调用 _do_write（测试/脚本/确认流补做）无此标记，跳过守卫，避免误伤。
+    _is_worker = bool(db.info.get('borrowed'))
+    if scope_guard_enabled() and _is_worker:
+        from memory import isolation, confirm as confirm_mod
+        cid = db.info.get('companion_id')
+        # 场景提取器(extractor!=None)或确认流关闭 → 本次会直接落 Fact，必须校验 scope；
+        # 确认流开启的普通聊天 → 只落 Candidate(pending，不带 scope、不进业务库)，无需 scope，放行。
+        will_write_fact = extractor is not None or not confirm_mod.confirmation_enabled()
+        if not cid:
+            if will_write_fact:
+                raise isolation.ScopeDenied('SCOPE_DENIED', 'memory job 缺少 companion scope，拒绝后台写入')
+        else:
+            _scope = isolation.build_scope(db, user_id, cid)
+            if not _scope.consent:
+                raise isolation.ScopeDenied('CONSENT_REQUIRED', '用户未授权记忆使用，拒绝后台写入')
+            if _scope.lifecycle == 'archived':
+                raise isolation.ScopeDenied('ARCHIVED_READ_ONLY', '归档 Journey 只读，拒绝后台写入')
     try:
         client = LLMClient()  # 独立客户端,避免与请求线程共享 httpx 连接
         if extractor is not None:
@@ -64,7 +119,8 @@ def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
                 place_tag=turn["place_tag"], time_tag=turn["time_tag"], cbt=turn.get("cbt"),
             )
         if result.get("mode") == "confirm":
-            # 待用户确认：此时无 entry，跳过依赖 entry 的情绪节点更新；
+            # 待用户确认：此时无 entry/memory_id，实体链接无法做，跳过；
+            # confirm 之后由路由调用 link_facts_for_entry(db, memory_id, user_id, facts) 补做。
             # 回声壁/画像仍可做（基于消息与情绪，不依赖落库 entry）。
             logger.info("memory candidate pending confirmation: %s", result.get("candidate_id"))
         else:
@@ -72,6 +128,12 @@ def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
             entry = db.get(store.MemoryEntry, result["memory_id"])
             if entry is not None:
                 reflect.upsert_emotion_node(db, entry)
+                # WP-1 接线：抽取后的 facts 经实体图回填 linked_memory_ids 并持久化。
+                # 开关关闭 / 无 id / 任何失败都原样返回，主链路不受影响。
+                try:
+                    link_facts_for_entry(db, str(entry.id), user_id, turn.get("facts") or [])
+                except Exception:  # noqa: BLE001 - 双保险：链接步骤永不破坏已落库记忆
+                    logger.warning("link_facts step failed in _do_write", exc_info=True)
         # 回声壁:随机捕获富有情感的句子,随机延时后回显(零 LLM、纯采样,不阻塞主流程)
         from agent import echo as echo_mod
         echo_mod.maybe_capture_echo(db, user_id, message, turn.get("emotion"))

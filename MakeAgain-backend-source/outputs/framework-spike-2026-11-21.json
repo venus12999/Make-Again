@@ -1,0 +1,1180 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "generated_at": "2026-11-21T14:52:08.505446+00:00",
+    "spike_date": "2026-11-21",
+    "task": "U-009 记忆框架 3 候选 spike（D-015 承诺）",
+    "baseline_commit": "main 29cda50（269 passed）",
+    "corpus": {
+      "path": "MakeAgain-backend/eval/recall_corpus.json",
+      "source": "synthetic-handwritten",
+      "memories": 33,
+      "queries": 18,
+      "caveat": "全部条目均为语料生成者手写的模拟语料，非真实用户数据；风格真实不等于数据真实，禁止在报告中称为真实用户统计。"
+    },
+    "method": "gh api 源码/文档实读 + 语料逐项机制对照；端到端行为 NOT_RUN",
+    "evidence_grade_legend": {
+      "DOC_LEVEL_PREDICTION": "由上游 README/源码声明推导，未运行上游系统",
+      "MEASURED_INSTALL_ONLY": "只做 pip 安装/import，未跑行为",
+      "NOT_RUN": "缺服务/密钥，未运行且不硬凑数字"
+    }
+  },
+  "runtime_prerequisites": {
+    "measured_at": "2026-11-21",
+    "checks": [
+      {
+        "item": "docker CLI",
+        "result": "PRESENT"
+      },
+      {
+        "item": "127.0.0.1:7687 (Neo4j)",
+        "result": "CLOSED"
+      },
+      {
+        "item": "127.0.0.1:5432 (Postgres)",
+        "result": "OPEN（但非本项目 pgvector 实例，且无 LLM key）"
+      },
+      {
+        "item": "127.0.0.1:3306 (MySQL)",
+        "result": "CLOSED"
+      },
+      {
+        "item": "LLM API keys (OPENAI/ANTHROPIC/DEEPSEEK/HINDSIGHT)",
+        "result": "ALL_ABSENT（只记录存在性，不记明文）"
+      }
+    ],
+    "lightweight_checks": [
+      {
+        "candidate": "graphiti",
+        "status": "MEASURED_INSTALL_ONLY",
+        "command": "python -m venv $TEMP/fw-spike-venv; pip install graphiti-core; python -c 'import graphiti_core'",
+        "output": "pip exit=0, graphiti-core 0.31.2; 首次 import 报 ModuleNotFoundError: No module named 'httpx'; 手动 pip install httpx 后 import OK",
+        "note": "只证明可 pip 安装，不构成行为实测；上游依赖声明缺 httpx 传递依赖是实测到的事实。"
+      },
+      {
+        "candidate": "hindsight",
+        "status": "NOT_RUN",
+        "reason": "需 Postgres+pgvector 服务 + HINDSIGHT_API_LLM_API_KEY（HS-05/06）；无 key，不装整包。"
+      },
+      {
+        "candidate": "memos",
+        "status": "NOT_RUN",
+        "reason": "核心需 MySQL 或 Neo4j+Qdrant + LLM（MS-03/05/06）；本地 SQLite 版本是 npm 插件，不适用于本后端。"
+      }
+    ],
+    "end_to_end_behavior": "NOT_RUN",
+    "end_to_end_reason": "三个候选写入链路都要 LLM 抽取 + 外部数据库；本机无 LLM key、无 Neo4j/MySQL。按纪律标 NOT_RUN，不用替身数字硬凑。"
+  },
+  "current_stack": {
+    "architecture": "agent-memory-core + 自研拼装（SQLite + 确定性 hash embedding + recency/importance/relevance 打分 + 五层库 + confirm/correct/isolation）",
+    "measured_baseline_from_existing_output": {
+      "source": "outputs/golden-recall-v2.json::dual1_sem1（既有产物，本次未重跑）",
+      "Recall@K": 0.5529,
+      "Precision@K": 0.3333,
+      "MRR": 0.8333,
+      "expected_first_hit_rate": 0.6471,
+      "negative_query_injection_rate": 1.0,
+      "n_queries": 17
+    },
+    "honest_reading": "最佳配置 Recall@K 仅 0.5529、负例注入率 1.0；真问题是自己的召回/query-intent，不是缺框架。",
+    "absorbed_upstream_algorithms": [
+      "graphiti: rrf / maximal_marginal_relevance / normalize_l2 / valid_at-invalid_at prompt 规则",
+      "mem0: scoring / entity boost（见 memory/recall.py 文件头来源声明）"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "GF-01",
+      "candidate": "graphiti",
+      "kind": "README",
+      "url": "https://github.com/getzep/graphiti/blob/main/README.md#L81",
+      "fetch": "repos/getzep/graphiti/readme",
+      "quote": "Graphiti is an open-source Python framework for building and querying temporal context graphs.",
+      "conclusion": "定位是 framework 不是成品服务；多租户/鉴权/入库/运维由使用方自建。"
+    },
+    {
+      "id": "GF-02",
+      "candidate": "graphiti",
+      "kind": "README",
+      "url": "https://github.com/getzep/graphiti/blob/main/README.md#L120-L136",
+      "fetch": "repos/getzep/graphiti/readme",
+      "quote": "Facts have validity windows. When information changes, old facts are",
+      "conclusion": "事实有有效窗口、旧事实失效而非删除——正好覆盖我们的养猫→猫去世冲突用例。"
+    },
+    {
+      "id": "GF-03",
+      "candidate": "graphiti",
+      "kind": "README",
+      "url": "https://github.com/getzep/graphiti/blob/main/README.md#L125-L128",
+      "fetch": "repos/getzep/graphiti/readme",
+      "quote": "Episodes & Provenance",
+      "conclusion": "内建 episodes 溯源到原始真源，对应旧仓库要求的 Source→Fact 溯源契约。"
+    },
+    {
+      "id": "GF-04",
+      "candidate": "graphiti",
+      "kind": "SOURCE",
+      "url": "https://github.com/getzep/graphiti/blob/main/graphiti_core/prompts/extract_edges.py#L60-L69",
+      "fetch": "repos/getzep/graphiti/contents/graphiti_core/prompts/extract_edges.py",
+      "quote": "When the fact stopped being true. Soft deadlines are not invalid_at values.",
+      "conclusion": "EdgeTimestamps.valid_at/invalid_at 是显式字段；我们 temporal.py 已复制其规则常量。"
+    },
+    {
+      "id": "GF-05",
+      "candidate": "graphiti",
+      "kind": "SOURCE",
+      "url": "https://github.com/getzep/graphiti/blob/main/graphiti_core/utils/maintenance/edge_operations.py#L438-L460",
+      "fetch": "repos/getzep/graphiti/contents/graphiti_core/utils/maintenance/edge_operations.py",
+      "quote": "invalidated/contradicted by new information",
+      "conclusion": "有真实 invalidate/contradiction 消解流程，不是仅靠 embedding 相似度排序。"
+    },
+    {
+      "id": "GF-06",
+      "candidate": "graphiti",
+      "kind": "SOURCE",
+      "url": "https://github.com/getzep/graphiti/blob/main/graphiti_core/search/search_utils.py#L1551",
+      "fetch": "repos/getzep/graphiti/contents/graphiti_core/search/search_utils.py",
+      "quote": "def maximal_marginal_relevance(",
+      "conclusion": "RRF/MMR/normalize_l2 已在 memory/recall.py 逐行复制并落地；换库不构成新增收益。"
+    },
+    {
+      "id": "GF-07",
+      "candidate": "graphiti",
+      "kind": "MANIFEST",
+      "url": "https://github.com/getzep/graphiti/blob/main/pyproject.toml#L13-L16",
+      "fetch": "repos/getzep/graphiti/contents/pyproject.toml",
+      "quote": "neo4j>=5.26.0",
+      "conclusion": "硬依赖 Neo4j（或 FalkorDB/Neptune）+ OpenAI key，见 README Installation。"
+    },
+    {
+      "id": "HS-01",
+      "candidate": "hindsight",
+      "kind": "README",
+      "url": "https://github.com/vectorize-io/hindsight/blob/main/README.md#L46-L52",
+      "fetch": "repos/vectorize-io/hindsight/readme",
+      "quote": "state-of-the-art performance on the LongMemEval benchmark",
+      "conclusion": "LongMemEval SOTA 且 README 声明第三方复现；记忆质量论据最强，但 benchmark ≠ 我们的语料。"
+    },
+    {
+      "id": "HS-02",
+      "candidate": "hindsight",
+      "kind": "README",
+      "url": "https://github.com/vectorize-io/hindsight/blob/main/README.md#L320-L328",
+      "fetch": "repos/vectorize-io/hindsight/readme",
+      "quote": "Recall performs 4 retrieval strategies in parallel:",
+      "conclusion": "语义+BM25+图+时间四路并行，RRF 融合 + cross-encoder 重排；我们的双路召回已覆盖前两路。"
+    },
+    {
+      "id": "HS-03",
+      "candidate": "hindsight",
+      "kind": "README",
+      "url": "https://github.com/vectorize-io/hindsight/blob/main/README.md#L350-L352",
+      "fetch": "repos/vectorize-io/hindsight/readme",
+      "quote": "Each observation keeps its supporting evidence with exact quotes and a proof count",
+      "conclusion": "observation 带证据引用+证明计数，新证据 refine 旧信念——可借鉴到我们的 provenance_store。"
+    },
+    {
+      "id": "HS-04",
+      "candidate": "hindsight",
+      "kind": "README",
+      "url": "https://github.com/vectorize-io/hindsight/blob/main/README.md#L385",
+      "fetch": "repos/vectorize-io/hindsight/readme",
+      "quote": "Isolation is strict: no cross-bank leakage.",
+      "conclusion": "bank 级强隔离；但我们 UC-4 的 assert_scope 需端到端落到业务主链路，换库不能替代接线。"
+    },
+    {
+      "id": "HS-05",
+      "candidate": "hindsight",
+      "kind": "README",
+      "url": "https://github.com/vectorize-io/hindsight/blob/main/README.md#L86",
+      "fetch": "repos/vectorize-io/hindsight/readme",
+      "quote": "Docker (external PostgreSQL)",
+      "conclusion": "默认部署需要外部 PostgreSQL；不是纯 SQLite / pip 即用。"
+    },
+    {
+      "id": "HS-06",
+      "candidate": "hindsight",
+      "kind": "COMPOSE",
+      "url": "https://github.com/vectorize-io/hindsight/blob/main/docker/docker-compose/external-pg/docker-compose.yaml#L18-L20",
+      "fetch": "repos/vectorize-io/hindsight/contents/docker/docker-compose/external-pg/docker-compose.yaml",
+      "quote": "pgvector/pgvector:pg",
+      "conclusion": "compose 明确 pgvector 镜像 + HINDSIGHT_API_LLM_API_KEY，运维栈与本项目定位冲突。"
+    },
+    {
+      "id": "MS-01",
+      "candidate": "memos",
+      "kind": "README",
+      "url": "https://github.com/MemTensor/MemOS/blob/main/README.md#L51",
+      "fetch": "repos/MemTensor/MemOS/readme",
+      "quote": "A single API to add, retrieve, edit, and delete memory",
+      "conclusion": "显式 edit/delete 正是用户控制权所需；但我们的 confirm/correct/export 已自建同等语义。"
+    },
+    {
+      "id": "MS-02",
+      "candidate": "memos",
+      "kind": "README",
+      "url": "https://github.com/MemTensor/MemOS/blob/main/README.md#L55",
+      "fetch": "repos/MemTensor/MemOS/readme",
+      "quote": "Memory Feedback & Correction",
+      "conclusion": "自然语言反馈纠错值得借鉴，但黑盒 LLM 改写与旧仓库「旧版本 supersede、不静默覆盖」红线需核对。"
+    },
+    {
+      "id": "MS-03",
+      "candidate": "memos",
+      "kind": "README",
+      "url": "https://github.com/MemTensor/MemOS/blob/main/README.md#L110-L115",
+      "fetch": "repos/MemTensor/MemOS/readme",
+      "quote": "Neo4j + Qdrant",
+      "conclusion": "README 自托管要 Neo4j + Qdrant；不是零运维。"
+    },
+    {
+      "id": "MS-04",
+      "candidate": "memos",
+      "kind": "README",
+      "url": "https://github.com/MemTensor/MemOS/blob/main/README.md#L110-L115",
+      "fetch": "repos/MemTensor/MemOS/readme",
+      "quote": "None (local SQLite)",
+      "conclusion": "Local Plugin 确实 100% 本地 SQLite，但它是 DSH/Hermes/OpenClaw 的 npm 插件，不是可嵌进 FastAPI 后端的 Python 库。"
+    },
+    {
+      "id": "MS-05",
+      "candidate": "memos",
+      "kind": "MANIFEST",
+      "url": "https://github.com/MemTensor/MemOS/blob/main/pyproject.toml#L38-L45",
+      "fetch": "repos/MemTensor/MemOS/contents/pyproject.toml",
+      "quote": "pymysql (>=1.1.0,<2.0.0)",
+      "conclusion": "核心依赖含 pymysql；MySQL 不是误解。"
+    },
+    {
+      "id": "MS-06",
+      "candidate": "memos",
+      "kind": "MANIFEST",
+      "url": "https://github.com/MemTensor/MemOS/blob/main/pyproject.toml#L102",
+      "fetch": "repos/MemTensor/MemOS/contents/pyproject.toml",
+      "quote": "pymilvus (>=2.5.12,<3.0.0)",
+      "conclusion": "可选依赖含 pymilvus/neo4j/qdrant，按部署形态至少再起 1~2 个服务。"
+    }
+  ],
+  "candidates": {
+    "graphiti": {
+      "repo": "getzep/graphiti",
+      "license": "Apache-2.0",
+      "stars_at_spike": 32976,
+      "pushed_at": "2026-11-20T17:36:25Z",
+      "positioning": "时序知识图谱构建框架（不是成品 agent memory 服务）",
+      "strengths": [
+        "双时间窗 valid_at/invalid_at + 自动旧边失效，保留历史（GF-02/04/05）",
+        "episodes 溯源到原始真源（GF-03）",
+        "语义+BM25+图混合检索（README Why Graphiti）",
+        "其 RRF/MMR/normalize_l2/时序 prompt 规则已被我们逐行吸收（GF-06 + memory/recall.py、temporal.py 文件头）"
+      ],
+      "gaps_vs_us": [
+        "需要 Neo4j/FalkorDB + LLM + embedder，写入按条付 LLM 税（GF-07）",
+        "无内建用户确认 Candidate 状态机、遗忘/画像；多租户/鉴权/入库/运维全要自建（GF-01）",
+        "我们的冲突用例已由 recency+supersede 排序处理；换库不解决 Recall@K=0.55、负例注入率 1.0 的自有问题"
+      ],
+      "migration_cost": {
+        "new_services": [
+          "Neo4j 或 FalkorDB",
+          "LLM API（或本地 LLM 服务）",
+          "embedder"
+        ],
+        "code_touchpoints": [
+          "memory/store.py 写入链路改为 add_episode",
+          "memory/recall.py 改图查询（现有 RRF/MMR 可复用）",
+          "memory/confirm.py 的 Candidate 确认语义要重新映射",
+          "memory/provenance_store.py 与 episode 溯源对齐",
+          "requirements + 部署 compose + 数据迁移（33 条语料只是评测集，真库量未知）"
+        ],
+        "irreversible_risk": "图库 schema + LLM 抽取结果不可回滚到现有五层库结构"
+      },
+      "verdict": "DO_NOT_SWITCH",
+      "worth_switching": false,
+      "why": "它最强的时序失效/episodes 两点，我们已用零 LLM 的 supersede+provenance_store 覆盖主要行为；换库换来的是图库+LLM 运维与新不一致风险。",
+      "revisit_if": "产品出现明确需求：按任意历史时点查询『当时什么是真的』，且规模超出单库 SQLite 能力。"
+    },
+    "hindsight": {
+      "repo": "vectorize-io/hindsight",
+      "license": "MIT",
+      "stars_at_spike": 62372,
+      "pushed_at": "2026-11-21T12:20:32Z",
+      "positioning": "agent memory 服务：retain/recall/reflect 学习闭环 + mental models",
+      "strengths": [
+        "LongMemEval SOTA 且有第三方复现（HS-01）",
+        "四路检索 + RRF + cross-encoder（HS-02）",
+        "observation 带证据引用与证明计数、refine 不覆盖（HS-03）",
+        "bank 强隔离 + Memory Defense PII 扫描（HS-04）"
+      ],
+      "gaps_vs_us": [
+        "Postgres+pgvector + LLM key（HS-05/06）；cross-encoder 与自带模型再加重依赖",
+        "retain 阶段 LLM 抽取 + 后台 consolidate/reflect 是黑盒，难满足旧仓库 8 类溯源问题与我们『先确认后成事实』红线",
+        "bank 隔离不能替代 UC-4 assert_scope 接主链路这一具体待办"
+      ],
+      "migration_cost": {
+        "new_services": [
+          "PostgreSQL + pgvector",
+          "LLM API",
+          "可选 cross-encoder/rerank 模型"
+        ],
+        "code_touchpoints": [
+          "所有 add/recall 入口改 retain/recall 客户端",
+          "五层库（Source/Candidate/Fact/Event/Summary/Index）要压平成 bank+observation+mental model",
+          "确认流/纠错流/删除级联要重做，现有 confirm/correct/export/isolation 全部作废",
+          "评测口径要从我们的 18 query 重建，LongMemEval 分数不能直接迁移"
+        ],
+        "irreversible_risk": "『模型学习出的信念』不可由用户逐条审计，与可纠错可删除的产品红线正面冲突"
+      },
+      "verdict": "DO_NOT_SWITCH",
+      "worth_switching": false,
+      "why": "记忆质量论据最强，但其价值来自 LLM 学习闭环；本项目红线是先确认后成事实、可逐条溯源纠错，且 0 LLM 成本结构。benchmark 高不等于我们语料高。",
+      "revisit_if": "产品明确接受黑盒学习信念、且愿意承担 Postgres+LLM+重排模型运维，重新用我们的 18 query 做端到端复测后再定。"
+    },
+    "memos": {
+      "repo": "MemTensor/MemOS",
+      "license": "Apache-2.0",
+      "stars_at_spike": 12470,
+      "pushed_at": "2026-11-20T11:27:29Z",
+      "positioning": "Memory OS：统一 add/retrieve/edit/delete + L1/L2/L3 分层",
+      "strengths": [
+        "显式 edit/delete + 自然语言反馈纠错（MS-01/02）",
+        "图结构可检视，不是纯 embedding 黑盒（README）",
+        "Local Plugin 100% 本地 SQLite（MS-04）——但仅面向 DSH/Hermes/OpenClaw"
+      ],
+      "gaps_vs_us": [
+        "核心依赖 pymysql（MS-05），可选 pymilvus/neo4j/qdrant（MS-06）；README 自托管写 Neo4j+Qdrant（MS-03）",
+        "Local Plugin 是 npm 插件，无法作为 Python 后端依赖集成；TS 主仓 + Python 包的双栈维护",
+        "基准自报（scan 文档口径），且与本项目既有 confirm/correct/export 语义重复"
+      ],
+      "migration_cost": {
+        "new_services": [
+          "MySQL 或 Neo4j+Qdrant",
+          "LLM API"
+        ],
+        "code_touchpoints": [
+          "FastAPI 后端无法直接消费 npm 本地插件，只能走自托管 REST/Python 包",
+          "用户控制权 3 路由（confirm/correct/delete）要迁到 MemOS 的 edit/feedback 语义",
+          "L1/L2/L3 与我们的五层库要做字段映射与重复消除"
+        ],
+        "irreversible_risk": "本地插件与自托管核心是两套数据模型，选错入口后续迁移成本高"
+      },
+      "verdict": "DO_NOT_SWITCH",
+      "worth_switching": false,
+      "why": "它最贴用户控制权，但我们已自建同等能力且保持 SQLite+0 LLM；其本地 SQLite 方案不在我们后端可售范围内，核心方案要多起数据库服务。",
+      "revisit_if": "产品决定把记忆层整体外包给带 GUI 的 agent 运行时（而非自持后端），再评估 Local Plugin。"
+    }
+  },
+  "case_matrix": [
+    {
+      "query_id": "q-01",
+      "boundary": null,
+      "memory_query": "我是靠着什么想起外公的？",
+      "expected_first": "mem-loved-one-father",
+      "memory_expect": [
+        "mem-loved-one-father",
+        "mem-l-07"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "混合检索可召回，但中文主体/语义质量无文档承诺（GF-06）",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "四路检索+RRF 可召回，中文语义质量未在本语料实测（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "统一 retrieve 可召回，排序质量无声明（MS-01）",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-02",
+      "boundary": "冲突事实-只召回新事实",
+      "memory_query": "现在养猫吗？",
+      "expected_first": "mem-cat-deceased",
+      "memory_expect": [
+        "mem-cat-deceased"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "EXPLICIT_DOC",
+          "mechanism": "invalid_at 自动失效旧边，查询当前真值只返新事实（GF-02/05）",
+          "evidence_ids": [
+            "GF-02",
+            "GF-05"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "observation refine 旧信念而非显式删除，是否只返新事实无文档承诺（HS-03）",
+          "evidence_ids": [
+            "HS-03"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "有显式 edit/delete，但需要调用方自己决定何时改（MS-01）",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-03",
+      "boundary": "冲突事实-新事实排前",
+      "memory_query": "我养的猫还在吗？",
+      "expected_first": "mem-cat-deceased",
+      "memory_expect": [
+        "mem-cat-deceased",
+        "mem-cat-owned"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "EXPLICIT_DOC",
+          "mechanism": "bi-temporal 查询区分 valid time，新事实天然在『当前』窗口（GF-02/04）",
+          "evidence_ids": [
+            "GF-02",
+            "GF-04"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "四路检索含 temporal 路 + 重排，但排序承诺未在文档给出（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到新旧事实排序口径的源码/文档声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-04",
+      "boundary": null,
+      "memory_query": "橘子喜欢待在哪儿？",
+      "expected_first": "mem-p-02",
+      "memory_expect": [
+        "mem-p-02",
+        "mem-cat-owned"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "混合检索可召回，但中文主体/语义质量无文档承诺（GF-06）",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "四路检索+RRF 可召回，中文语义质量未在本语料实测（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "统一 retrieve 可召回，排序质量无声明（MS-01）",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-05",
+      "boundary": "相似主题干扰",
+      "memory_query": "我养过哪些宠物？",
+      "expected_first": "mem-cat-owned",
+      "memory_expect": [
+        "mem-cat-owned",
+        "mem-cat-deceased",
+        "mem-p-01",
+        "mem-p-04",
+        "mem-p-05"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "图+语义检索不等于主体消歧，文档无 matching 承诺",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "cross-encoder 重排有利，但无主体消歧承诺（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到主体消歧声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-06",
+      "boundary": "时间敏感-去年",
+      "memory_query": "去年我经历了什么？",
+      "expected_first": "mem-l-05",
+      "memory_expect": [
+        "mem-l-05",
+        "mem-b-11",
+        "mem-b-04",
+        "mem-l-06",
+        "mem-loved-one-father"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "EXPLICIT_DOC",
+          "mechanism": "bi-temporal 支持按时间点查询（GF-02）",
+          "evidence_ids": [
+            "GF-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "EXPLICIT_DOC",
+          "mechanism": "四路检索显式含 Temporal: Time range filtering（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到时间范围检索声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-07",
+      "boundary": null,
+      "memory_query": "我们为什么分手？",
+      "expected_first": "mem-b-08",
+      "memory_expect": [
+        "mem-b-08",
+        "mem-b-04",
+        "mem-b-01"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "混合检索可召回，但中文主体/语义质量无文档承诺（GF-06）",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "四路检索+RRF 可召回，中文语义质量未在本语料实测（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "统一 retrieve 可召回，排序质量无声明（MS-01）",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-08",
+      "boundary": "相似主题干扰",
+      "memory_query": "前任叫什么名字？",
+      "expected_first": "mem-b-01",
+      "memory_expect": [
+        "mem-b-01"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "图+语义检索不等于主体消歧，文档无 matching 承诺",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "cross-encoder 重排有利，但无主体消歧承诺（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到主体消歧声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-09",
+      "boundary": "相似主题干扰",
+      "memory_query": "奶奶做饭有什么拿手的？",
+      "expected_first": "mem-l-01",
+      "memory_expect": [
+        "mem-l-01",
+        "mem-l-10"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "图+语义检索不等于主体消歧，文档无 matching 承诺",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "cross-encoder 重排有利，但无主体消歧承诺（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到主体消歧声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-10",
+      "boundary": null,
+      "memory_query": "外公的旧物是什么？",
+      "expected_first": "mem-loved-one-father",
+      "memory_expect": [
+        "mem-loved-one-father",
+        "mem-l-07"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "混合检索可召回，但中文主体/语义质量无文档承诺（GF-06）",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "四路检索+RRF 可召回，中文语义质量未在本语料实测（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "统一 retrieve 可召回，排序质量无声明（MS-01）",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-11",
+      "boundary": "相似主题干扰",
+      "memory_query": "爷爷留了什么给我？",
+      "expected_first": "mem-l-04",
+      "memory_expect": [
+        "mem-l-04"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "图+语义检索不等于主体消歧，文档无 matching 承诺",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "cross-encoder 重排有利，但无主体消歧承诺（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到主体消歧声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-12",
+      "boundary": null,
+      "memory_query": "妈妈留下什么？",
+      "expected_first": "mem-l-02",
+      "memory_expect": [
+        "mem-l-02",
+        "mem-l-05",
+        "mem-l-11"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "混合检索可召回，但中文主体/语义质量无文档承诺（GF-06）",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "四路检索+RRF 可召回，中文语义质量未在本语料实测（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "统一 retrieve 可召回，排序质量无声明（MS-01）",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-13",
+      "boundary": "时间敏感-周年",
+      "memory_query": "最近有什么周年纪念？",
+      "expected_first": "mem-l-07",
+      "memory_expect": [
+        "mem-l-07",
+        "mem-b-10"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "EXPLICIT_DOC",
+          "mechanism": "同上，有效时间窗（GF-02）",
+          "evidence_ids": [
+            "GF-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "EXPLICIT_DOC",
+          "mechanism": "temporal retrieval + 时间序列表示（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到周年/时间范围检索声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-14",
+      "boundary": "相似主题干扰",
+      "memory_query": "我对什么过敏？",
+      "expected_first": "mem-p-06",
+      "memory_expect": [
+        "mem-p-06",
+        "mem-b-09"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "图+语义检索不等于主体消歧，文档无 matching 承诺",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "cross-encoder 重排有利，但无主体消歧承诺（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到主体消歧声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-15",
+      "boundary": "冲突事实-新旧关系",
+      "memory_query": "我现在有对象吗？",
+      "expected_first": "mem-b-06",
+      "memory_expect": [
+        "mem-b-06"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "EXPLICIT_DOC",
+          "mechanism": "同实体关系失效机制，现伴侣/前任可建不同 valid_at 边（GF-02/05）",
+          "evidence_ids": [
+            "GF-02",
+            "GF-05"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "mental model 重写可能吸收，但不是逐事实可审计（HS-03）",
+          "evidence_ids": [
+            "HS-03"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "edit/feedback 可改，但需人工触发（MS-02）",
+          "evidence_ids": [
+            "MS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-16",
+      "boundary": "无关记忆-负例",
+      "memory_query": "今天晚饭吃什么？",
+      "expected_first": null,
+      "memory_expect": [],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到『无相关记忆时返回空』的契约（RAG 系统普遍返回 top-k）",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到负例空返回契约",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到负例空返回契约",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-17",
+      "boundary": null,
+      "memory_query": "橘子埋在哪里？",
+      "expected_first": "mem-cat-deceased",
+      "memory_expect": [
+        "mem-cat-deceased",
+        "mem-p-03"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "混合检索可召回，但中文主体/语义质量无文档承诺（GF-06）",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "四路检索+RRF 可召回，中文语义质量未在本语料实测（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "统一 retrieve 可召回，排序质量无声明（MS-01）",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    },
+    {
+      "query_id": "q-18",
+      "boundary": "相似主题干扰",
+      "memory_query": "父亲平时爱喝什么？",
+      "expected_first": "mem-l-03",
+      "memory_expect": [
+        "mem-l-03"
+      ],
+      "candidate_predictions": {
+        "graphiti": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "图+语义检索不等于主体消歧，文档无 matching 承诺",
+          "evidence_ids": [
+            "GF-06"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "hindsight": {
+          "support_level": "PARTIAL_DOC",
+          "mechanism": "cross-encoder 重排有利，但无主体消歧承诺（HS-02）",
+          "evidence_ids": [
+            "HS-02"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        },
+        "memos": {
+          "support_level": "NO_DOC_CLAIM",
+          "mechanism": "未检到主体消歧声明",
+          "evidence_ids": [
+            "MS-01"
+          ],
+          "execution_status": "NOT_RUN",
+          "evidence_grade": "DOC_LEVEL_PREDICTION"
+        }
+      }
+    }
+  ],
+  "case_support_summary": {
+    "graphiti": {
+      "PARTIAL_DOC": 6,
+      "EXPLICIT_DOC": 5,
+      "NO_DOC_CLAIM": 7
+    },
+    "hindsight": {
+      "PARTIAL_DOC": 15,
+      "EXPLICIT_DOC": 2,
+      "NO_DOC_CLAIM": 1
+    },
+    "memos": {
+      "PARTIAL_DOC": 8,
+      "NO_DOC_CLAIM": 10
+    }
+  },
+  "cross_case_focus": {
+    "cat_conflict": {
+      "queries": [
+        "q-02",
+        "q-03",
+        "q-17"
+      ],
+      "our_expectation": "q-02 只召回 mem-cat-deceased；q-03 新事实排前；q-17 埋葬地点主答为新事实",
+      "finding": "graphiti 有显式失效机制（文档层最强）；hindsight/memOS 靠重写或人工 edit（文档层 PARTIAL）。三者均未实测。"
+    },
+    "partner_conflict": {
+      "queries": [
+        "q-15"
+      ],
+      "our_expectation": "现伴侣 mem-b-06 命中，前任 mem-b-01 不召回",
+      "finding": "graphiti 可用不同 valid_at 边表达；其它两者无逐事实可审计承诺。"
+    },
+    "negative_query": {
+      "queries": [
+        "q-16"
+      ],
+      "our_expectation": "top-k 不命中任何记忆",
+      "finding": "三候选文档均未给『无相关记忆返回空』契约；我方当前实测负例注入率 1.0，属自身待修，不靠换库解决。"
+    },
+    "time_sensitive": {
+      "queries": [
+        "q-06",
+        "q-13"
+      ],
+      "our_expectation": "按 fixed_now=2026-11-21 解释去年/周年",
+      "finding": "graphiti 双时间窗与 hindsight temporal 路在文档层显式支持；memOS 未检到声明。"
+    }
+  },
+  "migration_comparison": {
+    "common_costs": [
+      "重做写入/召回/确认/纠错/删除链路",
+      "数据迁移与双写",
+      "重跑 18 query 评测（LongMemEval 分数不可迁移）"
+    ],
+    "service_count": {
+      "graphiti": " Neo4j/FalkorDB + LLM + embedder",
+      "hindsight": "Postgres+pgvector + LLM",
+      "memos": "MySQL 或 Neo4j+Qdrant + LLM"
+    },
+    "llm_tax": "三者写入都要 LLM 抽取；现栈写入 0 LLM / 检索 0 LLM（MEM0_EVAL 实测对照口径）。"
+  },
+  "final_decision": {
+    "verdict": "KEEP_CURRENT_STACK_SELECTIVE_BORROW",
+    "switch_any": false,
+    "per_candidate": {
+      "graphiti": {
+        "worth_switching": false,
+        "verdict": "DO_NOT_SWITCH",
+        "why": "它最强的时序失效/episodes 两点，我们已用零 LLM 的 supersede+provenance_store 覆盖主要行为；换库换来的是图库+LLM 运维与新不一致风险。",
+        "revisit_if": "产品出现明确需求：按任意历史时点查询『当时什么是真的』，且规模超出单库 SQLite 能力。"
+      },
+      "hindsight": {
+        "worth_switching": false,
+        "verdict": "DO_NOT_SWITCH",
+        "why": "记忆质量论据最强，但其价值来自 LLM 学习闭环；本项目红线是先确认后成事实、可逐条溯源纠错，且 0 LLM 成本结构。benchmark 高不等于我们语料高。",
+        "revisit_if": "产品明确接受黑盒学习信念、且愿意承担 Postgres+LLM+重排模型运维，重新用我们的 18 query 做端到端复测后再定。"
+      },
+      "memos": {
+        "worth_switching": false,
+        "verdict": "DO_NOT_SWITCH",
+        "why": "它最贴用户控制权，但我们已自建同等能力且保持 SQLite+0 LLM；其本地 SQLite 方案不在我们后端可售范围内，核心方案要多起数据库服务。",
+        "revisit_if": "产品决定把记忆层整体外包给带 GUI 的 agent 运行时（而非自持后端），再评估 Local Plugin。"
+      }
+    },
+    "rationale": [
+      "没有任一候选值得整体替换：能力最强项要么已被吸收（graphiti 算法），要么与产品红线冲突（hindsight 黑盒学习、memos 多服务）。",
+      "全绿证据不等于换库成功：三者端到端均 NOT_RUN，换库收益无法在本语料上量化。",
+      "当前质量缺口（Recall@K 0.5529、负例注入率 1.0）是我方 query-intent / 召回权重问题，就地修更便宜（对应 WP-3）。",
+      "继续借鉴：graphiti 时序失效规则、hindsight observation 证据计数、memOS 显式 edit/feedback 语义，均按零 LLM 方式自建。"
+    ]
+  },
+  "scope_guard": {
+    "read_only_inputs": [
+      "MakeAgain-backend\\eval\\recall_corpus.json",
+      "outputs\\golden-recall-v2.json"
+    ],
+    "sole_write_target": "outputs\\framework-spike-2026-11-21.json",
+    "forbidden_touched": [
+      "业务代码",
+      "requirements",
+      "PROGRESS.md",
+      "队友仓库",
+      "前端"
+    ],
+    "assertion": "本脚本不 import 业务模块、不写除 sole_write_target 外的任何路径。"
+  }
+}

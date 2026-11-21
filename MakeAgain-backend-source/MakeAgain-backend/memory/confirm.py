@@ -229,6 +229,14 @@ def confirm_candidate(db, candidate_id: str, user_id: str) -> dict:
         raise CandidateError("已拒绝的候选不能确认")
     content = _effective_content(candidate)
     entry = _store.add_memory(db, user_id, type=candidate.get("type") or "chat", content=content)
+    # WP-1 闭环：confirm 后从 content 派生 facts 并回填 linked_memory_ids（Candidate 不存 facts）。
+    # 失败 swallow 不破坏确认主流程——链接是增强，不是确认成功的必要条件。
+    try:
+        from memory import async_write as _aw
+        _derived_facts = [{"fact": content}]
+        _aw.link_facts_for_entry(db, str(entry.id), str(user_id), _derived_facts)
+    except Exception:
+        pass
     # store.add_memory 在 USE_FIVE_LAYER=1 时已并存写过五层（record name = entry.id），
     # 这里只补缺失的情况，避免对同一 slug 重复 add。
     record_id = str(entry.id)
