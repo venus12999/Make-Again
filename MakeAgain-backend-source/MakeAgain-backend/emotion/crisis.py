@@ -9,6 +9,7 @@
   所以对"撞死""想不开"这类口语化自伤表达,宁可多匹配。
 """
 from __future__ import annotations
+from agent import prompts_registry as registry
 
 _CRISIS_HIGH = [
     "自杀", "轻生", "不想活", "想死", "活着没意思", "结束自己", "结束生命",
@@ -111,12 +112,7 @@ def detect(text: str) -> dict:
     return {"level": level, "hit": high or med, "is_crisis": level >= 2}
 
 
-CRISIS_MESSAGE = (
-    "我很在意你现在的感受,谢谢你愿意告诉我。如果你正处在很痛苦的状态里,请先停下来,"
-    "联系能真正陪在你身边的人或专业热线:\n"
-    "全国 24 小时心理援助热线 400-161-9995,紧急情况请拨打 120 或 110。\n"
-    "我在这里陪着你,但专业的帮助更重要。"
-)
+CRISIS_MESSAGE = registry.get('crisis.message')
 
 
 def detect_with_flow(text: str, user_id: str, **kwargs) -> dict:

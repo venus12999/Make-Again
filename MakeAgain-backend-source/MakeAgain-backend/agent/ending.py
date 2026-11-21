@@ -6,11 +6,12 @@
 - 无记忆数据或 mock 时,按关系类型回落固定温和文案,保证结束流程不中断。
 """
 from __future__ import annotations
+from agent import prompts_registry as registry
 
 from gateway.client import LLMClient
 from memory import store
 
-_SYSTEM = "你是「重逢」的陪伴者。用户正在结束一段陪伴,需要一段温柔的纪念文字,像一封写给 TA(或它)的收尾。"
+_SYSTEM = registry.get('ending.system')
 
 _FALLBACK = {
     "pet": "你带我走过的那些路,我都记得。以后你再想起我,不必只想起最后那一天。",

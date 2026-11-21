@@ -7,6 +7,7 @@
 - 文案落 DailyPick(同一 user+date_key 幂等覆盖),供陪伴 Agent 注入当天上下文。
 """
 from __future__ import annotations
+from agent import prompts_registry as registry
 
 from datetime import datetime, timedelta
 
@@ -52,20 +53,7 @@ _THEME_BY_KEY = {t["key"]: t for t in THEMES}
 
 
 # 个性化开场引导:把「主题方向 + 最近状态 + 真实记忆」织成一句具体不模板的邀请
-THEME_GUIDE_SYSTEM = """你是「重逢」的陪伴助手。今天给用户推荐了一个疗愈主题,请基于 TA 最近的情绪状态和真实记忆,写一句温柔、具体、不评判的开场引导,邀请 TA 就这个主题轻轻开口。
-
-原则:
-1. 一句话即可,不超过 60 字;不要带称呼,不要命令、说教、空喊"加油/振作"。
-2. 必须贴合给出的「主题方向」来写,把落点放在往前走、看见当下能做的事或已经变好的地方,而不是反复咀嚼失去或放大伤感。
-3. 自然地带上 TA 真实记忆里的一两个细节(点到即可,不要生硬复述,更不要编造 TA 没说过的事),让 TA 感到被记得。
-4. 语气贴合给出的「语气定位」。
-5. 不要凭空编造时间对比;只有上下文里真实提供的信息才能用来做对比。
-
-[[TONE]]
-
-[[RULE]]
-
-只输出一句引导文案本身,不要输出 JSON、不要加引号、不要加解释。"""
+THEME_GUIDE_SYSTEM = registry.get('daily.theme_guide')
 
 def _today_key(now: datetime | None = None) -> str:
     s = get_settings()
