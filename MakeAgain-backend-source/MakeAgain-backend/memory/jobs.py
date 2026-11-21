@@ -5,6 +5,16 @@ from sqlalchemy import select
 from memory.scope import current_db
 from memory.b07_models import Job
 
+# ---- Scope guard wiring (USE_SCOPE_GUARD，默认开：安全地基) ------------------
+# WP-2：memory job worker 处理 memory job 时用当前 companion scope 走 UC-4 隔离守卫。
+# 默认开；只有显式 USE_SCOPE_GUARD=0/false/no/off 才关。关时 worker 写入主链路
+# 完全跳过守卫代码，逐字节回退到接线前的基线行为（与下面 Huey 试点同一纪律）。
+USE_SCOPE_GUARD_ENV='USE_SCOPE_GUARD'
+_SCOPE_GUARD_OFF=frozenset(('0','false','no','off'))
+def scope_guard_enabled():
+    """运行期读取开关（os.getenv，测试可 monkeypatch）；默认开，安全优先。"""
+    return os.getenv(USE_SCOPE_GUARD_ENV,'1').strip().lower() not in _SCOPE_GUARD_OFF
+
 # ---- Opt-in Huey trial -------------------------------------------------------
 # 这是一条**并行试点**通道，不替换 durable_jobs / Job.status 状态机。
 # 开关默认关闭：关闭时下面所有新逻辑都不生效，原有入队/落库代码逐字节保持原样。

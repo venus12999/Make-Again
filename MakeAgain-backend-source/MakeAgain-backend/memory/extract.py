@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 
 from emotion.classifier import classify
 from gateway.client import LLMClient
+
+logger = logging.getLogger(__name__)
 
 _TIME_TAGS = ["凌晨", "深夜", "夜里", "晚上", "傍晚", "下午", "中午", "上午", "早上", "周末", "周六", "周日"]
 _PLACE_TAGS = ["学校", "教室", "家里", "她家", "教堂", "寺庙", "医院", "公司", "公园", "海边", "咖啡店", "拜佛"]
@@ -59,6 +62,42 @@ def extract_turn(client: LLMClient, user_text: str, *, object_hint: str | None =
         except Exception:  # noqa: BLE001 - 开关可回滚:新路径任何失败一律回退基线
             pass
     return _extract_turn_legacy(client, user_text, emotion, place_tag, time_tag, object_hint)
+
+
+# ---- WP-1：抽取 → 实体双向链接的接线点 ----
+def link_facts_for_memory(facts, *, memory_id, user_id="", entities=None, entity_extractor=None):
+    """把抽取产出的 facts 接进实体图，回填每条 fact 的 linked_memory_ids。
+
+    这是 WP-C 遗留接口 ``entity_graph.link_facts`` 真正接到抽取链路的那一跳
+    （此前 agent 只提供接口，抽取链路上 link_facts 引用 0 次，导致恒为空）。
+
+    回退纪律（与画像开关 USE_ENTITY_PORTRAIT 同一口径）：
+    - ``USE_ENTITY_PORTRAIT`` 关闭：**原样返回同一个 facts 对象**，实体图零调用，
+      因此落库字节与基线逐字节一致；
+    - 无 memory_id（confirm 流 pending 阶段）：同样原样返回，交由 confirm 路由在
+      confirm_candidate 之后补做（接口见 memory.async_write.link_facts_for_entry）；
+    - 任何失败一律 swallow（debug/warning 级），绝不破坏抽取/主对话链路。
+
+    entities / entity_extractor 透传给 entity_graph.link_facts：前者显式指定实体，
+    后者注入真 NER；缺省用实体图的确定性兜底抽取器。
+    """
+    if not memory_id:
+        return facts
+    from memory import entity_graph
+
+    if not entity_graph.enabled():
+        return facts
+    try:
+        kwargs = {"memory_id": str(memory_id), "user_id": str(user_id or "")}
+        if entities is not None:
+            kwargs["entities"] = entities
+        if entity_extractor is not None:
+            kwargs["entity_extractor"] = entity_extractor
+        linked = entity_graph.link_facts(facts, **kwargs)
+        return linked if isinstance(linked, list) else facts
+    except Exception:  # noqa: BLE001 - 实体写失败不破坏抽取主链路
+        logger.warning("link_facts_for_memory failed; fallback to raw facts", exc_info=True)
+        return facts
 
 
 def _extract_turn_legacy(client, user_text, emotion, place_tag, time_tag, object_hint=None) -> dict:

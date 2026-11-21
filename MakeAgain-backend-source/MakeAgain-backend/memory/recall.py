@@ -8,6 +8,10 @@ WP-A 双路召回(USE_DUAL_RECALL,默认关闭):关闭=上面 R1/legacy 路径�
 开启=不调用 list_memories 全量读取,走 vec0 语义路 + bm25s 关键词路 → rrf 融合
 → score_and_rank 精排 → MMR 去冗余,返回仍是 list[dict]。
 embedding 是确定性 hash(非语义模型),详见 memory/vector_index.py 文件头声明。
+U-013 query-intent 门(开关 USE_QUERY_INTENT,默认关闭):
+   关闭 → 本模块原有行为逐字节不变;
+   开启 → 召回前用确定性规则判 query 是否与记忆相关(见 memory/query_intent.py),
+          判为无关(如"今天晚饭吃什么")直接返回 [],不再注入旧记忆。
 
 复制资产(全部经 gh api 实读源码、base64 解码,按行号复制):
   - rrf()                      graphiti `graphiti_core/search/search_utils.py:1551-1566`
@@ -104,8 +108,20 @@ def _use_dual_recall_enabled() -> bool:
     return os.getenv("USE_DUAL_RECALL", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _use_query_intent_enabled() -> bool:
+    """U-013 query-intent 门,默认关闭(需 golden 验证)。关闭时零调用、零行为变化。"""
+    return os.getenv("USE_QUERY_INTENT", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def recall(db, user_id: str, query: str, top_k: int | None = None, recent_text: str | None = None) -> list[dict]:
     """对外入口:签名/返回形态不变。开关关闭或融合失败 → 原路径 fallback。"""
+    # U-013:召回前判意图,与记忆无关直接短路。纯函数判定,不读 DB/user_id,不越权。
+    # 开关关闭时这段代码只做一次 os.getenv,其余逐字节走原路径。
+    if _use_query_intent_enabled():
+        from memory.query_intent import is_memory_irrelevant
+        if is_memory_irrelevant(query):
+            logger.debug("query-intent gate: irrelevant query, skip recall")
+            return []
     if _use_dual_recall_enabled():
         try:
             return _recall_dual(db, user_id, query, top_k=top_k, recent_text=recent_text)
