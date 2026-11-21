@@ -46,14 +46,32 @@ def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
             turn = extractor(client, message)
         else:
             turn = extract.extract_turn(client, message)
-        entry = store.add_memory(
-            db, user_id, type=type, content=message, summary=turn["summary"],
-            facts=turn["facts"], emotion=turn["emotion"], importance=turn["importance"],
-            place_tag=turn["place_tag"], time_tag=turn["time_tag"],
-            cbt=turn.get("cbt"),
-        )
-        # 增量更新情绪节点(替代每轮全量重建),让情绪节点随聊天自动更新。
-        reflect.upsert_emotion_node(db, entry)
+        # 记忆用户控制权：普通聊天抽取(extractor=None)走 Candidate 确认流；
+        # 场景提取器(breakup/loved_one/pet)携带 companion scope，直接落 Fact——
+        # Candidate 登记册不带 scope，走确认会绕过 UC-4 跨 Journey 隔离。
+        from memory import confirm as confirm_mod
+        if extractor is not None:
+            entry = store.add_memory(
+                db, user_id, type=type, content=message, summary=turn["summary"],
+                facts=turn["facts"], emotion=turn["emotion"], importance=turn["importance"],
+                place_tag=turn["place_tag"], time_tag=turn["time_tag"], cbt=turn.get("cbt"),
+            )
+            result = {"mode": "baseline", "memory_id": str(entry.id)}
+        else:
+            result = confirm_mod.submit_candidate(
+                db, user_id, type=type, content=message, summary=turn["summary"],
+                facts=turn["facts"], emotion=turn["emotion"], importance=turn["importance"],
+                place_tag=turn["place_tag"], time_tag=turn["time_tag"], cbt=turn.get("cbt"),
+            )
+        if result.get("mode") == "confirm":
+            # 待用户确认：此时无 entry，跳过依赖 entry 的情绪节点更新；
+            # 回声壁/画像仍可做（基于消息与情绪，不依赖落库 entry）。
+            logger.info("memory candidate pending confirmation: %s", result.get("candidate_id"))
+        else:
+            # 基线路径：entry 已写入，继续下游增强。
+            entry = db.get(store.MemoryEntry, result["memory_id"])
+            if entry is not None:
+                reflect.upsert_emotion_node(db, entry)
         # 回声壁:随机捕获富有情感的句子,随机延时后回显(零 LLM、纯采样,不阻塞主流程)
         from agent import echo as echo_mod
         echo_mod.maybe_capture_echo(db, user_id, message, turn.get("emotion"))
