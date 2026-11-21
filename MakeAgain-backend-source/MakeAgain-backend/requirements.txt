@@ -29,3 +29,7 @@ jieba>=0.42,<1
 agent-memory-core==0.1.0
 # U-012 真语义 embedding：BAAI/bge-small-zh-v1.5 中文模型（首次运行下载，HF_HOME 可配）
 fastembed>=0.4,<1
+# 编排层对照基线 C4：slim 0.8.1 依赖 opentelemetry._events，1.44+ 移除了该私有模块。
+# 显式 pin <1.44 保证裸 import 可用，去掉 agent_v2.py 的 shim 前置依赖。
+pydantic-ai-slim[openai]==0.8.1
+opentelemetry-api>=1.20,<1.44
