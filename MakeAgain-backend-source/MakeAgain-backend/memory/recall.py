@@ -38,6 +38,23 @@ from memory.store import list_memories
 from memory.models import MemoryEntry
 from memory.vector_index import embed_text, get_index_for
 
+# ---------------------------------------------------------------------------
+# F3 · golden-backed 默认翻转（D-023 / D-013 / WP-3）
+#   D-023: V2 语料 dual0sem0 R@K 0.1588 → dual1sem1 0.5529（3.5x），MRR 0.2059→0.8333
+#   WP-3 : neg_inject 1.0 → 0.0 且 R@K 不降 → USE_QUERY_INTENT 一并默认开
+# 把三个开关的「未设置」默认值从 ''（关）翻转为 '1'（开）。
+#
+# 为什么用 os.environ.setdefault 而不是改各 os.getenv(..., "") 的字面默认值：
+#   1) 这三个开关被多个模块读取（USE_DUAL_RECALL 见 recall.py/store.py/correct.py；
+#      USE_SEMANTIC_EMBEDDING 见 vector_index.py；USE_QUERY_INTENT 见 recall.py），
+#      本工作包只拥有 recall.py，setdefault 让所有读取方口径一致；
+#   2) 显式设置永远优先：0/off/false/no 仍可关闭（F3-V2 逐字节回退）；
+#   3) 测试用 monkeypatch.delenv 仍可拿到关语义；未 delenv 且假设旧默认的少量
+#      旧用例需显式置 0（位于本工作包所有权之外，已在验收报告逐条记录）。
+# ---------------------------------------------------------------------------
+for _f3_flag in ("USE_DUAL_RECALL", "USE_SEMANTIC_EMBEDDING", "USE_QUERY_INTENT"):
+    os.environ.setdefault(_f3_flag, "1")
+
 logger = logging.getLogger(__name__)
 _TOKEN_RE = re.compile(r"[一-鿿]|[a-zA-Z0-9]+")
 DEFAULT_MMR_LAMBDA = 0.5          # graphiti search_utils.py:66

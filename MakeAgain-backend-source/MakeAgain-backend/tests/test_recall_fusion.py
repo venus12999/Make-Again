@@ -144,6 +144,9 @@ def _seed_corpus(db, uid="R1-U"):
 def test_off_is_byte_for_byte_identical_to_baseline(db, monkeypatch):
     """① 6 个查询:开关关闭时输出字节 == 基线 main@45f3351。"""
     monkeypatch.delenv("USE_RECALL_FUSION", raising=False)
+    # 基线是 R1 之前的 legacy 打分；dual/semantic/intent 已默认开，需显式关以保持契约
+    for key in ("USE_DUAL_RECALL", "USE_SEMANTIC_EMBEDDING", "USE_QUERY_INTENT"):
+        monkeypatch.setenv(key, "0")
     monkeypatch.setattr(recall_mod, "datetime", _FixedDatetime)
     baseline = _baseline_recall(_FixedDatetime)
     uid = "R1-BYTE-U"
@@ -165,6 +168,9 @@ def test_off_is_byte_for_byte_identical_to_baseline(db, monkeypatch):
 def test_fusion_failure_falls_back_byte_for_byte(db, monkeypatch):
     """② 新路径抛异常时自动回退旧路径,输出字节 == 基线。"""
     monkeypatch.setenv("USE_RECALL_FUSION", "1")
+    # 让 fusion 成为唯一新路径（dual 已默认开会抢先），测它抛异常后的 legacy fallback
+    for key in ("USE_DUAL_RECALL", "USE_SEMANTIC_EMBEDDING", "USE_QUERY_INTENT"):
+        monkeypatch.setenv(key, "0")
     monkeypatch.setattr(recall_mod, "datetime", _FixedDatetime)
     baseline = _baseline_recall(_FixedDatetime)
     uid = "R1-FALLBACK-U"

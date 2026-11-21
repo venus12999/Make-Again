@@ -6,9 +6,17 @@
   - 纠错复用 memory.five_layer.FiveLayerAdapter.supersede_content（旧事实失效 + 新版本）
   - 召回判据复用 memory.store.five_layer_current / list_memories
 
-Candidate 本身没有 ORM 表（不动业务库 migration），用独立的轻量 SQLite 登记册，
-口径与 provenance_store.py 一致：每次调用新开连接、失败 swallow、开关关时零副作用。
-extract 侧接入点就是 submit_candidate()：开关开时它只落 Candidate，不写 Fact；
+【F2 一体化】Candidate 不再用独立 SQLite 登记册。唯一真相是五层库的
+index.db —— 与 agent-memory-core 的 records 表同一个 SQLite 文件。在该库里
+建 candidates 扩展表（review_status 列，pending 即 Candidate 层），并给 records
+表扩展 review_status/candidate_id 两列做「Candidate → Fact」关联。这样彻底消除
+「业务库 + 五层库 + 独立候选登记册」三套存储里的第三套。
+
+向后兼容（迁移）：老独立登记册（MEMORY_CONFIRM_DB_PATH / -candidates.sqlite3）只读。
+get/list 读到老行时读时回填（INSERT OR IGNORE）到五层库候选表，此后读写全走新库；
+因此老数据仍能 confirm/reject/edit。老库不存在/损坏一律当空，绝不新建 sqlite。
+
+extract 侧接入点就是 submit_candidate()：开关开时它只落 Candidate(pending)，不写 Fact；
 开关关时它逐字节走基线 store.add_memory()。
 """
 from __future__ import annotations
@@ -35,6 +43,18 @@ _VALID_STATUSES = (PENDING, CONFIRMED, REJECTED, EDITED)
 _candidate_lock = threading.Lock()
 _initialised_paths: set[str] = set()
 
+# 候选表列（与迁移前登记册逐列一致：老行可直接回填，字段语义不变）。
+_CANDIDATE_COLUMNS = (
+    "id TEXT PRIMARY KEY, user_id TEXT NOT NULL, content TEXT NOT NULL, "
+    "edited_content TEXT, review_status TEXT NOT NULL, memory_id TEXT, "
+    "record_id TEXT, successor_id TEXT, reason TEXT, created_at TEXT NOT NULL, "
+    "reviewed_at TEXT"
+)
+_MIGRATE_KEYS = (
+    "id", "user_id", "content", "edited_content", "review_status", "memory_id",
+    "record_id", "successor_id", "reason", "created_at", "reviewed_at",
+)
+
 
 class CandidateError(Exception):
     """Candidate 状态/归属错误；API 层映射成 4xx。"""
@@ -54,7 +74,10 @@ def confirmation_enabled() -> bool:
 
 
 def default_candidate_db_path() -> str:
-    """候选登记册落点：显式 env > 业务库同目录旁 > 系统临时目录。"""
+    """【迁移专用，只读】老独立登记册落点：显式 env > 业务库同目录旁 > 临时目录。
+
+    新 Candidate 不再写这里；此函数只服务于向后兼容的历史数据读取。
+    """
     explicit = (os.getenv("MEMORY_CONFIRM_DB_PATH") or "").strip()
     if explicit:
         return explicit
@@ -65,8 +88,14 @@ def default_candidate_db_path() -> str:
     return str(pathlib.Path(tempfile.gettempdir()) / "make-again-candidates.sqlite3")
 
 
+def _candidate_db_path() -> str:
+    """候选登记册唯一真相：五层库的 index.db（与 records 表同一个 SQLite 文件）。"""
+    return str(_store._get_five_layer_adapter()._store.layout.index_db)
+
+
 def _connect() -> sqlite3.Connection:
-    path = default_candidate_db_path()
+    """连五层库 index.db，惰性建 candidates 扩展表 + records 扩展列。"""
+    path = _candidate_db_path()
     parent = pathlib.Path(path).parent
     if str(parent):
         parent.mkdir(parents=True, exist_ok=True)
@@ -75,24 +104,23 @@ def _connect() -> sqlite3.Connection:
     with _candidate_lock:
         if path not in _initialised_paths:
             connection.execute(
-                """CREATE TABLE IF NOT EXISTS candidates (
-                       id TEXT PRIMARY KEY,
-                       user_id TEXT NOT NULL,
-                       content TEXT NOT NULL,
-                       edited_content TEXT,
-                       review_status TEXT NOT NULL,
-                       memory_id TEXT,
-                       record_id TEXT,
-                       successor_id TEXT,
-                       reason TEXT,
-                       created_at TEXT NOT NULL,
-                       reviewed_at TEXT
-                   )"""
+                "CREATE TABLE IF NOT EXISTS candidates (" + _CANDIDATE_COLUMNS + ")"
             )
             connection.execute(
                 "CREATE INDEX IF NOT EXISTS idx_candidates_user_status "
                 "ON candidates(user_id, review_status)"
             )
+            # 五层库表扩展：把 Candidate(review_status) 与 Fact 记录关联起来。
+            # agent-memory-core 的 records 表由库自己 CREATE；这里只加列，不重建。
+            # 扩展列是增强，失败 swallow，不影响 Candidate 主流程。
+            try:
+                columns = {row[1] for row in connection.execute("PRAGMA table_info(records)")}
+                if "review_status" not in columns:
+                    connection.execute("ALTER TABLE records ADD COLUMN review_status TEXT")
+                if "candidate_id" not in columns:
+                    connection.execute("ALTER TABLE records ADD COLUMN candidate_id TEXT")
+            except sqlite3.Error:
+                pass
             connection.commit()
             _initialised_paths.add(path)
     return connection
@@ -113,7 +141,7 @@ def _candidate_db():
 
 
 def reset_confirm_cache() -> None:
-    """只清登记册的建表缓存（测试/切库用，不碰业务库、不删数据）。"""
+    """只清建表缓存（测试/切库用，不碰业务库、不删数据）。"""
     with _candidate_lock:
         _initialised_paths.clear()
 
@@ -133,11 +161,56 @@ def _assert_owner(row: sqlite3.Row, user_id: str) -> None:
         raise PermissionDenied("无权访问此记忆候选")
 
 
-def get_candidate(candidate_id: str, user_id: str | None = None) -> dict:
+# ------------------------------------------------------------------ 旧登记册迁移（只读 → 回填新库）
+def _legacy_rows(sql: str, params: tuple) -> list[dict]:
+    """【迁移】从老独立登记册读取；文件不存在/无表/损坏一律当空，绝不新建 sqlite。"""
+    path = pathlib.Path(default_candidate_db_path())
+    if not path.exists():
+        return []
+    connection = None
+    try:
+        connection = sqlite3.connect(str(path), timeout=5.0)
+        connection.row_factory = sqlite3.Row
+        return [dict(row) for row in connection.execute(sql, params).fetchall()]
+    except sqlite3.Error:
+        return []
+    finally:
+        if connection is not None:
+            connection.close()
+
+
+def _migrate_legacy_rows(rows: list[dict]) -> None:
+    """读时迁移：把老行回填到五层库候选表（幂等），后续读写全走新库。"""
+    if not rows:
+        return
     with _candidate_db() as connection:
-        row = connection.execute(
+        for row in rows:
+            payload = {key: row.get(key) for key in _MIGRATE_KEYS}
+            connection.execute(
+                "INSERT OR IGNORE INTO candidates ("
+                + ", ".join(_MIGRATE_KEYS)
+                + ") VALUES ("
+                + ", ".join(":" + key for key in _MIGRATE_KEYS)
+                + ")",
+                payload,
+            )
+
+
+def _new_row(candidate_id: str) -> sqlite3.Row | None:
+    with _candidate_db() as connection:
+        return connection.execute(
             "SELECT * FROM candidates WHERE id = ?", (str(candidate_id),)
         ).fetchone()
+
+
+# ------------------------------------------------------------------ 读
+def get_candidate(candidate_id: str, user_id: str | None = None) -> dict:
+    row = _new_row(candidate_id)
+    if row is None:
+        legacy = _legacy_rows("SELECT * FROM candidates WHERE id = ?", (str(candidate_id),))
+        if legacy:
+            _migrate_legacy_rows(legacy)
+            row = _new_row(candidate_id)
     if row is None:
         raise CandidateError("记忆候选不存在")
     if user_id is not None:
@@ -146,9 +219,12 @@ def get_candidate(candidate_id: str, user_id: str | None = None) -> dict:
 
 
 def list_candidates(user_id: str, status: str | None = PENDING, limit: int = 50) -> list[dict]:
-    """按 owner 列出候选；status=None = 全部。开关关时登记册本就为空。"""
+    """按 owner 列出候选；status=None = 全部。先回填该用户的老登记册行再统一查新库。"""
     if status is not None and status not in _VALID_STATUSES:
         raise CandidateError("无效的审核状态")
+    _migrate_legacy_rows(
+        _legacy_rows("SELECT * FROM candidates WHERE user_id = ?", (str(user_id),))
+    )
     sql = "SELECT * FROM candidates WHERE user_id = ?"
     params: list = [str(user_id)]
     if status is not None:
@@ -195,7 +271,8 @@ def submit_candidate(db, user_id: str, *, type: str = "chat", content: str,
                      cbt: dict | None = None) -> dict:
     """抽取落点。
 
-    开：只写 Candidate(review_status=pending)，不写业务库/五层/索引 → 不可召回。
+    开：只写 Candidate(review_status=pending) 到五层库候选表，不写业务库/五层 records/索引
+        → 不可召回。
     关：逐字节调用基线 store.add_memory（同样的参数、同样的副作用），不产生 Candidate。
     """
     if not confirmation_enabled():
@@ -218,6 +295,25 @@ def submit_candidate(db, user_id: str, *, type: str = "chat", content: str,
 
 def _effective_content(candidate: dict) -> str:
     return candidate.get("edited_content") or candidate["content"]
+
+
+def _tag_fact_record(record_id: str | None, candidate_id: str, status: str) -> None:
+    """【表扩展列】把已落 Fact 的五层 records 行标记 review_status/candidate_id。
+
+    纯增强（可观测的 Candidate → Fact 关联），写失败 swallow，不影响确认主流程。
+    """
+    if not record_id:
+        return
+    try:
+        from memory.five_layer import _slug
+
+        with _candidate_db() as connection:
+            connection.execute(
+                "UPDATE records SET review_status = ?, candidate_id = ? WHERE name = ?",
+                (status, str(candidate_id), _slug(record_id)),
+            )
+    except Exception:
+        pass
 
 
 def confirm_candidate(db, candidate_id: str, user_id: str) -> dict:
@@ -251,6 +347,8 @@ def confirm_candidate(db, candidate_id: str, user_id: str) -> dict:
                 )
         except Exception:  # 五层是第二存储，写失败 swallow 回退基线
             record_id = None
+    # 五层 records 表扩展列：标记这个 Fact 来自哪条 Candidate。
+    _tag_fact_record(record_id, candidate_id, CONFIRMED)
     with _candidate_db() as connection:
         connection.execute(
             "UPDATE candidates SET review_status = ?, memory_id = ?, record_id = ?, "
@@ -330,6 +428,8 @@ def edit_candidate(db, candidate_id: str, user_id: str, *, content: str,
              str(candidate_id), str(user_id)),
         )
         connection.commit()
+    # 扩展列：纠错后的 Fact 也标记 edited。
+    _tag_fact_record(record_id, candidate_id, EDITED)
     return get_candidate(candidate_id, user_id)
 
 
