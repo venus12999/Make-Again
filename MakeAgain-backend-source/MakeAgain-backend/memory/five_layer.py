@@ -33,6 +33,9 @@ DEFAULT_TYPE = "fact"
 DEFAULT_WEIGHT = 1.0
 _ABSTRACT_MAX = 240
 _SLUG_MAX = 80
+# 标签切换归档：Journey 归属以自定义字段写进五层记录（库 records 表无 fields 列，
+# 但 MemoryRecord.fields 会随 frontmatter 落盘并在 Store.records() 读回）。
+_JOURNEY_FIELD = "companion_id"
 # agent-memory-core 的 FACTORY schema 只有 profile/preference/entity/event/decision/
 # procedure/fact/experience/reference；make-again 的业务 type 必须先映射成库认识的类型。
 _TYPE_MAP = {
@@ -107,14 +110,23 @@ class FiveLayerAdapter:
     def add(self, memory_id: str, content: str, *, user_id: str = "",
             type: str = DEFAULT_TYPE, subject: str | None = None,
             provenance: list[str] | None = None, weight: float | None = None,
-            valid_from: object = None) -> str:
-        """MemoryEntry → MemoryRecord（Source/Candidate → Fact），返回库里的 record name。"""
+            valid_from: object = None, companion_id: str | None = None) -> str:
+        """MemoryEntry → MemoryRecord（Source/Candidate → Fact），返回库里的 record name。
+
+        companion_id 作为 Journey 归属写进自定义字段，供 archive_journey() 按 Journey
+        批量归档；不传则记录不带归属，不会被任何 Journey 归档。
+        """
+        fields = {"project": DEFAULT_PROJECT,
+                  "subject": _one_line(subject or user_id or "memory")[:_SLUG_MAX]}
+        journey = str(companion_id or "").strip()
+        if journey:
+            fields[_JOURNEY_FIELD] = journey
         spec = {
             "type": _lib_type(type),
             "name": _slug(memory_id),
             "abstract": _one_line(content)[:_ABSTRACT_MAX],
             "body": str(content or ""),
-            "fields": {"project": DEFAULT_PROJECT, "subject": _one_line(subject or user_id or "memory")[:_SLUG_MAX]},
+            "fields": fields,
             "provenance": [str(p) for p in (provenance or []) if str(p).strip()],
             "weight": DEFAULT_WEIGHT if weight is None else float(weight),
         }
@@ -176,6 +188,28 @@ class FiveLayerAdapter:
         _record.invalidate(current, when, _slug(successor) if successor else None)
         self._store.write(current)  # 重新投影 records 表 / FTS5 surface
         return self.record(name)
+
+    def archive_journey(self, companion_id: str, *, at: object = None) -> int:
+        """标签切换归档：把该 Journey（companion_id）下所有 active 记录批量软删。
+
+        复用 invalidate() 的单条软删语义（区间结束、本体 + provenance 保留、可溯源），
+        只挑 invalid_at 为空的 active 记录处理，因此天然幂等：重复归档第二次返回 0，
+        不重复写、不改动已有的 invalid_at。current 不再返回归档项，as_of 历史时点
+        仍可见。返回本次实际归档的记录数。
+        """
+        target = str(companion_id or "").strip()
+        if not target:
+            return 0
+        active = [
+            rec for rec in self._store.records(include_invalid=False)
+            if str(rec.fields.get(_JOURNEY_FIELD, "")).strip() == target
+        ]
+        if not active:
+            return 0
+        when = _aware(at) if at is not None else self._clock.timestamp()
+        for rec in active:
+            self.invalidate(rec.name, at=when)
+        return len(active)
 
     # ------------------------------------------------------------------ 查询
     def record(self, record_id: str) -> dict:

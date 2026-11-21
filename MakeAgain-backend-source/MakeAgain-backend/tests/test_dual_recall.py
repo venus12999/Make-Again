@@ -201,8 +201,9 @@ def test_v2_vector_path_recalls_no_literal_overlap(db, idx_env, monkeypatch):
     assert sd["vec_score"] > 0
     # 查询与目标的 jieba token 零重叠 → bm25 原始分为 0，证明命中完全来自 vec0 路
     assert sd["bm25_raw"] == 0.0
-    # 非语义模型必须如实标注
-    assert sd["embedding_kind"] == "deterministic_hash_nonsemantic"
+    # F3 后语义embedding默认开；本用例验证的是"vec0 路单独命中"，两种 embedding 都算，
+    # 只要求 kind 非空且与实际引擎一致（hash 或 bge-small-zh 都可）。
+    assert sd["embedding_kind"] in ("deterministic_hash_nonsemantic", "semantic_bge_small_zh")
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +227,8 @@ def test_v3_keyword_exact_proper_noun_ranks_first(db, idx_env, monkeypatch):
 # V4 —— purge 级联一致
 # ---------------------------------------------------------------------------
 def test_v4_purge_cascades_vec_and_bm25(db, idx_env, monkeypatch):
+    # 本用例断言 64 维表 vec_rows；语义embedding已默认开，需显式关以保持原契约
+    monkeypatch.setenv("USE_SEMANTIC_EMBEDDING", "0")
     uid = "A-V4-U"
     a = _add(db, uid, "豆豆喜欢在院子里跑来跑去", "豆豆")
     b = _add(db, uid, "红枣桂花糕的配方", "桂花糕")

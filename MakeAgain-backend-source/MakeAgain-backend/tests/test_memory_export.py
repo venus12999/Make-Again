@@ -167,7 +167,9 @@ def test_u3_v1_export_all_categories_with_provenance(layered, api_client):
 
 
 # =========================================================================== U3-V2
-def test_u3_v2_single_delete_cascade_no_residue(layered, api_client):
+def test_u3_v2_single_delete_cascade_no_residue(layered, api_client, monkeypatch):
+    # 本用例断言 64 维表诊断；语义embedding已默认开，显式关以保持原契约
+    monkeypatch.setenv("USE_SEMANTIC_EMBEDDING", "0")
     db, _ = layered
     u, h, _ = _account(api_client, "u3-v2")
     entry = _seed_memories(db, u, n=1)[0]
@@ -240,8 +242,9 @@ def test_u3_v2_single_delete_cascade_no_residue(layered, api_client):
 # ============================================================================== U3-V2b
 def test_u3_v2b_user_control_not_gated_by_experimental_switches(monkeypatch, tmp_path, api_client):
     """地基默认可用：四开关全关时，删除依然真删业务库+vec0+bm25+实体反链。"""
-    for key in ("USE_PROVENANCE", "USE_FIVE_LAYER", "USE_DUAL_RECALL", "USE_ENTITY_PORTRAIT"):
-        monkeypatch.delenv(key, raising=False)
+    for key in ("USE_PROVENANCE", "USE_FIVE_LAYER", "USE_DUAL_RECALL", "USE_ENTITY_PORTRAIT",
+                "USE_SEMANTIC_EMBEDDING", "USE_QUERY_INTENT"):
+        monkeypatch.setenv(key, "0")
     monkeypatch.setenv("DUAL_RECALL_INDEX_DB", str(tmp_path / "idx-off.sqlite3"))
     monkeypatch.setenv("ENTITY_GRAPH_DB_PATH", str(tmp_path / "entities-off.sqlite3"))
     mstore.reset_provenance_cache()
