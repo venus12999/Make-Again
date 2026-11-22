@@ -68,6 +68,11 @@ def chat(req: ChatReq, db: Session = Depends(get_session)):
     if req.session_id and req.session_id != c.chat_session_id:
         fail(409, "SESSION_MISMATCH", "请使用服务器会话", session_id=c.chat_session_id)
     result = companion.chat(db, req.user_id, req.message, LLMClient(), session_id=c.chat_session_id, no_tools=req.no_tools)
+    # U-018: 本轮若命中"进入新关系"，companion.chat 已归档旧陪伴并新建当前陪伴；
+    # 回包须用新陪伴的 id / 会话 id，避免前端拿已归档 id 继续请求而 409。
+    refreshed = store.get_current_companion(db, req.user_id)
+    if refreshed is not None:
+        c = refreshed
     # PRD d.ii: 每日心情由 AI 根据聊天判断,按当地日期 upsert 当日记录。
     _emo = result.get("emotion") if isinstance(result, dict) else None
     if isinstance(_emo, dict) and _emo.get("emotion"):

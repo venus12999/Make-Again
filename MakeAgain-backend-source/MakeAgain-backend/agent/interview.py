@@ -741,8 +741,13 @@ def _persist_report(db, user_id: str, loss_type: str | None, parsed: dict) -> No
         if pa_text:
             user_portrait["哀伤叙事"] = pa_text
 
-    store.upsert_portrait(db, user_id, "user", user_portrait, status="draft")
-    store.upsert_portrait(db, user_id, "object", object_portrait, status="draft")
+    # U-018 GAP-V3：画像写入带当前 Journey 归属，配合 store.get_portrait(..., companion_id=) 让主链
+    # 与隔离层口径一致；无当前 companion 时回落 None，保持旧行为不崩。
+    portrait_companion_id = companion.id if companion else None
+    store.upsert_portrait(db, user_id, "user", user_portrait, status="draft",
+                          companion_id=portrait_companion_id)
+    store.upsert_portrait(db, user_id, "object", object_portrait, status="draft",
+                          companion_id=portrait_companion_id)
     store.add_memory(
         db, user_id, type="report", content=parsed.get("summary", ""),
         summary=(parsed.get("summary") or "")[:120], facts=[], emotion=None, importance=9.0,

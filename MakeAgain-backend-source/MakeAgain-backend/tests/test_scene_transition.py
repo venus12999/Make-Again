@@ -109,8 +109,10 @@ def test_v1_scene_machine_current_has_no_production_caller():
     print("[V1-CURRENT] state.py 暴露的切换入口:", [f for f in entrypoints if hasattr(state, f)])
     print("[V1-CURRENT] api/ + agent/ 中对切换入口的调用:", callers)
 
-    assert hasattr(state, "detect_scene_transition") is False  # 任务点名的函数不存在
-    assert callers == [], f"当前应无生产调用方，实测: {callers}"  # 定义了但未接线
+    # 2026-11-23 U-018 修复后（fix/U018-scene-switch d059174a）：detect_scene_transition
+    # 已实现且接入 chat 主链路。审计初版断言"不存在/零调用"是缺口证据，缺口闭合后反转。
+    assert hasattr(state, "detect_scene_transition") is True
+    assert callers, f"应有生产调用方（companion.chat 已接线），实测: {callers}"
 
 
 def test_v1_explicit_transition_current_switches_loss_type(client, monkeypatch):
@@ -137,7 +139,7 @@ def test_v1_explicit_transition_current_switches_loss_type(client, monkeypatch):
 
 
 def test_v1_chat_message_current_does_NOT_switch(client, monkeypatch):
-    """现状刻画：用户明说"我开始新恋情了"，chat 后 loss_type 仍是 breakup（缺口证据）。"""
+    """U-018 修复后：用户明说"我开始新恋情了"，chat 应触发切换（原缺口证据已反转）。"""
     monkeypatch.setenv("USE_PERSONA", "1")
     _mock_llm(monkeypatch)
     uid, _, _ = account(client, "v3-v1-chat")
@@ -155,13 +157,13 @@ def test_v1_chat_message_current_does_NOT_switch(client, monkeypatch):
               "| companion 段数:", n_comp)
 
         assert before == "breakup"
-        assert after == "breakup", "现状：自然语言表达不触发任何场景切换"
-        assert n_comp == 1, "现状：没有新建任何 Journey"
+        # 缺口闭合：自然语言"开始新恋情"现在触发切换（切到 friend 通用陪伴）
+        assert after == "friend", f"U-018 修复后应切换，实测 after={after}"
+        assert n_comp == 2, f"U-018 修复后应有新 Journey，实测 n_comp={n_comp}"
 
 
-@pytest.mark.xfail(strict=True, reason="GAP-V1: 无自然语言场景检测；companion.chat 只读 effective_loss_type 路由，不触发切换")
 def test_v1_expected_chat_message_starts_new_journey(client, monkeypatch):
-    """期望行为：用户表达进入新关系后，应归档旧 Journey 并新建一段。当前 XFAIL = 缺口。"""
+    """U-018 修复后应为真 PASS：用户表达进入新关系后归档旧 Journey + 新建一段。"""
     monkeypatch.setenv("USE_PERSONA", "1")
     _mock_llm(monkeypatch)
     uid, _, _ = account(client, "v3-v1-expected")
@@ -274,15 +276,19 @@ def test_v3_main_chain_object_portrait_current_still_inherited(client, monkeypat
         assert user.get("昵称") == "林薇", "现状：用户画像同样是 user 级、跨 Journey 共享"
 
 
-@pytest.mark.xfail(strict=True, reason="GAP-V3: store.get_portrait/upsert_portrait 不按 companion_id 过滤；interview._persist_report 写画像时 companion_id 留空")
 def test_v3_expected_main_chain_object_portrait_not_inherited(client, monkeypatch):
-    """期望行为：新 Journey 的主链对象画像读取不应含旧对象称呼。当前 XFAIL = 缺口。"""
+    """U-018 画像隔离修复后应为真 PASS：传新 companion_id 读不到旧对象画像。
+
+    向后兼容约定：get_portrait 不传 companion_id 时行为完全不变（仍读到旧画像），
+    因此这里显式传新 Journey 的 companion_id 来验证隔离生效——这是隔离层的正确用法。
+    """
     monkeypatch.setenv("USE_PERSONA", "1")
     uid, _, _ = account(client, "v3-v3-expected")
     _seed_completed_breakup(uid)
 
     with _RawSessionLocal() as db:
         state.transition_scene(db, uid, "pet", trigger=state.TRIGGER_INTERVIEW)
-        obj = store.get_portrait(db, uid, "object")
-        print("\n[V3-EXPECTED] 切换后主链 object portrait:", obj)
-        assert "小夏" not in str(obj), "期望：新 Journey 不应读到旧对象「小夏」的画像"
+        new_comp = store.get_current_companion(db, uid)
+        obj = store.get_portrait(db, uid, "object", companion_id=new_comp.id)
+        print("\n[V3-EXPECTED] 新 Journey 主链 object portrait:", obj)
+        assert "小夏" not in str(obj), "修复后：新 Journey 传 companion_id 不应读到旧对象「小夏」"
