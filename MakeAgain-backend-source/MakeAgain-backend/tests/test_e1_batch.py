@@ -40,12 +40,11 @@ def _load() -> dict:
 
 
 def _baseline_items() -> list[dict]:
-    out = subprocess.run(
-        ["git", "show", f"{BASELINE}:{REL_BATCH}"],
-        cwd=str(REPO), capture_output=True, text=True, encoding="utf-8",
-    )
-    assert out.returncode == 0, out.stderr[:200]
-    return json.loads(out.stdout)["items"]
+    # 旧34条基线固化为文件（从 main@aad3e951 提取），不依赖 git 历史——
+    # 队友仓库没有该 commit，git show 会失败（同 prompt-registry / heart-rubric 的前科）。
+    p = BACKEND / "eval" / "e1_legacy_baseline.json"
+    assert p.exists(), f"缺基线文件 {p}"
+    return json.loads(p.read_text(encoding="utf-8"))["items"]
 
 
 # ------------------------------------------------------------------ E1-V1
