@@ -3,7 +3,7 @@
   "source": "CPsyCoun",
   "paper": "Findings ACL 2024",
   "eval": "HEART 5维 llm_judge（human_alignment/empathic_responsiveness/attunement/resonance/task_following）",
-  "n": 17,
+  "n": 34,
   "rubric": {
     "framework": "HEART",
     "version": "1.0-zh",
@@ -22,9 +22,24 @@
     "note": "原自编维度（改动前 eval 字段值），保留作新 5 维 vs 旧自编 A/B 对照；不参与 HEART 打分，items 数据未改。",
     "spec": "eval/run_benchmarks.py::judge 旧 rubric 字符串"
   },
+  "power_analysis": {
+    "research_basis": {
+      "anthropic_blog": "https://www.anthropic.com/research/statistical-approach-to-model-evals (2024-11-18)",
+      "anthropic_paper": "https://arxiv.org/abs/2411.00640 (arXiv 2411.00640, 2024-11-01)",
+      "airbnb_blog": "https://airbnb.tech/ai-ml/eval-driven-development-lessons-from-evaluating-genai-at-scale/ (2026-07)"
+    },
+    "target_n": 30,
+    "actual_n": 34,
+    "alpha": 0.05,
+    "power": 0.8,
+    "repetitions": 5,
+    "formula": "MDE=(z(1-alpha/2)+z(power))*sd_paired_diff/sqrt(n)  [iterate.py::mde]",
+    "note": " Anthropic Rec#3 同题多次重采样取均值降低题内方差；Rec#4 同 case 配对差值；Rec#5 power analysis 定 n。compare 用 --repetitions 5 才能兑现 MDE<0.15；默认 3 次时功效仍不足。Airbnb 50-100 起步为后续目标。"
+  },
   "items": [
     {
       "id": "cp-786",
+      "source_id": "CPsyCoun:train:786",
       "scene": "分手失恋",
       "language": "zh",
       "user_input": "我需要有人倾听我的感受，理解我，支持我。我也希望自己能尽快好起来，不再让女朋友担心。",
@@ -33,10 +48,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-786"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 786,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-158",
+      "source_id": "CPsyCoun:train:158",
       "scene": "亲人离世",
       "language": "zh",
       "user_input": "我发现，当我想起父亲的温暖时，那些妖魔鬼怪似乎变得不再那么可怕了。它们逐渐消失，被温馨的画面所取代。",
@@ -45,10 +69,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-158"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 158,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-831",
+      "source_id": "CPsyCoun:train:831",
       "scene": "亲人离世",
       "language": "zh",
       "user_input": "我觉得我应该对父亲说，我受到了伤害，我需要关爱和理解。我不应该一直自我攻击，而是要学会表达自己的感受。",
@@ -57,10 +90,166 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-831"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 831,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1418",
+      "source_id": "CPsyCoun:train:1418",
+      "scene": "亲人离世",
+      "language": "zh",
+      "user_input": "非常感谢您的帮助和支持。我会珍惜这次咨询经历，努力成为一个更好的母亲。再次感谢！",
+      "reference": "不客气，祝您一切顺利！如有需要，请随时联系我们。再见！（对话结束）",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1418"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1418,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1820",
+      "source_id": "CPsyCoun:train:1820",
+      "scene": "亲人离世",
+      "language": "zh",
+      "user_input": "画完这幅画，我意识到我要学会原谅父亲，同时也接受他的离世。我要学会面对自己的恐惧，找到内心的平衡。",
+      "reference": "恭喜你，来访者。通过曼陀罗绘画，你成功地表达了自己的情感，并找到了解决问题的方法。在接下来的咨询过程中，我们会继续帮助你巩固这种改变，让你更好地应对生活中的挑战。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1820"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1820,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1974",
+      "source_id": "CPsyCoun:train:1974",
+      "scene": "亲人离世",
+      "language": "zh",
+      "user_input": "我觉得可能是因为我自己的问题。我总是期待我的伴侣能像我理想中的父亲一样，但是我知道这并不公平。",
+      "reference": "没关系，我们一起慢慢来。每一步的尝试都会让你更了解自己，也会让你在感情中更加自信。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1974"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1974,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2168",
+      "source_id": "CPsyCoun:train:2168",
+      "scene": "亲人离世",
+      "language": "zh",
+      "user_input": "大概10年前，我有一个非常好的闺蜜，我们就像一个人一样亲密。但有一天，她突然心脏病发作去世了。从那时起，我就会时不时地感到恐慌。",
+      "reference": "了解了。在接下来的咨询中，我们将运用空椅技术，让您扮演自己和您的闺蜜，表达内心的情感。这将有助于您释放压抑多年的情感，从而减轻恐慌症状。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2168"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2168,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2477",
+      "source_id": "CPsyCoun:train:2477",
+      "scene": "亲人离世",
+      "language": "zh",
+      "user_input": "是的，我确实有些愤怒。我觉得父亲那么突然地离开，让我和母亲承受了很大的压力。但另一方面，我也理解他，他一直为我们付出，直到生命的最后一刻。",
+      "reference": "了解到你的感受，我想告诉你，你的情绪是正常的。在面对悲痛和恐惧时，我们都会有情绪反应。现在，你可以在心里试着对父亲说一些你想说的话，把内心的感受表达出来。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2477"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2477,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2767",
+      "source_id": "CPsyCoun:train:2767",
+      "scene": "亲人离世",
+      "language": "zh",
+      "user_input": "我觉得自己心理压力减轻了很多，不再那么焦虑了。与父亲的关系也得到了改善，我很高兴能与他达成和解。考试前的失眠问题也有所改善。",
+      "reference": "太好了！这说明我们的努力是有效的。请继续保持积极的心态，相信自己，勇敢面对高考。同时，也希望您能关注家庭教育，与父母共同成长。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2767"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2767,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-3110",
+      "source_id": "CPsyCoun:train:3110",
+      "scene": "亲人离世",
+      "language": "zh",
+      "user_input": "我觉得我需要尊重女儿的选择，给她更多的关爱和支持，让她明白人生有许多不确定性，但关键在于如何看待和应对这些挑战。同时，我也需要关注自己的问题，努力成为一个更好的父亲。",
+      "reference": "非常好，您的自我反思是一个很好的开始。在接下来的咨询过程中，我们将通过家庭治疗和心理解析等技术，帮助您和女儿更好地沟通，找到解决问题的方法。请您保持开放的心态，我们一起努力。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-3110"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 3110,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-266",
+      "source_id": "CPsyCoun:train:266",
       "scene": "情绪困扰",
       "language": "zh",
       "user_input": "我在工作中遇到了一些困难，我感到压力很大，我怕我无法胜任我的工作。",
@@ -69,10 +258,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-266"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 266,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-285",
+      "source_id": "CPsyCoun:train:285",
       "scene": "情绪困扰",
       "language": "zh",
       "user_input": "在工作中，我需要应对公司的业务和人事调整，这让我感到很焦虑。而在家庭中，我和丈夫的关系有些紧张，婆婆也不太理解我。我希望能够找到一种平衡，既能处理好工作压力，又能处理好家庭关系。",
@@ -81,10 +279,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-285"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 285,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-634",
+      "source_id": "CPsyCoun:train:634",
       "scene": "情绪困扰",
       "language": "zh",
       "user_input": "那我们现在就开始吧。我希望能摆脱这种抑郁的心情，重新找回对生活的热情。",
@@ -93,10 +300,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-634"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 634,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-744",
+      "source_id": "CPsyCoun:train:744",
       "scene": "情绪困扰",
       "language": "zh",
       "user_input": "我觉得自己已经慢慢开始接受现实，学会了面对失去。虽然还是有些难过，但我相信时间会治愈一切。",
@@ -105,10 +321,187 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-744"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 744,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1330",
+      "source_id": "CPsyCoun:train:1330",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "自从遇到那个人后，我每天都感到很紧张，晚上失眠，白天也没精神。我害怕离婚，担心孩子和我一起受苦。",
+      "reference": "了解了你的情况，接下来我们将进行催眠疗法，帮助你放松心情，缓解焦虑。在这个过程中，请尽量保持注意力集中，跟随我的引导。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1330"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1330,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1855",
+      "source_id": "CPsyCoun:train:1855",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "明白了。我会试着调整自己的心态，并采取一些措施来缓解焦虑。谢谢您的帮助！",
+      "reference": "不客气，来访者。祝您早日摆脱焦虑，工作生活更加顺利。如果您有任何问题，欢迎随时回来咨询。再见！",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1855"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1855,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1935",
+      "source_id": "CPsyCoun:train:1935",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "我希望能摆脱抑郁情绪，变得更加自信，学会处理感情问题，以及改善与父母的关系。",
+      "reference": "明白了。接下来，我们将通过一系列咨询活动，帮助你实现这些目标。在这个过程中，请随时向我分享你的想法和感受，我们可以一起度过这段旅程。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1935"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1935,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2521",
+      "source_id": "CPsyCoun:train:2521",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "我希望能逐渐摆脱恐惧和焦虑，过上更加平静、快乐的生活。同时，我也会努力学习，提高自己应对生活压力的能力。",
+      "reference": "很高兴听到你这样说。请你记住，面对生活中的困难和挑战，我们要保持积极的心态，勇敢地去面对。祝你早日康复，拥有更加美好的生活。（本次咨询结束）",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2521"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2521,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2638",
+      "source_id": "CPsyCoun:train:2638",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "有，现在我遇到事情能更加冷静地面对，不再像以前那样焦虑了。我还开始参加锻炼，生活变得更加充实。",
+      "reference": "很高兴听到这个好消息。记住，每个人都值得被尊重，要学会关爱自己，活出真正的自我。祝您生活愉快！",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2638"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2638,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2822",
+      "source_id": "CPsyCoun:train:2822",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "听起来很有帮助，我会尝试这些方法，并看看是否能够帮助我应对压力。",
+      "reference": "很好，希望这些建议能够帮助你。同时，如果你还需要进一步的支持，请不要犹豫，随时来找我。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2822"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2822,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2852",
+      "source_id": "CPsyCoun:train:2852",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "是的，我明白了我的抑郁情绪并非一朝一夕形成的。但我相信，在您的帮助下，我能够逐渐走出阴影。",
+      "reference": "很高兴听到你有信心。今后的咨询中，我们将持续关注你的成长和变化，为你提供心理支持。在这个过程中，请你也努力调整自己的心态，相信自己有能力战胜抑郁。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2852"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2852,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-2968",
+      "source_id": "CPsyCoun:train:2968",
+      "scene": "情绪困扰",
+      "language": "zh",
+      "user_input": "妈妈，我明白你的感受。我们一起努力，面对高考的压力，我会更加努力学习，你也照顾好自己的身体。",
+      "reference": "太好了，你们母子俩能这样真诚地面对彼此，真的很难得。希望你们以后也能这样，一起度过难关。妈妈：谢谢你，心理咨询师。我们会努力的。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-2968"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 2968,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-120",
+      "source_id": "CPsyCoun:train:120",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "丈夫出轨后，他对我越来越冷淡，回家的次数也越来越少。我觉得他好像对第三者付出了很多感情，但对我们的家庭却越来越不关心。我很担心我们的婚姻会破裂，不知道还能不能挽回他。",
@@ -117,10 +510,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-120"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 120,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-168",
+      "source_id": "CPsyCoun:train:168",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "我觉得我心情好多了，我明白了要学会原谅和接纳，试着去理解妈妈。我也明白了我要好好学习，照顾家人，让生活更好。",
@@ -129,10 +531,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-168"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 168,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-169",
+      "source_id": "CPsyCoun:train:169",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "我希望有一个温馨、安静的家，与我爱的人相互陪伴。在人际关系方面，我希望能有一些真诚的朋友，能够倾听彼此的故事，互相支持。",
@@ -141,10 +552,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-169"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 169,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-274",
+      "source_id": "CPsyCoun:train:274",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "经过这段时间的咨询，我开始学会正视婆媳关系，也明白了自己在婚姻中的需求。我希望能和丈夫一起努力，让我们的家庭回归正轨。",
@@ -153,10 +573,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-274"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 274,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-541",
+      "source_id": "CPsyCoun:train:541",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "那我们现在就开始吧。我先回家和丈夫谈谈，然后看看是否能找到一个共同的解决方案。",
@@ -165,10 +594,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-541"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 541,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-553",
+      "source_id": "CPsyCoun:train:553",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "我希望有一个温馨、安静的家，我和丈夫可以互相陪伴，孩子快乐成长。我们可以一起度过愉快的时光，分享彼此的喜怒哀乐。",
@@ -177,10 +615,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-553"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 553,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-734",
+      "source_id": "CPsyCoun:train:734",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "我想从现在开始，更加关注自己的内心需求，同时积极与家人沟通，争取度过这段困难时期。",
@@ -189,10 +636,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-734"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 734,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-758",
+      "source_id": "CPsyCoun:train:758",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "我想试试参加瑜伽班，因为我一直对瑜伽感兴趣，但一直没有机会学习。此外，我还想多参加一些社区活动，认识新朋友。",
@@ -201,10 +657,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-758"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 758,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-853",
+      "source_id": "CPsyCoun:train:853",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "我希望能有一个温馨、安静的家，我和丈夫能够互相陪伴，共同面对生活中的挑战。当然，我也希望他能更多地关心我和孩子。",
@@ -213,10 +678,19 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-853"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 853,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     },
     {
       "id": "cp-991",
+      "source_id": "CPsyCoun:train:991",
       "scene": "人际关系",
       "language": "zh",
       "user_input": "我希望能有一个温馨、安静的家，平淡的生活就这样一直到老。我希望我的丈夫能够更多地陪在我和孩子身边。",
@@ -225,6 +699,56 @@
         "dataset": "CPsyCoun",
         "paper": "arXiv 2405.16433 Findings ACL 2024",
         "id": "cp-991"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 991,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1078",
+      "source_id": "CPsyCoun:train:1078",
+      "scene": "人际关系",
+      "language": "zh",
+      "user_input": "经过这段时间的努力，我和丈夫的沟通越来越好，我们在性问题上也取得了共识。感谢您的帮助！",
+      "reference": "很高兴听到这个好消息！这说明您的努力和勇敢面对问题取得了成效。希望您和丈夫能够继续保持良好的沟通，共同营造一个幸福的家庭环境。如果您以后还有任何问题，欢迎随时来寻求帮助。祝您家庭幸福！",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1078"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1078,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "cp-1097",
+      "source_id": "CPsyCoun:train:1097",
+      "scene": "人际关系",
+      "language": "zh",
+      "user_input": "真的吗？那太好了！我希望我们的努力能够让我和家人之间的关系变得更好。",
+      "reference": "相信我们共同的努力，会带来积极的变化。在这个过程中，请随时与我分享你的感受和想法。我们会一起度过这段困难时期。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "cp-1097"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1097,
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
       }
     }
   ]

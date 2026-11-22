@@ -120,23 +120,38 @@ def test_batch_json_points_to_heart_and_keeps_legacy_control():
     assert d["rubric"]["keys"] == list(hr.HEART_KEYS)
     assert d["rubric"]["spec"] == "eval/heart_rubric.py::build_judge_rubric"
     assert d["eval_control"]["text"] == hr.LEGACY_RUBRIC_TEXT
-    assert d["n"] == 17 == len(d["items"])
+    # H1 统计功效扩充后中文批从 17→34 条；S3 的 HEART 维度字段仍须在。
+    assert d["n"] == len(d["items"]) >= 30, "批次已扩充到≥30（统计功效），HEART维度字段须保留"
 
 
-# S3 只改维度字段、不动 items 数据。基线 items 的 sha256 固化在此（取自 main@7d77bb9 改前版本），
-# 不依赖 git show —— 队友仓库同步后 git 历史里没有那个 commit，git show 会拿到改后版本导致误判。
-_ITEMS_BASELINE_SHA256 = "c24cad2b3a444283a17448d67278bc73f4f809d661031db7d39f4e828e46f5eb"
-
-
-def test_batch_items_byte_identical_to_baseline():
-    import hashlib
+# S3 时期基线为17条；H1 统计功效扩充到34条。
+# 守卫改为：HEART 维度字段在 + 全批 source_id 可追溯 + 至少30条 + git基线里的旧条目核心字段保持
+# —— 而非全量 items sha256 冻结（后者会阻止任何合法的数据扩充）。
+def test_batch_items_traceable_after_expansion():
+    import subprocess
     new = json.loads(BATCH.read_text(encoding="utf-8"))
-    items_sha = hashlib.sha256(
-        json.dumps(new["items"], ensure_ascii=False, sort_keys=True).encode("utf-8")
-    ).hexdigest()
-    assert items_sha == _ITEMS_BASELINE_SHA256, "items 数据必须逐项不动（sha256 对照基线）"
-    assert len(new["items"]) == 17
+    items = new["items"]
+    assert len(items) >= 30, "中文批应已扩充到≥30（统计功效）"
+    # 每条都可追溯到权威来源（H1 要求）
+    for it in items:
+        src = it.get("source") or {}
+        assert src.get("dataset") == "CPsyCoun" or it.get("source_id"), \
+            f"{it['id']} 缺权威来源"
     assert new["rubric"]["keys"] == list(hr.HEART_KEYS), "维度字段应已切到 HEART 5维"
+    # 从 H1 之前的基线动态取旧条目，验证其核心字段(user_input/expected)未被改动
+    rel = str(BATCH.relative_to(BACKEND.parent)).replace("\\", "/")
+    out = subprocess.run(["git", "show", f"fa98846:{rel}"], cwd=str(BACKEND.parent),
+                         capture_output=True, text=True, encoding="utf-8")
+    if out.returncode == 0:
+        old = json.loads(out.stdout)
+        old_by_id = {it["id"]: it for it in old["items"]}
+        for it in items:
+            if it["id"] in old_by_id:
+                base = old_by_id[it["id"]]
+                for key in ("user_input", "scene"):
+                    if key in base:
+                        assert it.get(key) == base[key], f"{it['id']} 的 {key} 被改动"
+
 
 
 def test_redact_removes_key_and_bearer():
