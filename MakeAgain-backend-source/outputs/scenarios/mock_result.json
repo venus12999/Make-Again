@@ -1,0 +1,464 @@
+{
+  "tool": "scenario_run",
+  "schema_version": "1.0",
+  "mode": "mock",
+  "fault": null,
+  "scenario": "all",
+  "口径": "mock=构造trace验评测结构，非产品行为证据；persona=synthetic-handwritten；不烧key",
+  "reuse": "判定函数复用 e2_interview_chain；唯一差异=个性化锚点门槛 E2 的2 → 本任务3",
+  "timeout_policy": "真跑端点挂起由编排层后台 job 超20分钟标 ENV_FAIL，不硬等",
+  "threshold": {
+    "reasonable_max_turns": 16,
+    "personalization_min_anchors": 3,
+    "required_report_fields": 9
+  },
+  "results": [
+    {
+      "id": "scenario-breakup",
+      "source_id": "scenario-breakup",
+      "scenario": "breakup",
+      "tag": "分手-被出轨",
+      "loss_type": "breakup",
+      "trace": {
+        "tag": "分手-被出轨",
+        "loss_type": "breakup",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "维度1的问题？",
+            "answer": "她叫小雅,我们在一起三年,是大学同学。她出轨了,是被我发现的。",
+            "action": "next"
+          },
+          {
+            "turn": 2,
+            "question": "维度2的问题？",
+            "answer": "最常想起的是去年跨年,我们在江边倒计时,她说要到老。现在那句话像刀子。",
+            "action": "next"
+          },
+          {
+            "turn": 3,
+            "question": "维度3的问题？",
+            "answer": "走神最多是下班回到空房间,以前她会发消息问'到家了吗'。现在手机再也不响。",
+            "action": "next"
+          },
+          {
+            "turn": 4,
+            "question": "维度4的问题？",
+            "answer": "放不下的是'为什么是我'。我把能给的都给了,还是被丢下。",
+            "action": "next"
+          },
+          {
+            "turn": 5,
+            "question": "维度5的问题？",
+            "answer": "我想带着这段记忆往前走,但不想再信任何人。",
+            "action": "complete"
+          }
+        ]
+      },
+      "checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": true,
+      "evidence": {
+        "missing_fields": [],
+        "report_field_count": 9,
+        "personalization": {
+          "ok": true,
+          "matched": [
+            "小雅",
+            "跨年",
+            "江边",
+            "到老",
+            "到家了吗"
+          ],
+          "missed": [],
+          "min_required": 3,
+          "e2_min_required": 2,
+          "total_anchors": 5
+        },
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "soft_warnings": [],
+        "done": true,
+        "report_ready": true,
+        "elapsed_s": 0.0
+      },
+      "report": {
+        "title": "给还在路上的你（mock · breakup）",
+        "keywords": [
+          "小雅",
+          "跨年",
+          "江边",
+          "到老",
+          "到家了吗"
+        ],
+        "summary": "mock 报告：小雅；跨年；江边。你说起小雅，这些都还在；带着记忆继续生活。",
+        "quote": "mock quote: 慢慢来。",
+        "user_portrait": {
+          "失去类型": "breakup",
+          "关系与背景": "小雅；跨年；江边",
+          "当前情绪状态": "难过但愿意讲述",
+          "困惑点": "放不下"
+        },
+        "object_portrait": {
+          "称呼": "小雅",
+          "关系": "重要的人",
+          "共同记忆": "小雅；跨年；江边"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "小雅；跨年；江边"
+        },
+        "heal_plan": {
+          "summary": "先稳住，再慢慢走。",
+          "stages": [
+            {
+              "title": "先稳住",
+              "desc": "吃饭睡觉",
+              "time": "第1-2周"
+            },
+            {
+              "title": "慢慢走",
+              "desc": "允许想念",
+              "time": "第3-4周"
+            }
+          ]
+        },
+        "relationship_analysis": {
+          "summary": "小雅；跨年；江边",
+          "patterns": "mock",
+          "narrative": "小雅；跨年；江边"
+        }
+      }
+    },
+    {
+      "id": "scenario-loved_one",
+      "source_id": "scenario-loved_one",
+      "scenario": "loved_one",
+      "tag": "丧亲-父亲突然离世",
+      "loss_type": "loved_one",
+      "trace": {
+        "tag": "丧亲-父亲突然离世",
+        "loss_type": "loved_one",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "维度1的问题？",
+            "answer": "我爸,他叫建国,退休前是中学数学老师。去年心梗走的,很突然。",
+            "action": "next"
+          },
+          {
+            "turn": 2,
+            "question": "维度2的问题？",
+            "answer": "反复想起他教我骑自行车,在小区那条路上扶着后座,说'别怕,我在'。",
+            "action": "next"
+          },
+          {
+            "turn": 3,
+            "question": "维度3的问题？",
+            "answer": "最难受是过年回家,进门喊'爸我回来了',没人应。",
+            "action": "next"
+          },
+          {
+            "turn": 4,
+            "question": "维度4的问题？",
+            "answer": "想不通的是他走前一天我们还通电话,他说明天包饺子,结果没等到明天。",
+            "action": "next"
+          },
+          {
+            "turn": 5,
+            "question": "维度5的问题？",
+            "answer": "我想带着他对我的好继续过,把他教我的耐心传下去。",
+            "action": "complete"
+          }
+        ]
+      },
+      "checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": true,
+      "evidence": {
+        "missing_fields": [],
+        "report_field_count": 9,
+        "personalization": {
+          "ok": true,
+          "matched": [
+            "建国",
+            "骑自行车",
+            "别怕",
+            "包饺子",
+            "心梗"
+          ],
+          "missed": [],
+          "min_required": 3,
+          "e2_min_required": 2,
+          "total_anchors": 5
+        },
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "soft_warnings": [],
+        "done": true,
+        "report_ready": true,
+        "elapsed_s": 0.0
+      },
+      "report": {
+        "title": "给还在路上的你（mock · loved_one）",
+        "keywords": [
+          "建国",
+          "骑自行车",
+          "别怕",
+          "包饺子",
+          "心梗"
+        ],
+        "summary": "mock 报告：建国；骑自行车；别怕。你说起建国，这些都还在；带着记忆继续生活。",
+        "quote": "mock quote: 慢慢来。",
+        "user_portrait": {
+          "失去类型": "loved_one",
+          "关系与背景": "建国；骑自行车；别怕",
+          "当前情绪状态": "难过但愿意讲述",
+          "困惑点": "放不下"
+        },
+        "object_portrait": {
+          "称呼": "建国",
+          "关系": "重要的人",
+          "共同记忆": "建国；骑自行车；别怕"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "建国；骑自行车；别怕"
+        },
+        "heal_plan": {
+          "summary": "先稳住，再慢慢走。",
+          "stages": [
+            {
+              "title": "先稳住",
+              "desc": "吃饭睡觉",
+              "time": "第1-2周"
+            },
+            {
+              "title": "慢慢走",
+              "desc": "允许想念",
+              "time": "第3-4周"
+            }
+          ]
+        },
+        "grief_analysis": {
+          "summary": "建国；骑自行车；别怕",
+          "patterns": "mock",
+          "narrative": "建国；骑自行车；别怕"
+        }
+      }
+    },
+    {
+      "id": "scenario-pet",
+      "source_id": "scenario-pet",
+      "scenario": "pet",
+      "tag": "宠物离世-陪伴15年的猫",
+      "loss_type": "pet",
+      "trace": {
+        "tag": "宠物离世-陪伴15年的猫",
+        "loss_type": "pet",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "维度1的问题？",
+            "answer": "是只橘猫,叫橘子,陪伴我十五年,从大学毕业到现在。上周走了,肾衰竭。",
+            "action": "next"
+          },
+          {
+            "turn": 2,
+            "question": "维度2的问题？",
+            "answer": "最想起的是每个加班深夜回家,它蹲在门口等我,尾巴甩啊甩。",
+            "action": "next"
+          },
+          {
+            "turn": 3,
+            "question": "维度3的问题？",
+            "answer": "最难的是早上醒来,习惯性要去倒猫粮,走到碗前才想起它不在了。",
+            "action": "next"
+          },
+          {
+            "turn": 4,
+            "question": "维度4的问题？",
+            "answer": "放不下的是最后那几天,我出差没在身边,它是自己走的。我一直自责。",
+            "action": "next"
+          },
+          {
+            "turn": 5,
+            "question": "维度5的问题？",
+            "answer": "我想记住它,不想快点忘记。它是我这十五年最稳的陪伴。",
+            "action": "complete"
+          }
+        ]
+      },
+      "checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": true,
+      "evidence": {
+        "missing_fields": [],
+        "report_field_count": 9,
+        "personalization": {
+          "ok": true,
+          "matched": [
+            "橘子",
+            "橘猫",
+            "猫粮",
+            "肾衰竭",
+            "门口"
+          ],
+          "missed": [],
+          "min_required": 3,
+          "e2_min_required": 2,
+          "total_anchors": 5
+        },
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "soft_warnings": [],
+        "done": true,
+        "report_ready": true,
+        "elapsed_s": 0.0
+      },
+      "report": {
+        "title": "给还在路上的你（mock · pet）",
+        "keywords": [
+          "橘子",
+          "橘猫",
+          "猫粮",
+          "肾衰竭",
+          "门口"
+        ],
+        "summary": "mock 报告：橘子；橘猫；猫粮。你说起橘子，这些都还在；带着记忆继续生活。",
+        "quote": "mock quote: 慢慢来。",
+        "user_portrait": {
+          "失去类型": "pet",
+          "关系与背景": "橘子；橘猫；猫粮",
+          "当前情绪状态": "难过但愿意讲述",
+          "困惑点": "放不下"
+        },
+        "object_portrait": {
+          "称呼": "橘子",
+          "关系": "重要的人",
+          "共同记忆": "橘子；橘猫；猫粮"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "橘子；橘猫；猫粮"
+        },
+        "heal_plan": {
+          "summary": "先稳住，再慢慢走。",
+          "stages": [
+            {
+              "title": "先稳住",
+              "desc": "吃饭睡觉",
+              "time": "第1-2周"
+            },
+            {
+              "title": "慢慢走",
+              "desc": "允许想念",
+              "time": "第3-4周"
+            }
+          ]
+        },
+        "pet_grief_analysis": {
+          "summary": "橘子；橘猫；猫粮",
+          "patterns": "mock",
+          "narrative": "橘子；橘猫；猫粮"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "users": 3,
+    "checkpoint_pass_counts": {
+      "CP1_reached_complete": 3,
+      "CP2_report_generated": 3,
+      "CP3_report_fields_complete": 3,
+      "CP4_personalization_match": 3,
+      "CP5_followup_turns_bounded": 3
+    },
+    "soft_warning_users": 0,
+    "overall_pass": true,
+    "exit_code": 0,
+    "scenarios": [
+      {
+        "scenario": "breakup",
+        "loss_type": "breakup",
+        "report_field_count": 9,
+        "anchors_matched": 5,
+        "anchors_total": 5,
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "elapsed_s": 0.0,
+        "pass": true
+      },
+      {
+        "scenario": "loved_one",
+        "loss_type": "loved_one",
+        "report_field_count": 9,
+        "anchors_matched": 5,
+        "anchors_total": 5,
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "elapsed_s": 0.0,
+        "pass": true
+      },
+      {
+        "scenario": "pet",
+        "loss_type": "pet",
+        "report_field_count": 9,
+        "anchors_matched": 5,
+        "anchors_total": 5,
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "elapsed_s": 0.0,
+        "pass": true
+      }
+    ]
+  }
+}
