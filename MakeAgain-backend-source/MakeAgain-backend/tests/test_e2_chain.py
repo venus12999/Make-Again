@@ -160,7 +160,7 @@ class _TokenBudgetClient:
     """Fake provider：复现推理模型 reasoning 吃满 token → raw 空的根因。"""
 
     def __init__(self):
-        # 真实 bug：max_tokens=4000 时报告 raw 为空；修复后 8000 才返回内容。
+        # 真实 bug：max_tokens=4000 时报告 raw 为空；修复后 8000+ 才返回内容（现为12000）。
         self.settings = SimpleNamespace(llm_report_model="", llm_fast_model="hy4-flash-free")
         self.seen_max_tokens: list[int] = []
 
@@ -172,10 +172,10 @@ class _TokenBudgetClient:
 
 
 def test_bug1_product_guard_max_tokens_and_invalid_output():
-    """压到产品代码 _build_report_parsed：max_tokens 必须是 8000，低了就抛 INVALID_REPORT_OUTPUT。"""
+    """压到产品代码 _build_report_parsed：max_tokens 必须 ≥8000（现12000），低了就抛 INVALID_REPORT_OUTPUT。"""
     good = _TokenBudgetClient()
     report = interview._build_report_parsed(good, "breakup", [{"role": "user", "content": "访谈内容"}])
-    assert good.seen_max_tokens and all(t == 8000 for t in good.seen_max_tokens)
+    assert good.seen_max_tokens and all(t >= 8000 for t in good.seen_max_tokens)
     ok, missing = e2.validate_report_fields(report, "breakup")
     assert ok, missing
 
