@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -360,3 +361,74 @@ def scene_decision_for(current_scene: str | None, target_scene: str,
                        trigger: str = TRIGGER_EXPLICIT) -> SceneDecision:
     """纯函数：只产出决策记录，不碰 DB（供路由/前端预判与测试断言）。"""
     return _SCENE_MACHINE.decide(current_scene, target_scene, trigger)
+
+
+# ============================================================================
+# U-018 · 自然语言「进入新关系」检测（关键词/正则 + 开关兜底，零 LLM）
+#
+# 设计约束（与 GAP-V1 对齐）：
+# - 只识别「用户自己开始一段新关系」的明确表达。第三人称叙述（"前任开始新恋情了"）
+#   与单纯怀念（"我想起前任"）都不触发，避免普通倾诉误切场景。
+# - 检测本身纯确定性、不发 LLM、不改库；真正的归档+新建统一复用 SceneStateMachine.apply
+#   （其 archive_and_create 分支调用 store.archive_companion + store.create_companion）。
+# - USE_PERSONA 关闭时一律不切换（默认关闭，可显式打开；与既有状态机开关同一变量）。
+# ============================================================================
+
+# 第一人称 + 关系起始表述。用邻近限定而不是全局关键词，避免"听说前任开始新恋情了，我心里难受"
+# 这类第三人称叙述被误判成用户自己进入新关系。
+_RELATIONSHIP_START_PATTERNS = (
+    r"(?:我|咱|自己|本人).{0,8}(?:开始|开启|有了|遇到|碰到|找到|谈|交|交往|发展|进入).{0,8}"
+    r"(?:新恋情|新的恋情|新关系|新的关系|新对象|新的对象|男朋友|女朋友|对象|新欢|恋爱|恋情|对的人|一段新的感情)",
+    r"(?:我|咱|自己|本人).{0,8}(?:在一起|脱单|官宣|重新在一起|开始新生活)",
+    r"(?:我们|咱俩|我和他|我和她|我和TA|我和ta).{0,8}在一起",
+    r"(?:我|咱|自己|本人).{0,8}(?:喜欢上|爱上|看上).{0,6}(?:别人|其他人|另一个人|新人)",
+)
+# 命中片段里若夹带这些第三人称关系词，视为"讲别人"而非"自己进入新关系"，跳过。
+_THIRD_PERSON_RELATION_HINTS = ("前任", "前男友", "前女友", "前对象", "ex", "EX")
+
+# 新恋情不属于 breakup/loved_one/pet 任一丧失类型；切换到通用陪伴场景，
+# 其 prompt 明确"不主动翻旧事"，正好避免新旅程继续引用旧对象（SCENE_PROMPT_HINT[friend]）。
+_NEW_RELATIONSHIP_SCENE = SCENE_FRIEND
+
+
+def detect_scene_transition(db, user_id: str, message: str,
+                            current_loss_type: str | None) -> dict:
+    """检测用户是否在表达"进入新关系"（U-018 主链路缺口，纯确定性零 LLM）。
+
+    保守策略：第一人称邻近正则 + USE_PERSONA 开关兜底。命中时返回建议目标场景
+    （新恋情 → friend 通用陪伴）；"我想起前任"、第三人称叙述均不触发。
+
+    返回 dict 字段：
+      should_switch / target_scene / new_loss_type / current_scene / matched / reason
+    db、user_id 仅为接口一致性保留，检测本身不依赖数据库。
+    """
+    result = {
+        "should_switch": False,
+        "target_scene": None,
+        "new_loss_type": None,
+        "current_scene": current_loss_type,
+        "matched": None,
+        "reason": "未检测到进入新关系的明确表达",
+    }
+    if not persona_enabled():
+        result["reason"] = "USE_PERSONA 未开启（默认关闭），检测不生效"
+        return result
+    text = (message or "").strip()
+    if not text:
+        return result
+    for pattern in _RELATIONSHIP_START_PATTERNS:
+        m = re.search(pattern, text)
+        if m is None:
+            continue
+        matched = m.group(0)
+        if any(hint in matched for hint in _THIRD_PERSON_RELATION_HINTS):
+            continue  # "我前任开始新恋情了" 是讲别人，不切场景
+        result.update(
+            should_switch=True,
+            target_scene=_NEW_RELATIONSHIP_SCENE,
+            new_loss_type=_NEW_RELATIONSHIP_SCENE,
+            matched=matched,
+            reason=f"检测到用户表达进入新关系：{matched}",
+        )
+        return result
+    return result

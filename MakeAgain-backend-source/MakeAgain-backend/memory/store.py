@@ -161,25 +161,32 @@ def delete_session(db: Session, token: str) -> None:
         db.commit()
 
 
-def get_portrait(db: Session, user_id: str, kind: str) -> dict:
-    row = db.execute(
-        select(Portrait)
-        .where(Portrait.user_id == user_id, Portrait.kind == kind)
-        .order_by(Portrait.version.desc())
-        .limit(1)
-    ).scalar_one_or_none()
+def get_portrait(db: Session, user_id: str, kind: str, companion_id: str | None = None) -> dict:
+    """按 user_id + kind 取最新画像；传 companion_id 时只取该 Journey 归属的画像。
+
+    向后兼容：companion_id=None 时完全保持旧行为（不按归属过滤），所有既有 3 参数调用方不受影响。
+    U-018 GAP-V3：主链画像读写此前忽略 companion_id，新 Journey 会继承旧对象画像，此处补上过滤。
+    """
+    q = select(Portrait).where(Portrait.user_id == user_id, Portrait.kind == kind)
+    if companion_id is not None:
+        q = q.where(Portrait.companion_id == companion_id)
+    row = db.execute(q.order_by(Portrait.version.desc()).limit(1)).scalar_one_or_none()
     return row.content if row else {}
 
 
-def upsert_portrait(db: Session, user_id: str, kind: str, content: dict, status: str = "draft") -> Portrait:
-    row = db.execute(
-        select(Portrait)
-        .where(Portrait.user_id == user_id, Portrait.kind == kind)
-        .order_by(Portrait.version.desc())
-        .limit(1)
-    ).scalar_one_or_none()
+def upsert_portrait(db: Session, user_id: str, kind: str, content: dict, status: str = "draft",
+                    companion_id: str | None = None) -> Portrait:
+    """写入画像；传 companion_id 时按归属定位并把归属写进新行，不传时保持旧行为。
+
+    U-018 GAP-V3：报告落库时带当前 companion_id，画像才有 Journey 归属，隔离层与主链口径才能一致。
+    """
+    q = select(Portrait).where(Portrait.user_id == user_id, Portrait.kind == kind)
+    if companion_id is not None:
+        q = q.where(Portrait.companion_id == companion_id)
+    row = db.execute(q.order_by(Portrait.version.desc()).limit(1)).scalar_one_or_none()
     if row is None:
-        row = Portrait(user_id=user_id, kind=kind, content=content, status=status, version=1)
+        row = Portrait(user_id=user_id, kind=kind, content=content, status=status,
+                       version=1, companion_id=companion_id)
         db.add(row)
     else:
         row.content = content

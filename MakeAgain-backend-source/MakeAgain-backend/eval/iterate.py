@@ -2,7 +2,14 @@
 """评测闭环工具：snapshot（存基线）/ compare（改后对比）/ history（迭代历史）。
 
 把"评测数字 + prompt版本 + git commit"绑在一起，让每次改动有据可查。
-判据见 docs/EVAL_ITERATION_LOOP.md。
+判据见 docs/EVAL_ITERATION_LOOP.md；2026-09 方法升级见 docs/EVAL_METHOD_UPGRADE.md。
+
+2026-11-23 方法升级（evalstats 2026-09 + Anthropic playbook 2026-09-28）：
+- 新增 noise_gate：增益在噪声带内 -> "持平（增益在噪声内，建议不合入）"；
+  噪声带≥最小可行动改进 -> 提示加重复次数/样本量再开跑
+- 稳健模式以精确配对符号检验为主、bootstrap CI 仅作对照；N<100 标注 bootstrap 不可靠
+- 同基线同批 compare≥2 次 -> 标注过拟合风险（尚未做物理 train/test 拆分）
+- --no-robust 逐字回退升级前的 CI+符号检验判定；--no-repetitions 仍逐字节回退最初旧行为
 
 2026-11-22 统计门禁（P0/S1）：
 - compare 默认 repetitions=3，同批 case 跑 N 次，保留每条 case 每次分数
@@ -38,6 +45,72 @@ BOOTSTRAP_SEED = 20261122
 ALPHA = 0.05
 POWER = 0.80
 LOW_POWER_N = 30  # n<30 标功效不足
+
+# ---- 2026-09 方法升级（evalstats arXiv:2609.35815 / Anthropic playbook 2026-09-28）----
+# evalstats：N<100 明确警告 bootstrap CI 不可靠、raw judge 分数统计虚高；
+#            小样本判定以精确配对符号检验为主，bootstrap CI 只作对照。
+SMALL_SAMPLE_N = 100
+NOISE_Z = 1.96  # 配对差值噪声带的 95% 正态近似：先看噪声再开跑
+OVERFIT_COMPARES = 2  # 同一基线+同一批 compare 达到此次数即提示过拟合风险
+BOOTSTRAP_CAVEAT = (f"⚠ 小样本 bootstrap CI 不可靠（evalstats 2026-09，N<{SMALL_SAMPLE_N}），"
+                    "仅作对照；判定以精确配对符号检验为主")
+
+
+def noise_gate(deltas, delta_mean, min_improve: float | None = None,
+               alpha: float = ALPHA, z: float = NOISE_Z) -> dict:
+    """噪声门槛（Anthropic playbook 2026-09-28）：增益在噪声内就建议不合入。
+
+    noise_se = sd(配对差值)/sqrt(n)，noise_band = z*noise_se 即纯噪声下均分能移动的范围。
+    噪声带 >= 最小可行动改进时，建议先加重复次数/样本量再开跑。
+    纯函数：不改全局状态，便于构造性测试。
+    """
+    ds = [float(d) for d in deltas if d is not None]
+    n = len(ds)
+    if n < 2 or delta_mean is None:
+        return {"noise_se": None, "noise_band": None, "min_improve": min_improve,
+                "gain_above_noise": None, "eval_noise_too_high": None,
+                "note": "样本不足(n<2)，噪声门槛不可用"}
+    sd = math.sqrt(sum((d - delta_mean) ** 2 for d in ds) / (n - 1))
+    se = sd / math.sqrt(n)
+    band = z * se
+    above = delta_mean > band
+    too_high = min_improve is not None and band >= min_improve
+    note = (("增益在噪声内：" if not above else "增益高于噪声：")
+            + f"增益 {delta_mean:+.4f} {'高于' if above else '未高于'}噪声带 {band:.4f}"
+            + ("；噪声≥最小可行动改进，建议加重复次数/样本再开跑" if too_high else ""))
+    return {"noise_se": round(se, 4), "noise_band": round(band, 4),
+            "min_improve": min_improve, "gain_above_noise": above,
+            "eval_noise_too_high": too_high, "note": note}
+
+
+def overfit_warning(prior_compares: int, threshold: int = OVERFIT_COMPARES) -> str | None:
+    """同批 case 被反复 compare 时的过拟合风险提示（playbook: train/test 拆分）。
+
+    本工具尚未做 train/test 物理拆分，只能用"同基线同批已 compare 次数"作为风险信号；
+    这是标注，不是代替 held-out 验证。
+    """
+    if prior_compares < threshold:
+        return None
+    return (f"该批已被用于 {prior_compares} 次调参对比，存在过拟合风险："
+            "建议留 held-out 批做最终验证；train 提分而 test 持平的改动应回退")
+
+
+def prior_compare_count(history: Path, baseline_ts, batch_names) -> int:
+    """从迭代历史数出"同一基线 + 同一批"已 compare 过几次（纯读文件）。"""
+    if not history.exists():
+        return 0
+    want = set(batch_names or [])
+    cnt = 0
+    for line in history.read_text(encoding="utf-8").splitlines():
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if d.get("event") != "compare" or d.get("vs_baseline") != baseline_ts:
+            continue
+        if want and want.intersection(d.get("batches") or {}):
+            cnt += 1
+    return cnt
 
 
 def git_info() -> dict:
@@ -241,15 +314,18 @@ def ci_direction(ci_b, ci_a) -> int:
 
 def compare_metric(key, before, after, *, crisis_line: bool = False,
                    alpha: float = ALPHA, n_resamples: int = BOOTSTRAP_RESAMPLES,
-                   seed: int = BOOTSTRAP_SEED) -> dict:
+                   seed: int = BOOTSTRAP_SEED, robust_gate: bool = True) -> dict:
     """配对比较单个指标。before/after 为 {case_id: [每次分数...]} 或 None。
 
     纯函数：只读入参，不改全局状态，便于构造"抖动/稳定提升/危机退化"用例。
+    robust_gate=True（默认）启用 2026 稳健判定：符号检验为主、CI 仅参考，并加噪声门槛；
+    robust_gate=False 逐字回退升级前的 CI+符号检验一致判定（供 A/B 对照与开关回退）。
     """
     empty = {"key": key, "verdict": "N/A（缺配对数据）", "reason": "缺基线或当前的 per-case 明细",
              "deltas": None, "sign": None, "n": 0, "mde": None, "low_power": True,
              "ci_b": None, "ci_a": None, "ci_dir": 0, "sign_dir": 0,
-             "b_mean": None, "a_mean": None, "delta_mean": None, "crisis_line": crisis_line}
+             "b_mean": None, "a_mean": None, "delta_mean": None, "crisis_line": crisis_line,
+             "robust_gate": robust_gate, "noise": None, "bootstrap_caveat": None}
     if not before or not after:
         return empty
     bm = {cid: _mean(vals) for cid, vals in before.items() if vals}
@@ -277,16 +353,32 @@ def compare_metric(key, before, after, *, crisis_line: bool = False,
     mde_val = mde(n, sd, alpha=alpha)
     low_power = n < LOW_POWER_N
 
+    # 噪声门槛只在稳健模式生效；关闭时下面 CI+符号检验判定逐字保持升级前逻辑
+    noise = (noise_gate(deltas, delta_mean, THRESH.get(key, {}).get("improve"))
+             if robust_gate else None)
+    caveat = BOOTSTRAP_CAVEAT if (robust_gate and n < SMALL_SAMPLE_N) else None
+
     dirs = [d for d in (ci_dir, sign_dir) if d != 0]
-    if dirs and all(d > 0 for d in dirs):
-        evidence, ev_desc = 1, "CI不重叠/配对检验显著（正向）"
-    elif dirs and all(d < 0 for d in dirs):
-        evidence, ev_desc = -1, "CI不重叠/配对检验显著（负向）"
+    if robust_gate:
+        # evalstats 2026-09：小样本 bootstrap CI 不可靠 -> 以精确配对符号检验为主、CI 仅参考
+        if sign_dir != 0:
+            evidence = sign_dir
+            ev_desc = (f"配对符号检验显著（{'正向' if sign_dir > 0 else '负向'}），"
+                       f"CI方向={ci_dir:+d} 仅作参考")
+        else:
+            evidence = 0
+            ev_desc = ("CI 提示方向但符号检验不显著（抖动内）" if ci_dir
+                       else "CI重叠且配对检验不显著（抖动内）")
     else:
-        evidence, ev_desc = 0, "CI重叠且配对检验不显著（抖动内）"
+        if dirs and all(d > 0 for d in dirs):
+            evidence, ev_desc = 1, "CI不重叠/配对检验显著（正向）"
+        elif dirs and all(d < 0 for d in dirs):
+            evidence, ev_desc = -1, "CI不重叠/配对检验显著（负向）"
+        else:
+            evidence, ev_desc = 0, "CI重叠且配对检验不显著（抖动内）"
 
     if crisis_line:
-        # 安全红线：recall 只要退化就不合入，不看显著性
+        # 安全红线：recall 只要退化就不合入，不看显著性（稳健开关不改变红线）
         if delta_mean < -1e-9:
             verdict = "退化（安全红线，不合入）"
             reason = f"危机recall下降 {delta_mean:+.3f}，红线不许退化；{ev_desc}"
@@ -294,6 +386,10 @@ def compare_metric(key, before, after, *, crisis_line: bool = False,
             verdict, reason = "改善", ev_desc
         else:
             verdict, reason = "持平", ev_desc
+    elif robust_gate and evidence > 0 and delta_mean > 0 and not noise["gain_above_noise"]:
+        # Anthropic playbook 2026-09-28：增益在噪声内就建议不合入
+        verdict = "持平（增益在噪声内，建议不合入）"
+        reason = f"{noise['note']}；{ev_desc}"
     else:
         if evidence > 0 and delta_mean > 0:
             verdict, reason = "改善", ev_desc
@@ -307,7 +403,8 @@ def compare_metric(key, before, after, *, crisis_line: bool = False,
             "ci_dir": ci_dir, "deltas": [round(d, 4) for d in deltas],
             "sign": sg, "sign_dir": sign_dir, "n": n, "mde": mde_val,
             "low_power": low_power, "verdict": verdict, "reason": reason,
-            "crisis_line": crisis_line}
+            "crisis_line": crisis_line, "robust_gate": robust_gate,
+            "noise": noise, "bootstrap_caveat": caveat}
 
 
 def format_metric_report(r: dict) -> str:
@@ -330,6 +427,15 @@ def format_metric_report(r: dict) -> str:
     mde_s = "N/A" if r.get("mde") is None else f"{r['mde']:.4f}"
     power_tag = "  [⚠ n<30 功效不足，结论仅供参考]" if r.get("low_power") else "  [功效充足]"
     lines.append(f"    功效: n={r['n']} MDE(α={ALPHA},power={POWER})={mde_s}{power_tag}")
+    if r.get("bootstrap_caveat"):
+        lines.append(f"    {r['bootstrap_caveat']}")
+    nz = r.get("noise")
+    if nz and nz.get("noise_band") is not None:
+        mi = "N/A" if nz.get("min_improve") is None else f"{nz['min_improve']:.4f}"
+        lines.append(f"    噪声门槛: 噪声带={nz['noise_band']:.4f} SE={nz['noise_se']:.4f} "
+                     f"最小可行动改进={mi} 增益高于噪声={nz['gain_above_noise']}")
+        if nz.get("eval_noise_too_high"):
+            lines.append("    ⚠ 噪声≥最小可行动改进，建议加重复次数或样本量再开跑（playbook）")
     lines.append(f"    依据: {r['reason']}")
     return "\n".join(lines)
 
@@ -339,6 +445,9 @@ def overall_verdict(verdicts) -> str:
     good = any(v == "改善" for v in verdicts)
     if bad:
         return "❌ 有核心指标退化，建议不合入/回滚"
+    # 2026 方法升级：单项已判"增益在噪声内，建议不合入"，总判定不能再说"可合入"
+    if any("增益在噪声内" in v for v in verdicts):
+        return "⚠ 增益在噪声内，建议不合入（先加重复次数/样本量再开跑）"
     if good:
         return "✅ 改善，可合入"
     return "➖ 持平，可合入"
@@ -428,13 +537,15 @@ def cmd_snapshot(args):
 
 def cmd_compare_statistical(args):
     reps = max(1, args.repetitions)
+    robust = not getattr(args, "no_robust", False)
     if not BASELINE.exists():
         print("[compare] 无基线，先跑 snapshot")
         return
     base = json.loads(BASELINE.read_text(encoding="utf-8"))
     names = [args.batch] if args.batch else list(base["batches"].keys())
     print(f"[compare] running {len(names)} batches × {reps} repetitions "
-          f"(bootstrap×{BOOTSTRAP_RESAMPLES}, alpha={ALPHA}) ...")
+          f"(bootstrap×{BOOTSTRAP_RESAMPLES}, alpha={ALPHA}, "
+          f"robust_gate={robust}) ...")
     now = run_batches(names, repetitions=reps)
     print(f"\n{'='*70}\n对照基线: {base['ts']} commit={base['git']['commit']}\n{'='*70}")
     verdicts = []
@@ -459,7 +570,7 @@ def cmd_compare_statistical(args):
                             ("crisis_detect_rate", True)):
             bpc = (b.get("per_case") or {}).get(key)
             apc = (n.get("per_case") or {}).get(key)
-            r = compare_metric(key, bpc, apc, crisis_line=crisis)
+            r = compare_metric(key, bpc, apc, crisis_line=crisis, robust_gate=robust)
             print(format_metric_report(r))
             if r["verdict"] != "N/A（缺配对数据）":
                 verdicts.append(r["verdict"])
@@ -487,13 +598,26 @@ def cmd_compare_statistical(args):
         print(f"[gate] judge 校准检查失败：{str(_exc)[:100]}（保守判不可信）")
         final = "❌ judge 未校准，结论不可信（不给出合入建议）"
 
+    # 2026 方法升级：同批反复调参 -> 过拟合风险标注（--no-robust 可回退）
+    # 放在 judge 门之后，保证风险提示不被门的最终判定覆盖
+    prior = prior_compare_count(HISTORY, base.get("ts"), names) if robust else 0
+    overfit = overfit_warning(prior) if robust else None
+    if overfit:
+        print(f"[overfit] {overfit}")
+        final += " ⚠ 同批多次调参，存在过拟合风险（结论仅参考）"
+
     print(f"\n{'='*70}\n总判定: {final}\n{'='*70}")
     snap = {
         "ts": datetime.now(timezone.utc).isoformat(),
         "git": git_info(), "prompt_versions": prompt_versions(),
         "vs_baseline": base["ts"], "batches": now, "verdict": final,
         "statistical": {"repetitions": reps, "bootstrap": BOOTSTRAP_RESAMPLES,
-                        "alpha": ALPHA, "power": POWER},
+                        "alpha": ALPHA, "power": POWER, "robust_gate": robust,
+                        "small_sample_n": SMALL_SAMPLE_N,
+                        "prior_compares_same_batch": prior,
+                        "overfit_warning": overfit,
+                        "methods": ["sign_test_primary", "bootstrap_ci_reference",
+                                    "noise_gate", "overfit_marker"] if robust else []},
         "note": args.note or "",
     }
     with HISTORY.open("a", encoding="utf-8") as f:
@@ -531,6 +655,8 @@ def main():
     c = sub.add_parser("compare"); c.add_argument("--batch"); c.add_argument("--note")
     c.add_argument("--repetitions", type=int, default=3, help="同批 case 重复运行次数（默认3）")
     c.add_argument("--no-repetitions", action="store_true", help="关闭统计门禁，逐字节回退旧 compare 行为")
+    c.add_argument("--no-robust", action="store_true",
+                   help="关闭2026稳健判定（符号检验优先/噪声门槛/过拟合提示），回退升级前统计门禁")
     h = sub.add_parser("history")
     args = ap.parse_args()
     if getattr(args, "repetitions", 1) < 1:

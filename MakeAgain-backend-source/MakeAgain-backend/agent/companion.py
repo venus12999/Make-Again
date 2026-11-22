@@ -178,6 +178,38 @@ def _execute_tools(db, user_id: str, client: LLMClient, msgs: list[dict],
     return reply, tool
 
 
+def _maybe_transition_scene(db, user_id: str, message: str, session_id: str | None = None) -> dict | None:
+    """U-018：生成前检测"用户进入新关系"，命中则归档旧 Journey + 新建新关系 Journey。
+
+    归档/新建统一复用 memory.state.SceneStateMachine.apply（其 archive_and_create 分支
+    调用 store.archive_companion + store.create_companion），不在此处自造逻辑。
+    检测与切换全程确定性、零 LLM；任何异常都 swallow，保证对话主链路不因切换失败中断。
+    """
+    try:
+        from memory import state as scene_state
+        current = store.effective_loss_type(db, user_id)
+        detection = scene_state.detect_scene_transition(db, user_id, message, current)
+        if not detection.get("should_switch"):
+            return None
+        result = scene_state.transition_scene(
+            db, user_id, detection["target_scene"], trigger=scene_state.TRIGGER_RELATIONSHIP
+        )
+        # 新旅程沿用本轮会话 id：对话历史与回包的 session_id 保持一致，前端可无缝续聊。
+        new_id = result.get("companion_id") if isinstance(result, dict) else None
+        if new_id:
+            # SecureRoute 在请求开始时把 db.info["companion_id"] 钉成旧陪伴，且 ManagedSession
+            # 的 do_orm_execute 会按它自动过滤所有 scoped 模型。切换后必须把本请求的 scope
+            # 指针挪到新陪伴：否则同一请求里 get_current_companion()/画像读取仍命中已归档
+            # 旧对象，路由层事后校验还会误报 COMPANION_CHANGED。只改 chat 路径，不影响
+            # interview/显式 transition_scene 的既有调用语义（GAP-V3 归 B 包处理）。
+            db.info["companion_id"] = new_id
+            if session_id:
+                store.update_companion(db, new_id, chat_session_id=session_id)
+        return result
+    except Exception:
+        return None
+
+
 def chat(db, user_id: str, message: str, client: LLMClient, session_id: str | None = None, no_tools: bool = False) -> dict:
     """陪伴入口:按丧失类型路由到对应场景引擎。
 
@@ -191,7 +223,10 @@ def chat(db, user_id: str, message: str, client: LLMClient, session_id: str | No
 
     USE_PYDANTIC_AI=1 时路由到 agent_v2 的 pydantic-ai typed-tools 编排;
     默认关闭,关闭时下面的原有逻辑逐字节不变。
+
+    U-018：路由前先做一次确定性的"进入新关系"检测；未命中时无任何写操作。
     """
+    _maybe_transition_scene(db, user_id, message, session_id)
     if _use_pydantic_ai():
         from agent.agent_v2 import chat_v2
         return chat_v2(db, user_id, message, client, session_id, no_tools=no_tools)
