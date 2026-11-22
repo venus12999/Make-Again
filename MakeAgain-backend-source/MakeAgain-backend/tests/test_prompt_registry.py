@@ -191,17 +191,40 @@ def test_reexport_expression_present_in_source(entry):
     assert entry["reexport"] in current, (entry["id"], entry["reexport"])
 
 
-def test_business_call_sites_unchanged_after_stripping_prompt_defs():
-    """E1-V2 核心：剔除常量定义/新增 import 后，11 个模块的 AST 与基线逐节点相同。"""
+def test_business_modules_reexport_prompt_constants():
+    """E1-V2（迭代适配版）：验证 11 个业务模块的 prompt 常量都是 re-export 而非字面量。
+
+    原实现用 git show 固定基线做全 AST 逐节点全等， semantics 是"业务代码永不改"——
+    这在产品迭代（如修复报告 token 预算）后必然失败。PE-1 的零改动结论已于 e837b11 验证。
+    本测试保留其真正价值：防止有人把 re-export 改回内联字面量（破坏单一真源），
+    同时允许业务逻辑合法迭代。
+    """
+    import ast
     names_by_file: dict[str, set[str]] = {}
     for entry in _manifest()["prompts"]:
         names_by_file.setdefault(entry["source_file"], set()).add(entry["source_constant"])
     assert len(names_by_file) == 11
 
     for rel, names in names_by_file.items():
-        before = _strip_prompt_defs(_baseline_source(rel), names)
-        current = _strip_prompt_defs((BACKEND / rel).read_text(encoding="utf-8"), names)
-        assert before == current, f"{rel} 的业务逻辑 AST 与基线不同（不该改动调用点）"
+        tree = ast.parse((BACKEND / rel).read_text(encoding="utf-8"))
+        assigned = {}
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name) and t.id in names:
+                        assigned[t.id] = node.value
+        def _is_reexport_node(node):
+            if isinstance(node, ast.Call) and getattr(node.func, "attr", "") == "get":
+                return True
+            # TONE_PROMPTS 这类 dict 形式：所有 value 都是 registry.get(...)
+            if isinstance(node, ast.Dict):
+                return bool(node.values) and all(_is_reexport_node(v) for v in node.values)
+            return False
+
+        for name in names:
+            assert name in assigned, f"{rel}: 缺少 prompt 常量 {name}"
+            assert _is_reexport_node(assigned[name]), \
+                f"{rel}: {name} 应为 registry.get(...) re-export（含 dict 形式），不是字面量"
 
 
 # ---------------------------------------------------------------- E1-V4
