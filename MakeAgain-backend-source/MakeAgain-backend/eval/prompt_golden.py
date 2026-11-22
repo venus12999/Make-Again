@@ -41,6 +41,9 @@ from pathlib import Path
 from typing import Any
 
 BACKEND = Path(__file__).resolve().parents[1]
+import sys
+if str(BACKEND) not in sys.path:
+    sys.path.insert(0, str(BACKEND))  # 作为脚本运行时能 import agent.prompts_registry
 DEFAULT_CASES = BACKEND / "eval" / "prompt_cases.json"
 BREAKUP_SRC = BACKEND / "agent" / "breakup.py"
 TONE_SRC = BACKEND / "emotion" / "tone.py"
@@ -298,12 +301,36 @@ def _ast_tone_soothe(path: Path) -> str | None:
 
 
 def build_generation_template() -> tuple[str | None, dict]:
-    """从 breakup.py / tone.py 用 AST 抽取真实 prompt 常量并填好非 context 占位符。"""
-    template = _ast_string_assign(BREAKUP_SRC, "BREAKUP_SYSTEM_PROMPT") or FALLBACK_TEMPLATE
+    """取真实 prompt 并填好非 context 占位符。
+
+    PE-1 后 prompt 单一真源是 agent/prompts_registry.py，源文件常量改为 re-export，
+    AST 抽不到字面量——优先从 registry 取；registry 不可用时再退回 AST / 兜底。
+    """
+    def _from_registry(pid: str) -> str | None:
+        try:
+            from agent.prompts_registry import get
+            v = get(pid)
+            return v if isinstance(v, str) and v.strip() else None
+        except Exception:
+            return None
+
+    template = (
+        _from_registry("breakup.system")
+        or _ast_string_assign(BREAKUP_SRC, "BREAKUP_SYSTEM_PROMPT")
+        or FALLBACK_TEMPLATE
+    )
     if not template:
-        return None, {"reason": "无法从 breakup.py 抽取 BREAKUP_SYSTEM_PROMPT，且无兜底；拒绝编造 prompt"}
-    micro = _ast_string_assign(BREAKUP_SRC, "MICRO_GATE_RULE") or FALLBACK_MICRO
-    rule = _ast_string_assign(TONE_SRC, "SHARED_RULE") or FALLBACK_RULE
+        return None, {"reason": "无法从 registry / breakup.py 取到 BREAKUP_SYSTEM_PROMPT，且无兜底；拒绝编造 prompt"}
+    micro = (
+        _from_registry("breakup.micro_gate")
+        or _ast_string_assign(BREAKUP_SRC, "MICRO_GATE_RULE")
+        or FALLBACK_MICRO
+    )
+    rule = (
+        _from_registry("tone.shared_rule")
+        or _ast_string_assign(TONE_SRC, "SHARED_RULE")
+        or FALLBACK_RULE
+    )
     soothe = _ast_tone_soothe(TONE_SRC) or FALLBACK_SOOTHE
     try:
         filled = template.format(rule=rule, stage_guidance=soothe, microrule=micro, context="@@CTX@@")
