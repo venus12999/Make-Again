@@ -1,0 +1,293 @@
+{
+  "summary": {
+    "batch": "03_情绪识别_GoEmotions",
+    "n": 35,
+    "raw": false,
+    "model": "hy4-flash-free",
+    "judge_avg": null,
+    "emotion_hit_rate": 0.543,
+    "crisis_detect_rate": 0.0
+  },
+  "results": [
+    {
+      "id": "ge-edcu99z",
+      "scene": "情绪-sadness",
+      "text": "我这辈子从来没有这么难过过！",
+      "pred": "难过",
+      "gold": "sadness",
+      "hit": true
+    },
+    {
+      "id": "ge-ed4yr9r",
+      "scene": "情绪-anger",
+      "text": "哇，妈呀，别人当面戳穿我在胡扯，我还不能封他们，滚出去，小子。",
+      "pred": "愤怒",
+      "gold": "anger",
+      "hit": true
+    },
+    {
+      "id": "ge-eelgxk0",
+      "scene": "情绪-love",
+      "text": "我觉得，与其说那样的一刻会让她对这游戏有点扫兴，不如说它真的能点燃她对这游戏的热爱。",
+      "pred": "其他",
+      "gold": "love",
+      "hit": false
+    },
+    {
+      "id": "ge-edwloev",
+      "scene": "情绪-grief",
+      "text": "他四天后就因为脱水走了。",
+      "pred": "难过",
+      "gold": "grief",
+      "hit": true
+    },
+    {
+      "id": "ge-ed2znun",
+      "scene": "情绪-sadness",
+      "text": "笑死，做梦去吧哥们。你今天已经博够眼球了。真去搞懂自己在说啥，帮助可大了。抱歉啊，你还卡在 free roam 里吸 crack。",
+      "pred": "愤怒",
+      "gold": "sadness",
+      "hit": false
+    },
+    {
+      "id": "ge-ee2piwu",
+      "scene": "情绪-anger",
+      "text": "作为一个麻醉科住院医，这让我鼻孔加速喷气了好几秒。收下你他妈的赞吧，混蛋。",
+      "pred": "愤怒",
+      "gold": "anger",
+      "hit": true
+    },
+    {
+      "id": "ge-edgygzk",
+      "scene": "情绪-sadness",
+      "text": "1-2-3-4 我宣布，拇指大战开始！可恶，[NAME]，你又赢了！好吧，你又可以戳我了 :(",
+      "pred": "不甘",
+      "gold": "sadness",
+      "hit": false
+    },
+    {
+      "id": "ge-ed4m2jt",
+      "scene": "情绪-annoyance",
+      "text": "我倒也不一定恨他们，但话说回来，我很不喜欢那种明知道生活有多残酷，还非要生孩子的人。",
+      "pred": "愤怒",
+      "gold": "annoyance",
+      "hit": true
+    },
+    {
+      "id": "ge-ed9udb9",
+      "scene": "情绪-annoyance",
+      "text": "你要是信那套，就真是蠢透了。",
+      "pred": "愤怒",
+      "gold": "annoyance",
+      "hit": true
+    },
+    {
+      "id": "ge-ef4jj65",
+      "scene": "情绪-sadness",
+      "text": "*[NAME] 搞得 [NAME] 更难受了。*",
+      "pred": "难过",
+      "gold": "sadness",
+      "hit": true
+    },
+    {
+      "id": "ge-edz9687",
+      "scene": "情绪-love",
+      "text": "才五个小时车程……我想我就去 Almonte 来个一日游吧。我超爱烘焙点心。",
+      "pred": "其他",
+      "gold": "love",
+      "hit": false
+    },
+    {
+      "id": "ge-ef9wfsk",
+      "scene": "情绪-annoyance",
+      "text": "我他妈基本可以确定是卷款跑路了……",
+      "pred": "愤怒",
+      "gold": "annoyance",
+      "hit": true
+    },
+    {
+      "id": "ge-edfsmzk",
+      "scene": "情绪-annoyance",
+      "text": "我可不会去费这个劲。他都看了你的消息了，到现在还没回。所以这已经是个坏信号了，开局就不妙。",
+      "pred": "回避",
+      "gold": "annoyance",
+      "hit": false
+    },
+    {
+      "id": "ge-efdpg9a",
+      "scene": "情绪-anger",
+      "text": "我恨鹿。他妈的大屁股耗子。",
+      "pred": "愤怒",
+      "gold": "anger",
+      "hit": true
+    },
+    {
+      "id": "ge-ef4djgp",
+      "scene": "情绪-annoyance",
+      "text": "这张截图里的帖子，还有你的评论，真是把你们这些人到底有多脆弱给暴露出来了。",
+      "pred": "愤怒",
+      "gold": "annoyance",
+      "hit": true
+    },
+    {
+      "id": "ge-ee1cn14",
+      "scene": "情绪-anger",
+      "text": "哈，我才不管他们那些支持者呢……对社会来说最重要的是正义得到伸张，那个男的被关进牢里！你尽管尖叫吧。",
+      "pred": "其他",
+      "gold": "anger",
+      "hit": false
+    },
+    {
+      "id": "ge-ed1smi9",
+      "scene": "情绪-love",
+      "text": "这是哪儿啊？太美了。我特别想拥有一块带小溪的地。那就是我的梦想。",
+      "pred": "其他",
+      "gold": "love",
+      "hit": false
+    },
+    {
+      "id": "ge-ef0t5h0",
+      "scene": "情绪-love",
+      "text": "是啊，我其实真的很喜欢 TD Centre。我超爱在那种不是冻死人的周六到处逛逛，就欣赏欣赏这座城市。",
+      "pred": "平静",
+      "gold": "love",
+      "hit": false
+    },
+    {
+      "id": "ge-ee3oyyx",
+      "scene": "情绪-annoyance",
+      "text": "在 Chicago 长大，这就是我的生活。我气得要死，他没能撑下来。",
+      "pred": "愤怒",
+      "gold": "annoyance",
+      "hit": true
+    },
+    {
+      "id": "ge-edxub2h",
+      "scene": "情绪-sadness",
+      "text": "我真替我孩子们难过，他们永远都没机会看到 [NAME] 上场了……可 [NAME] 呢……",
+      "pred": "难过",
+      "gold": "sadness",
+      "hit": true
+    },
+    {
+      "id": "ge-eebcfza",
+      "scene": "情绪-anger",
+      "text": "“对男子气概的攻击”我在这儿都快笑死了，你这个玻璃心的狗娘养的。",
+      "pred": "愤怒",
+      "gold": "anger",
+      "hit": true
+    },
+    {
+      "id": "ge-eeuhgtp",
+      "scene": "情绪-anger",
+      "text": "经典款懒鬼渣男",
+      "pred": "愤怒",
+      "gold": "anger",
+      "hit": true
+    },
+    {
+      "id": "ge-ef5m49k",
+      "scene": "情绪-sadness",
+      "text": "我就是想让[NAME]赶紧退下来，这样我才能别再黑他、开始感激他做过的一切……哪怕这让我痛苦得不行。",
+      "pred": "愤怒",
+      "gold": "sadness",
+      "hit": false
+    },
+    {
+      "id": "ge-ed70zli",
+      "scene": "情绪-love",
+      "text": "天哪，我太爱 Canada 了🇨🇦",
+      "pred": "其他",
+      "gold": "love",
+      "hit": false
+    },
+    {
+      "id": "ge-ef46c0z",
+      "scene": "情绪-love",
+      "text": "告诉他，我爱他。",
+      "pred": "其他",
+      "gold": "love",
+      "hit": false
+    },
+    {
+      "id": "ge-eegj1ea",
+      "scene": "情绪-nervousness",
+      "text": "我老是会否定自己的感受，因为我总担心他们会觉得我这样很矫情，我一直在跟这个东西较劲。",
+      "pred": "焦虑",
+      "gold": "nervousness",
+      "hit": true
+    },
+    {
+      "id": "ge-ee8n1ep",
+      "scene": "情绪-nervousness",
+      "text": "你以前去过那种场合吗？如果去过，体验怎么样？我紧张得要命。",
+      "pred": "焦虑",
+      "gold": "nervousness",
+      "hit": true
+    },
+    {
+      "id": "ge-ee8mzwa",
+      "scene": "情绪-grief",
+      "text": "我好想他们还活着啊",
+      "pred": "想念",
+      "gold": "grief",
+      "hit": false
+    },
+    {
+      "id": "ge-ed2wzm6",
+      "scene": "情绪-grief",
+      "text": "我在另一个帖子里看到说，他没过多久就因为内伤死了。",
+      "pred": "难过",
+      "gold": "grief",
+      "hit": true
+    },
+    {
+      "id": "ge-edy9n76",
+      "scene": "情绪-grief",
+      "text": "太离谱了吧。大概两年前，在 LaPorte 的 146 路上，有辆卡车把一颗螺栓崩了起来，直接穿过他的挡风玻璃砸中他，人就没了。",
+      "pred": "其他",
+      "gold": "grief",
+      "hit": false
+    },
+    {
+      "id": "ge-ee7w2ox",
+      "scene": "情绪-grief",
+      "text": "真难过。我向她家人表示哀悼。",
+      "pred": "难过",
+      "gold": "grief",
+      "hit": true
+    },
+    {
+      "id": "ge-edumf9e",
+      "scene": "情绪-nervousness",
+      "text": "一样，不过得加上 Panic at the Disco",
+      "pred": "平静",
+      "gold": "nervousness",
+      "hit": false
+    },
+    {
+      "id": "ge-efh1hit",
+      "scene": "情绪-nervousness",
+      "text": "这种事儿让我对未来几代人稍微少担心一点。",
+      "pred": "释怀",
+      "gold": "nervousness",
+      "hit": false
+    },
+    {
+      "id": "ge-ee5xxx8",
+      "scene": "情绪-grief",
+      "text": "我把他们全干掉了，然后还把我唯一的存档给覆盖了。我真是疯了。",
+      "pred": "内疚",
+      "gold": "grief",
+      "hit": false
+    },
+    {
+      "id": "ge-edwthsb",
+      "scene": "情绪-nervousness",
+      "text": "我也很焦虑，怕大家会因为我之前从来没跟任何人说过这件事，而对我生气、感到惊讶，或者心里不舒服。",
+      "pred": "焦虑",
+      "gold": "nervousness",
+      "hit": true
+    }
+  ]
+}

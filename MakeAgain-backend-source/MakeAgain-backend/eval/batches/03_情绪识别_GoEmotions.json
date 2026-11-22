@@ -1,0 +1,499 @@
+{
+  "batch": "03_情绪识别_GoEmotions",
+  "source": "GoEmotions",
+  "paper": "ACL 2020",
+  "eval": "情绪分类（翻译后测）",
+  "n": 35,
+  "items": [
+    {
+      "id": "ge-edcu99z",
+      "scene": "情绪-sadness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I've never been this sad in my life!",
+      "expected_label": "sadness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edcu99z"
+      },
+      "user_input_zh": "我这辈子从来没有这么难过过！"
+    },
+    {
+      "id": "ge-ed4yr9r",
+      "scene": "情绪-anger",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Wah Mum other people call me on my bullshit and I can't ban them , Go out side son.",
+      "expected_label": "anger",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ed4yr9r"
+      },
+      "user_input_zh": "哇，妈呀，别人当面戳穿我在胡扯，我还不能封他们，滚出去，小子。"
+    },
+    {
+      "id": "ge-eelgxk0",
+      "scene": "情绪-love",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "It's better to say a moment like that could truly ignite her love for the game rather than putting a bit of a damper on it.",
+      "expected_label": "love",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-eelgxk0"
+      },
+      "user_input_zh": "我觉得，与其说那样的一刻会让她对这游戏有点扫兴，不如说它真的能点燃她对这游戏的热爱。"
+    },
+    {
+      "id": "ge-edwloev",
+      "scene": "情绪-grief",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "He died 4 days later of dehydration",
+      "expected_label": "grief",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edwloev"
+      },
+      "user_input_zh": "他四天后就因为脱水走了。"
+    },
+    {
+      "id": "ge-ed2znun",
+      "scene": "情绪-sadness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Lol dream on buddy. You’ve had enough attention today. Actually learn what your talking about helps a lot. Sorry your stuck in free roam smokin crack",
+      "expected_label": "sadness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ed2znun"
+      },
+      "user_input_zh": "笑死，做梦去吧哥们。你今天已经博够眼球了。真去搞懂自己在说啥，帮助可大了。抱歉啊，你还卡在 free roam 里吸 crack。"
+    },
+    {
+      "id": "ge-ee2piwu",
+      "scene": "情绪-anger",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "As an anesthesia resident this made me blow air out my nose at an accelerated rate for several seconds. Take your damn upvote you bastard.",
+      "expected_label": "anger",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ee2piwu"
+      },
+      "user_input_zh": "作为一个麻醉科住院医，这让我鼻孔加速喷气了好几秒。收下你他妈的赞吧，混蛋。"
+    },
+    {
+      "id": "ge-edgygzk",
+      "scene": "情绪-sadness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "1-2-3-4 I declare a thumb war! Dangit [NAME], you win again! Ok you get to stab me again :(",
+      "expected_label": "sadness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edgygzk"
+      },
+      "user_input_zh": "1-2-3-4 我宣布，拇指大战开始！可恶，[NAME]，你又赢了！好吧，你又可以戳我了 :("
+    },
+    {
+      "id": "ge-ed4m2jt",
+      "scene": "情绪-annoyance",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I don't necessarily hate them, but then again, I dislike it when people breed while knowing how harsh life is.",
+      "expected_label": "annoyance",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ed4m2jt"
+      },
+      "user_input_zh": "我倒也不一定恨他们，但话说回来，我很不喜欢那种明知道生活有多残酷，还非要生孩子的人。"
+    },
+    {
+      "id": "ge-ed9udb9",
+      "scene": "情绪-annoyance",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "You're really stupid if you believe that.",
+      "expected_label": "annoyance",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ed9udb9"
+      },
+      "user_input_zh": "你要是信那套，就真是蠢透了。"
+    },
+    {
+      "id": "ge-ef4jj65",
+      "scene": "情绪-sadness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "*[NAME] making [NAME] even more sad.*",
+      "expected_label": "sadness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ef4jj65"
+      },
+      "user_input_zh": "*[NAME] 搞得 [NAME] 更难受了。*"
+    },
+    {
+      "id": "ge-edz9687",
+      "scene": "情绪-love",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Only 5 hour drive..... I guess im doing a day trip to Almonte. I love baked goods.",
+      "expected_label": "love",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edz9687"
+      },
+      "user_input_zh": "才五个小时车程……我想我就去 Almonte 来个一日游吧。我超爱烘焙点心。"
+    },
+    {
+      "id": "ge-ef9wfsk",
+      "scene": "情绪-annoyance",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Pretty fuking sure exit scam..",
+      "expected_label": "annoyance",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ef9wfsk"
+      },
+      "user_input_zh": "我他妈基本可以确定是卷款跑路了……"
+    },
+    {
+      "id": "ge-edfsmzk",
+      "scene": "情绪-annoyance",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I would not bother. He read your message and did not reply yet. So that's already a bad sign and not a good start.",
+      "expected_label": "annoyance",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edfsmzk"
+      },
+      "user_input_zh": "我可不会去费这个劲。他都看了你的消息了，到现在还没回。所以这已经是个坏信号了，开局就不妙。"
+    },
+    {
+      "id": "ge-efdpg9a",
+      "scene": "情绪-anger",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I hate deer. Damn big assed rats",
+      "expected_label": "anger",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-efdpg9a"
+      },
+      "user_input_zh": "我恨鹿。他妈的大屁股耗子。"
+    },
+    {
+      "id": "ge-ef4djgp",
+      "scene": "情绪-annoyance",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "The post in this screenshot and your comment shows how fragile you guys really are.",
+      "expected_label": "annoyance",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ef4djgp"
+      },
+      "user_input_zh": "这张截图里的帖子，还有你的评论，真是把你们这些人到底有多脆弱给暴露出来了。"
+    },
+    {
+      "id": "ge-ee1cn14",
+      "scene": "情绪-anger",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Ha, who cares about them supporters...the most important thing for society is that justice is served and the man jailed! Scream all you want. ",
+      "expected_label": "anger",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ee1cn14"
+      },
+      "user_input_zh": "哈，我才不管他们那些支持者呢……对社会来说最重要的是正义得到伸张，那个男的被关进牢里！你尽管尖叫吧。"
+    },
+    {
+      "id": "ge-ed1smi9",
+      "scene": "情绪-love",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Where about sis this it’s gorgeous. I’d love to have a piece of property with a creek. That’s my dream.",
+      "expected_label": "love",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ed1smi9"
+      },
+      "user_input_zh": "这是哪儿啊？太美了。我特别想拥有一块带小溪的地。那就是我的梦想。"
+    },
+    {
+      "id": "ge-ef0t5h0",
+      "scene": "情绪-love",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Yeah, I actually do really like the TD Centre. Love walking around on (non bone chilling Saturday's) and just admiring the city.",
+      "expected_label": "love",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ef0t5h0"
+      },
+      "user_input_zh": "是啊，我其实真的很喜欢 TD Centre。我超爱在那种不是冻死人的周六到处逛逛，就欣赏欣赏这座城市。"
+    },
+    {
+      "id": "ge-ee3oyyx",
+      "scene": "情绪-annoyance",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Growing up in Chicago this was my life. Pissed he didn’t make it.",
+      "expected_label": "annoyance",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ee3oyyx"
+      },
+      "user_input_zh": "在 Chicago 长大，这就是我的生活。我气得要死，他没能撑下来。"
+    },
+    {
+      "id": "ge-edxub2h",
+      "scene": "情绪-sadness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I feel bad for my kids who will never get to see [NAME] play... [NAME] on the other hand...",
+      "expected_label": "sadness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edxub2h"
+      },
+      "user_input_zh": "我真替我孩子们难过，他们永远都没机会看到 [NAME] 上场了……可 [NAME] 呢……"
+    },
+    {
+      "id": "ge-eebcfza",
+      "scene": "情绪-anger",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "“Attack on masculinity” I’m dying over here you fragile motherfucker.",
+      "expected_label": "anger",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-eebcfza"
+      },
+      "user_input_zh": "“对男子气概的攻击”我在这儿都快笑死了，你这个玻璃心的狗娘养的。"
+    },
+    {
+      "id": "ge-eeuhgtp",
+      "scene": "情绪-anger",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Classic sloth fuckboi",
+      "expected_label": "anger",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-eeuhgtp"
+      },
+      "user_input_zh": "经典款懒鬼渣男"
+    },
+    {
+      "id": "ge-ef5m49k",
+      "scene": "情绪-sadness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I just need [NAME] to retire already so I can stop hating on him and appreciate all he's done... Even if it has caused me great suffering.",
+      "expected_label": "sadness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ef5m49k"
+      },
+      "user_input_zh": "我就是想让[NAME]赶紧退下来，这样我才能别再黑他、开始感激他做过的一切……哪怕这让我痛苦得不行。"
+    },
+    {
+      "id": "ge-ed70zli",
+      "scene": "情绪-love",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Man I love Canada🇨🇦",
+      "expected_label": "love",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ed70zli"
+      },
+      "user_input_zh": "天哪，我太爱 Canada 了🇨🇦"
+    },
+    {
+      "id": "ge-ef46c0z",
+      "scene": "情绪-love",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "tell him i love him",
+      "expected_label": "love",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ef46c0z"
+      },
+      "user_input_zh": "告诉他，我爱他。"
+    },
+    {
+      "id": "ge-eegj1ea",
+      "scene": "情绪-nervousness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I tend to invalidate my feelings because I’m always worried that they’re going to think that being silly, I’m always struggling with it",
+      "expected_label": "nervousness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-eegj1ea"
+      },
+      "user_input_zh": "我老是会否定自己的感受，因为我总担心他们会觉得我这样很矫情，我一直在跟这个东西较劲。"
+    },
+    {
+      "id": "ge-ee8n1ep",
+      "scene": "情绪-nervousness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Have you been to one before? If so what is your experience with it? I’m nervous as hell",
+      "expected_label": "nervousness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ee8n1ep"
+      },
+      "user_input_zh": "你以前去过那种场合吗？如果去过，体验怎么样？我紧张得要命。"
+    },
+    {
+      "id": "ge-ee8mzwa",
+      "scene": "情绪-grief",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I miss them being alive",
+      "expected_label": "grief",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ee8mzwa"
+      },
+      "user_input_zh": "我好想他们还活着啊"
+    },
+    {
+      "id": "ge-ed2wzm6",
+      "scene": "情绪-grief",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I read on a different post that he died shortly after of internal injuries.",
+      "expected_label": "grief",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ed2wzm6"
+      },
+      "user_input_zh": "我在另一个帖子里看到说，他没过多久就因为内伤死了。"
+    },
+    {
+      "id": "ge-edy9n76",
+      "scene": "情绪-grief",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Thats insane. Someone died like 2 years ago after a bolt got kicked up by a truck and went through his windshield and hit him on 146 in LaPorte",
+      "expected_label": "grief",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edy9n76"
+      },
+      "user_input_zh": "太离谱了吧。大概两年前，在 LaPorte 的 146 路上，有辆卡车把一颗螺栓崩了起来，直接穿过他的挡风玻璃砸中他，人就没了。"
+    },
+    {
+      "id": "ge-ee7w2ox",
+      "scene": "情绪-grief",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Sad. My condolences to her family.",
+      "expected_label": "grief",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ee7w2ox"
+      },
+      "user_input_zh": "真难过。我向她家人表示哀悼。"
+    },
+    {
+      "id": "ge-edumf9e",
+      "scene": "情绪-nervousness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "same but with panic at the disco",
+      "expected_label": "nervousness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edumf9e"
+      },
+      "user_input_zh": "一样，不过得加上 Panic at the Disco"
+    },
+    {
+      "id": "ge-efh1hit",
+      "scene": "情绪-nervousness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Stuff like this makes me worry a little less about the future generations.",
+      "expected_label": "nervousness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-efh1hit"
+      },
+      "user_input_zh": "这种事儿让我对未来几代人稍微少担心一点。"
+    },
+    {
+      "id": "ge-ee5xxx8",
+      "scene": "情绪-grief",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I kill them all and THEN overwrite my only save. I'm bonkers.",
+      "expected_label": "grief",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-ee5xxx8"
+      },
+      "user_input_zh": "我把他们全干掉了，然后还把我唯一的存档给覆盖了。我真是疯了。"
+    },
+    {
+      "id": "ge-edwthsb",
+      "scene": "情绪-nervousness",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "also anxious that people will be angry or surprised or upset at me for me never telling people about this before",
+      "expected_label": "nervousness",
+      "source": {
+        "dataset": "GoEmotions",
+        "paper": "arXiv 2005.00547 ACL 2020",
+        "id": "ge-edwthsb"
+      },
+      "user_input_zh": "我也很焦虑，怕大家会因为我之前从来没跟任何人说过这件事，而对我生气、感到惊讶，或者心里不舒服。"
+    }
+  ]
+}
