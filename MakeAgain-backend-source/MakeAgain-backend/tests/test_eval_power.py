@@ -130,18 +130,36 @@ def test_v2_control_balanced_jitter_stays_hold():
 
 # ---------------------------------------------------------------- H1-V3 数据真实可追溯
 def test_v3_batch_expanded_and_traceable():
-    """中文共情批 n>=30，全部来自 CPsyCoun 实拉，带 source_id 与非 synthetic 来源标注。"""
+    """中文共情批 n>=30：旧34条来自 CPsyCoun 实拉；E1 重造另含 PsyQA 权威失恋条
+    与明确标 synthetic-handwritten 的自造宠物条。三类来源全部 source_id 可追溯，
+    且旧条目的 H1 baseline 配对口径逐字不变。"""
     d = json.loads(BATCH.read_text(encoding="utf-8"))
     items = d["items"]
     assert d["n"] == len(items) >= 30
     assert len({i["id"] for i in items}) == len(items)
     assert len({i["source_id"] for i in items}) == len(items)
     for it_ in items:
+        prov = it_["provenance"]
+        # E1 重造（2026-11-23）：宠物离世权威中文集 NOT_FOUND，6 条自造并明确标口径
+        if prov.get("kind") == "synthetic-handwritten":
+            assert it_["source_id"].startswith("synthetic-handwritten:pet-loss:")
+            assert prov["synthetic"] is True and it_["scene"] == "宠物离世"
+            assert it_["source"]["dataset"] == "synthetic-handwritten"
+            assert it_["language"] == "zh" and len(it_["user_input"]) >= 30
+            continue
+        # E1 重造：失恋场景补 PsyQA（Findings ACL-IJCNLP 2021）中文原生权威条
+        if it_["source_id"].startswith("PsyQA:test:"):
+            assert it_["source"]["dataset"] == "PsyQA"
+            assert prov["kind"] == "authoritative" and prov["synthetic"] is False
+            assert isinstance(prov["row_index"], int)
+            assert it_["language"] == "zh" and len(it_["user_input"]) >= 30
+            continue
+        # 旧 34 条原断言逐字保留，H1 baseline 的 per-case 配对仍成立
         assert it_["source_id"].startswith("CPsyCoun:train:")
         assert it_["source"]["dataset"] == "CPsyCoun"
-        assert it_["provenance"]["kind"] == "authoritative"
-        assert it_["provenance"]["synthetic"] is False
-        assert isinstance(it_["provenance"]["row_index"], int)
+        assert prov["kind"] == "authoritative"
+        assert prov["synthetic"] is False
+        assert isinstance(prov["row_index"], int)
         assert it_["language"] == "zh" and len(it_["user_input"]) >= 30
     # 旧 17 条 id 全保留：和历史 baseline 的 per-case 配对可比
     assert set(_REAL_BASELINE_2REP).issubset({i["id"] for i in items})

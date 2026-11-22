@@ -5,6 +5,7 @@
     "01_中文共情_CPsyCoun",
     "02_支持策略_ESConv",
     "03_情绪识别_GoEmotions",
-    "04_危机安全_CueSupport"
+    "04_危机安全_CueSupport",
+    "E2_理解段链路"
   ]
 }

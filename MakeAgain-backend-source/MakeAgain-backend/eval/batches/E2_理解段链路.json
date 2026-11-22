@@ -1,0 +1,84 @@
+{
+  "batch": "E2_理解段链路",
+  "source": {
+    "dataset": "synthetic-handwritten",
+    "note": "沿用 eval/walkthrough_journey.py 的 PERSONAS（synthetic-persona 手工构造，非真实用户），补齐全三分手/亲友离世/宠物场景"
+  },
+  "paper": "无（自造语料）；报告字段结构取自 outputs/walkthrough/journey_walkthrough.json 的真实 hy4 同步输出",
+  "eval": "E2 理解段链路：访谈→报告检查点（走到complete/报告生成/字段齐全/个性化匹配/追问轮数≤12）+ 两个已知bug回归守卫",
+  "n": 3,
+  "items": [
+    {
+      "id": "e2-synthetic-01",
+      "source_id": "e2-synthetic-01",
+      "scene": "分手",
+      "language": "zh",
+      "user_input": "她叫小雅，我们在一起三年，是大学同学。她出轨了，是被我发现的。",
+      "source": {
+        "id": "e2-synthetic-01",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "eval/walkthrough_journey.py PERSONAS[0]（走查实物 outputs/walkthrough/journey_walkthrough.json 仅跑通此用户）"
+      },
+      "persona": {
+        "tag": "分手-被出轨",
+        "loss_type": "breakup",
+        "answers": [
+          "她叫小雅,我们在一起三年,是大学同学。她出轨了,是被我发现的。",
+          "最常想起的是去年跨年,我们在江边倒计时,她说要到老。现在那句话像刀子。",
+          "走神最多是下班回到空房间,以前她会发消息问'到家了吗'。现在手机再也不响。",
+          "放不下的是'为什么是我'。我把能给的都给了,还是被丢下。",
+          "我想带着这段记忆往前走,但不想再信任何人。"
+        ],
+        "anchors": ["小雅", "跨年", "江边", "到老", "到家了吗"]
+      }
+    },
+    {
+      "id": "e2-synthetic-02",
+      "source_id": "e2-synthetic-02",
+      "scene": "亲友离世",
+      "language": "zh",
+      "user_input": "我爸，他叫建国，退休前是中学数学老师。去年心梗走的，很突然。",
+      "source": {
+        "id": "e2-synthetic-02",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "eval/walkthrough_journey.py PERSONAS[1]（真实hy4未跑，口径标注）"
+      },
+      "persona": {
+        "tag": "丧亲-父亲突然离世",
+        "loss_type": "loved_one",
+        "answers": [
+          "我爸,他叫建国,退休前是中学数学老师。去年心梗走的,很突然。",
+          "反复想起他教我骑自行车,在小区那条路上扶着后座,说'别怕,我在'。",
+          "最难受是过年回家,进门喊'爸我回来了',没人应。",
+          "想不通的是他走前一天我们还通电话,他说明天包饺子,结果没等到明天。",
+          "我想带着他对我的好继续过,把他教我的耐心传下去。"
+        ],
+        "anchors": ["建国", "骑自行车", "别怕", "包饺子", "心梗"]
+      }
+    },
+    {
+      "id": "e2-synthetic-03",
+      "source_id": "e2-synthetic-03",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "是只橘猫，叫橘子，陪伴我十五年，从大学毕业到现在。上周走了，肾衰竭。",
+      "source": {
+        "id": "e2-synthetic-03",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "eval/walkthrough_journey.py PERSONAS[2]（真实hy4未跑，口径标注）"
+      },
+      "persona": {
+        "tag": "宠物离世-陪伴15年的猫",
+        "loss_type": "pet",
+        "answers": [
+          "是只橘猫,叫橘子,陪伴我十五年,从大学毕业到现在。上周走了,肾衰竭。",
+          "最想起的是每个加班深夜回家,它蹲在门口等我,尾巴甩啊甩。",
+          "最难的是早上醒来,习惯性要去倒猫粮,走到碗前才想起它不在了。",
+          "放不下的是最后那几天,我出差没在身边,它是自己走的。我一直自责。",
+          "我想记住它,不想快点忘记。它是我这十五年最稳的陪伴。"
+        ],
+        "anchors": ["橘子", "橘猫", "猫粮", "肾衰竭", "门口"]
+      }
+    }
+  ]
+}
