@@ -487,6 +487,12 @@ def answer(db, session_id: str, user_answer: str, client: LLMClient, async_repor
     if action == "followup" and state["dimension_idx"] == goal_idx:
         action = "complete"
 
+    # 覆盖度保护:所有维度都聊过之后,LLM 仍可能返回 followup 在旧话题上打转
+    # (实测走查出现答完5题后再追问15轮"能松一点/先不用急着下结论"的空转)。
+    # 全部维度 covered 且已到目标维度时,不再追问,直接收尾——真实用户没有那么多话可反复讲。
+    if action == "followup" and len(covered) >= len(dims) and state["dimension_idx"] >= goal_idx:
+        action = "complete"
+
     turns = len([h for h in state["history"] if h["role"] == "user"])
     if turns >= MAX_TURNS:
         action = "complete"
@@ -661,11 +667,13 @@ def _build_report_parsed(client: LLMClient, loss_type: str | None, history: list
     ]
     # 报告走热路径快模型(默认),时延优先;要更高分析质量时,在 .env 把 llm_report_model 设为 llm_model。
     model = client.settings.llm_report_model or client.settings.llm_fast_model
-    parsed, meta = client.chat_json(messages, temperature=0.5, max_tokens=4000, model=model)
+    # 推理模型(hy4 等)的 reasoning 会先吃 token:实测 4000 时 completion 用满 4000 而 raw 为空,
+    # 报告 JSON 实际需 ~6800 tokens。给足 8000;非推理模型(deepseek-chat)只用其中一部分,无副作用。
+    parsed, meta = client.chat_json(messages, temperature=0.5, max_tokens=8000, model=model)
     if not _valid_report(parsed):
         # 输出可能被截断或格式错误,再试一次
         messages.append({"role": "user", "content": "请只输出一个完整、合法的 JSON 对象,不要任何其他文字。"})
-        parsed, _ = client.chat_json(messages, temperature=0.3, max_tokens=4000, model=model)
+        parsed, _ = client.chat_json(messages, temperature=0.3, max_tokens=8000, model=model)
     if not _valid_report(parsed):
         raise ReportGenerationError("INVALID_REPORT_OUTPUT")
     return parsed
