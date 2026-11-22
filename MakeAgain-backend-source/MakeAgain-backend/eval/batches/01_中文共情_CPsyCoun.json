@@ -2,8 +2,26 @@
   "batch": "01_中文共情_CPsyCoun",
   "source": "CPsyCoun",
   "paper": "Findings ACL 2024",
-  "eval": "llm_judge 共情+安全",
+  "eval": "HEART 5维 llm_judge（human_alignment/empathic_responsiveness/attunement/resonance/task_following）",
   "n": 17,
+  "rubric": {
+    "framework": "HEART",
+    "version": "1.0-zh",
+    "scale": "0-5",
+    "spec": "eval/heart_rubric.py::build_judge_rubric",
+    "keys": [
+      "human_alignment",
+      "empathic_responsiveness",
+      "attunement",
+      "resonance",
+      "task_following"
+    ]
+  },
+  "eval_control": {
+    "text": "共情是否具体、有无专业边界与Safety",
+    "note": "原自编维度（改动前 eval 字段值），保留作新 5 维 vs 旧自编 A/B 对照；不参与 HEART 打分，items 数据未改。",
+    "spec": "eval/run_benchmarks.py::judge 旧 rubric 字符串"
+  },
   "items": [
     {
       "id": "cp-786",
