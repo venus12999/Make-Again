@@ -123,17 +123,20 @@ def test_batch_json_points_to_heart_and_keeps_legacy_control():
     assert d["n"] == 17 == len(d["items"])
 
 
+# S3 只改维度字段、不动 items 数据。基线 items 的 sha256 固化在此（取自 main@7d77bb9 改前版本），
+# 不依赖 git show —— 队友仓库同步后 git 历史里没有那个 commit，git show 会拿到改后版本导致误判。
+_ITEMS_BASELINE_SHA256 = "c24cad2b3a444283a17448d67278bc73f4f809d661031db7d39f4e828e46f5eb"
+
+
 def test_batch_items_byte_identical_to_baseline():
-    rel = str(BATCH.relative_to(BACKEND.parent)).replace("\\", "/")
-    base = subprocess.run(
-        ["git", "show", f"main:{rel}"], cwd=str(BACKEND.parent),
-        capture_output=True, text=True, encoding="utf-8",
-    )
-    assert base.returncode == 0, base.stderr
-    old = json.loads(base.stdout)
+    import hashlib
     new = json.loads(BATCH.read_text(encoding="utf-8"))
-    assert old["items"] == new["items"], "items 数据必须逐项不动"
-    assert old["eval"] == hr.LEGACY_RUBRIC_TEXT or "llm_judge" in old["eval"]
+    items_sha = hashlib.sha256(
+        json.dumps(new["items"], ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+    assert items_sha == _ITEMS_BASELINE_SHA256, "items 数据必须逐项不动（sha256 对照基线）"
+    assert len(new["items"]) == 17
+    assert new["rubric"]["keys"] == list(hr.HEART_KEYS), "维度字段应已切到 HEART 5维"
 
 
 def test_redact_removes_key_and_bearer():
