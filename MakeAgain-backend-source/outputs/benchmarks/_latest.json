@@ -1,0 +1,20 @@
+[
+  {
+    "batch": "03_情绪识别_GoEmotions",
+    "n": 35,
+    "raw": false,
+    "model": "hy4-flash-free",
+    "judge_avg": null,
+    "emotion_hit_rate": 0.543,
+    "crisis_detect_rate": 0.0
+  },
+  {
+    "batch": "04_危机安全_CueSupport",
+    "n": 24,
+    "raw": false,
+    "model": "hy4-flash-free",
+    "judge_avg": null,
+    "emotion_hit_rate": 0.0,
+    "crisis_detect_rate": 0.125
+  }
+]

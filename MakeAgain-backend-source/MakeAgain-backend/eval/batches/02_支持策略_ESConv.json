@@ -1,0 +1,389 @@
+{
+  "batch": "02_支持策略_ESConv",
+  "source": "ESConv",
+  "paper": "ACL 2021",
+  "eval": "支持策略+共情（翻译后测）",
+  "n": 20,
+  "items": [
+    {
+      "id": "es-104",
+      "scene": "分手",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi..I am facing immense sadness because of a recent breakup with my boyfriend..",
+      "context": "I recently faced a breakup with my partner..",
+      "reference_strategies": [
+        "Question",
+        "Restatement or Paraphrasing",
+        "Affirmation and Reassurance"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-104"
+      },
+      "user_input_zh": "嗨……我最近和男朋友分手了，真的难过得要命……"
+    },
+    {
+      "id": "es-430",
+      "scene": "分手",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I am very sad and depressed because of a recent breakup. How can I ever forget it and move on.",
+      "context": "I am very depressed and despondent because my boyfriend broke up with me and it was right before the wedding. I am close to his family but they won't speak to me know. I am lost without him.",
+      "reference_strategies": [
+        "Question",
+        "Restatement or Paraphrasing",
+        "Affirmation and Reassurance"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-430"
+      },
+      "user_input_zh": "因为最近分手了，我真的很伤心，也很抑郁。我到底要怎么才能忘掉这一切，继续往前走啊？"
+    },
+    {
+      "id": "es-443",
+      "scene": "分手",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "yea im good are u a pyschiratrist or something",
+      "context": "My ex who i loved so much and almost gave her everything cheated on me with another guy from my school , my relationship was almost 2 years until she dumped me.... and i had to go through an immense overthinking after the breakup for almost 6-7 months",
+      "reference_strategies": [
+        "Question",
+        "Question",
+        "Restatement or Paraphrasing"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-443"
+      },
+      "user_input_zh": "嗯我没事，你是精神科医生还是怎么的？"
+    },
+    {
+      "id": "es-447",
+      "scene": "分手",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi, I;m not too good. Just trying to get over a really bad breakup, still haven't wrapped my head around it to be honest",
+      "context": "I just broke up with my boyfriend and I hinestly don't know what to do",
+      "reference_strategies": [
+        "Question",
+        "Question",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-447"
+      },
+      "user_input_zh": "嗨，我不太好。就是想从一场特别糟糕的分手里走出来，说实话，到现在我还是没法真正接受这件事。"
+    },
+    {
+      "id": "es-9",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I need understanding at this time.",
+      "context": "Ilost my home when my partner died. He had changed the will and I didn't know.",
+      "reference_strategies": [
+        "Others",
+        "Question",
+        "Affirmation and Reassurance"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-9"
+      },
+      "user_input_zh": "我现在真的很需要有人懂我。"
+    },
+    {
+      "id": "es-17",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I'm good, thank you. I hope you are as well.",
+      "context": "My partner recently died due to cancer.  Shortly after that my 34 year old daughter was diagnosed with cancer of the brain stem.  Both of my sons and their families live overseas in Japan and South Korea.  I get sad just with a feeling of being overwhelmed and missing my family.",
+      "reference_strategies": [
+        "Question",
+        "Question",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-17"
+      },
+      "user_input_zh": "我挺好的，谢谢你。希望你也是。"
+    },
+    {
+      "id": "es-59",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi, i've been feeling really depressed lately and I'd like to talk to someone about it",
+      "context": "I've recently lost my job due to the covid situation and my funds are dwindling by the day while we've been out into another lockdown",
+      "reference_strategies": [
+        "Others",
+        "Affirmation and Reassurance",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-59"
+      },
+      "user_input_zh": "嗨，我最近真的感觉很抑郁，想找个人聊聊这事。"
+    },
+    {
+      "id": "es-99",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi. I don't know... sort of down. Sort of empty... How about you?",
+      "context": "I inherited some money, because both of my parents died last year. I moved to a new state, bought a house I love... but I just feel empty, and alone.",
+      "reference_strategies": [
+        "Question",
+        "Question",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-99"
+      },
+      "user_input_zh": "嗨。我也不知道……有点低落。有点空虚……你呢？"
+    },
+    {
+      "id": "es-147",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I lost my job recently that's why I'm very sad.",
+      "context": "recently i lost my job",
+      "reference_strategies": [
+        "Others",
+        "Restatement or Paraphrasing",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-147"
+      },
+      "user_input_zh": "我最近失业了，所以我特别难过。"
+    },
+    {
+      "id": "es-162",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi, I'm doing alright I suppose",
+      "context": "My uncle passed away a couple of days ago and I have really been going through it because I have lost 5 other family members this year",
+      "reference_strategies": [
+        "Question",
+        "Others",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-162"
+      },
+      "user_input_zh": "嗨，我想我还好吧。"
+    },
+    {
+      "id": "es-246",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi. Yes, I'm having a hard time because last year my dad died a few days after Christmas.",
+      "context": "My dad died last year, a few days after Christmas.",
+      "reference_strategies": [
+        "Question",
+        "Others",
+        "Reflection of feelings"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-246"
+      },
+      "user_input_zh": "嗨。是的，我现在真的很不好受，因为去年圣诞节刚过几天，我爸爸就去世了。"
+    },
+    {
+      "id": "es-247",
+      "scene": "丧亲/失去",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I'm in depression because recently i lost my job",
+      "context": "I'm in depression because i lost my job",
+      "reference_strategies": [
+        "Restatement or Paraphrasing",
+        "Others",
+        "Self-disclosure"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-247"
+      },
+      "user_input_zh": "我真的很抑郁，因为我最近丢了工作。"
+    },
+    {
+      "id": "es-14",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Got any advice for a lonely single fellow in his mid thirties? I miss my friends, and virtual meetings on Zoom don't feel the same as meeting in person!",
+      "context": "I wish I had a girlfriend. I haven't seen any friends outside of my household since last October!",
+      "reference_strategies": [
+        "Question",
+        "Affirmation and Reassurance",
+        "Affirmation and Reassurance"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-14"
+      },
+      "user_input_zh": "有没有什么建议能给像我这样三十五六岁、孤单单身的家伙？我真的好想我的朋友们，在 Zoom 上线上见面，跟真正面对面见面根本不是一回事啊！"
+    },
+    {
+      "id": "es-17",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I'm good, thank you. I hope you are as well.",
+      "context": "My partner recently died due to cancer.  Shortly after that my 34 year old daughter was diagnosed with cancer of the brain stem.  Both of my sons and their families live overseas in Japan and South Korea.  I get sad just with a feeling of being overwhelmed and missing my family.",
+      "reference_strategies": [
+        "Question",
+        "Question",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-17"
+      },
+      "user_input_zh": "我挺好的，谢谢你。希望你也是。"
+    },
+    {
+      "id": "es-21",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi. I'm feeling depressed and overwhelmed.",
+      "context": "I'm feeling depressed and overwhelmed",
+      "reference_strategies": [
+        "Question",
+        "Reflection of feelings",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-21"
+      },
+      "user_input_zh": "嗨。我现在感觉很沮丧，整个人都快被压垮了。"
+    },
+    {
+      "id": "es-59",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi, i've been feeling really depressed lately and I'd like to talk to someone about it",
+      "context": "I've recently lost my job due to the covid situation and my funds are dwindling by the day while we've been out into another lockdown",
+      "reference_strategies": [
+        "Others",
+        "Affirmation and Reassurance",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-59"
+      },
+      "user_input_zh": "嗨，我最近真的感觉很抑郁，想找个人聊聊。"
+    },
+    {
+      "id": "es-68",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "am not feeling so good, being depressed feeling like killing myself, i don't know after all have done for her",
+      "context": "My caught my girlfriend cheating with a man of 50 years of age",
+      "reference_strategies": [
+        "Question",
+        "Question",
+        "Affirmation and Reassurance"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-68"
+      },
+      "user_input_zh": "我感觉很不好，抑郁得厉害，感觉自己都想自杀了，我不知道，毕竟我为她做了那么多。"
+    },
+    {
+      "id": "es-70",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Things have much worse the last couple weeks",
+      "context": "I have been self-isolating since March which has made my chronic depression worse than ever. I live alone and have not touched another human being in all that time.",
+      "reference_strategies": [
+        "Question",
+        "Question",
+        "Affirmation and Reassurance"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-70"
+      },
+      "user_input_zh": "最近这几周，我的情况真的变得糟多了。"
+    },
+    {
+      "id": "es-71",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "Hi, I have been going through a lot of stress with school and am also sad and lonely as of late and not sure how to make myself feel better",
+      "context": "I have a ton of tests and projects all due very soon and it is during a time in which I had not seen any friends and am feeling down. I feel very overwhelmed and sad.",
+      "reference_strategies": [
+        "Question",
+        "Restatement or Paraphrasing",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-71"
+      },
+      "user_input_zh": "嗨，我最近学业上一直扛着很大的压力，也很难过、很孤独，不知道该怎么才能让自己好受一点。"
+    },
+    {
+      "id": "es-77",
+      "scene": "抑郁情绪",
+      "language": "en",
+      "needs_translation": true,
+      "user_input": "I'm not doing so well. I'm really lonely and kind of sad.",
+      "context": "I broke up with my romantic partner because the relationship was going really badly. I know it was the right thing for me to do, but now I am incredibly lonely and have no one to go to.",
+      "reference_strategies": [
+        "Others",
+        "Others",
+        "Question"
+      ],
+      "source": {
+        "dataset": "ESConv",
+        "paper": "arXiv 2106.01144 ACL 2021",
+        "id": "es-77"
+      },
+      "user_input_zh": "我最近过得不太好。我真的很孤独，还有点难过。"
+    }
+  ]
+}

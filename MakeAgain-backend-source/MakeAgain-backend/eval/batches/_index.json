@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "note": "权威集分类分批，每批独立可反复跑；英文样本需翻译后用于中文产品",
+  "batches": [
+    "01_中文共情_CPsyCoun",
+    "02_支持策略_ESConv",
+    "03_情绪识别_GoEmotions",
+    "04_危机安全_CueSupport"
+  ]
+}
