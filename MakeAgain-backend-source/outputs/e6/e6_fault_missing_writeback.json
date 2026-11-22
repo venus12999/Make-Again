@@ -1,0 +1,438 @@
+{
+  "tool": "e6_full_journey",
+  "schema_version": "1.0",
+  "mode": "mock",
+  "fault": "missing_writeback",
+  "口径": "mock=构造trace验链路结构，非产品行为证据；persona=synthetic-handwritten",
+  "thresholds": {
+    "simulated_days": 3,
+    "context_anchor_hits_min": 1,
+    "recall_hits_min": 1,
+    "negative_recall_hits_max": 0
+  },
+  "results": [
+    {
+      "id": "e6-synthetic-01",
+      "source_id": "e6-synthetic-01",
+      "tag": "分手-被出轨",
+      "loss_type": "breakup",
+      "trace": {
+        "tag": "分手-被出轨",
+        "loss_type": "breakup",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "report_memory_count": 2,
+        "portrait_key_count": 13,
+        "context_has_portrait": true,
+        "context_anchor_hits": 3,
+        "job_status": "failed",
+        "memories_before": 2,
+        "memories_after": 2,
+        "writeback_memory_id": null,
+        "writeback_anchor_hits": 0,
+        "days_shift": 3,
+        "recall_hits": 2,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.8333,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "emotion:晚上",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 2
+      },
+      "e2_checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "checkpoints": {
+        "CP1_report_ready": true,
+        "CP2_report_to_dialogue": true,
+        "CP3_dialogue_to_writeback": false,
+        "CP4_memory_to_crossday_recall": true,
+        "CP5_recall_to_trigger": true
+      },
+      "overall_pass": false,
+      "evidence": {
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "missing_fields": [],
+        "report_anchors_matched": [
+          "小雅",
+          "跨年",
+          "江边",
+          "到老",
+          "到家了吗"
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 13,
+        "context_has_portrait": true,
+        "context_anchor_hits": 3,
+        "job_status": "failed",
+        "memories_before": 2,
+        "memories_after": 2,
+        "writeback_anchor_hits": 0,
+        "days_shift": 3,
+        "recall_hits": 2,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.8333,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "emotion:晚上",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 2,
+        "total_anchors": 5
+      },
+      "thresholds": {
+        "days_shift_min": 3,
+        "context_anchor_hits_min": 1,
+        "recall_hits_min": 1,
+        "negative_recall_hits_max": 0
+      },
+      "report": {
+        "title": "给还在路上的你（mock · breakup）",
+        "keywords": [
+          "小雅",
+          "跨年",
+          "江边",
+          "到老",
+          "到家了吗"
+        ],
+        "summary": "mock 报告：小雅；跨年；江边。你说起小雅，这些都还在；带着记忆继续生活。",
+        "quote": "mock quote: 慢慢来。",
+        "user_portrait": {
+          "失去类型": "breakup",
+          "关系与背景": "小雅；跨年；江边",
+          "当前情绪状态": "难过但愿意讲述",
+          "困惑点": "放不下"
+        },
+        "object_portrait": {
+          "称呼": "小雅",
+          "关系": "重要的人",
+          "共同记忆": "小雅；跨年；江边"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "小雅；跨年；江边"
+        },
+        "heal_plan": {
+          "summary": "先稳住，再慢慢走。",
+          "stages": [
+            {
+              "title": "先稳住",
+              "desc": "吃饭睡觉",
+              "time": "第1-2周"
+            },
+            {
+              "title": "慢慢走",
+              "desc": "允许想念",
+              "time": "第3-4周"
+            }
+          ]
+        },
+        "relationship_analysis": {
+          "summary": "小雅；跨年；江边",
+          "patterns": "mock",
+          "narrative": "小雅；跨年；江边"
+        }
+      }
+    },
+    {
+      "id": "e6-synthetic-02",
+      "source_id": "e6-synthetic-02",
+      "tag": "丧亲-父亲突然离世",
+      "loss_type": "loved_one",
+      "trace": {
+        "tag": "丧亲-父亲突然离世",
+        "loss_type": "loved_one",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "report_memory_count": 2,
+        "portrait_key_count": 13,
+        "context_has_portrait": true,
+        "context_anchor_hits": 3,
+        "job_status": "failed",
+        "memories_before": 2,
+        "memories_after": 2,
+        "writeback_memory_id": null,
+        "writeback_anchor_hits": 0,
+        "days_shift": 3,
+        "recall_hits": 2,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.8333,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "emotion:晚上",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 2
+      },
+      "e2_checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "checkpoints": {
+        "CP1_report_ready": true,
+        "CP2_report_to_dialogue": true,
+        "CP3_dialogue_to_writeback": false,
+        "CP4_memory_to_crossday_recall": true,
+        "CP5_recall_to_trigger": true
+      },
+      "overall_pass": false,
+      "evidence": {
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "missing_fields": [],
+        "report_anchors_matched": [
+          "建国",
+          "骑自行车",
+          "别怕",
+          "包饺子",
+          "心梗"
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 13,
+        "context_has_portrait": true,
+        "context_anchor_hits": 3,
+        "job_status": "failed",
+        "memories_before": 2,
+        "memories_after": 2,
+        "writeback_anchor_hits": 0,
+        "days_shift": 3,
+        "recall_hits": 2,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.8333,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "emotion:晚上",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 2,
+        "total_anchors": 5
+      },
+      "thresholds": {
+        "days_shift_min": 3,
+        "context_anchor_hits_min": 1,
+        "recall_hits_min": 1,
+        "negative_recall_hits_max": 0
+      },
+      "report": {
+        "title": "给还在路上的你（mock · loved_one）",
+        "keywords": [
+          "建国",
+          "骑自行车",
+          "别怕",
+          "包饺子",
+          "心梗"
+        ],
+        "summary": "mock 报告：建国；骑自行车；别怕。你说起建国，这些都还在；带着记忆继续生活。",
+        "quote": "mock quote: 慢慢来。",
+        "user_portrait": {
+          "失去类型": "loved_one",
+          "关系与背景": "建国；骑自行车；别怕",
+          "当前情绪状态": "难过但愿意讲述",
+          "困惑点": "放不下"
+        },
+        "object_portrait": {
+          "称呼": "建国",
+          "关系": "重要的人",
+          "共同记忆": "建国；骑自行车；别怕"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "建国；骑自行车；别怕"
+        },
+        "heal_plan": {
+          "summary": "先稳住，再慢慢走。",
+          "stages": [
+            {
+              "title": "先稳住",
+              "desc": "吃饭睡觉",
+              "time": "第1-2周"
+            },
+            {
+              "title": "慢慢走",
+              "desc": "允许想念",
+              "time": "第3-4周"
+            }
+          ]
+        },
+        "grief_analysis": {
+          "summary": "建国；骑自行车；别怕",
+          "patterns": "mock",
+          "narrative": "建国；骑自行车；别怕"
+        }
+      }
+    },
+    {
+      "id": "e6-synthetic-03",
+      "source_id": "e6-synthetic-03",
+      "tag": "宠物离世-陪伴15年的猫",
+      "loss_type": "pet",
+      "trace": {
+        "tag": "宠物离世-陪伴15年的猫",
+        "loss_type": "pet",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "report_memory_count": 2,
+        "portrait_key_count": 13,
+        "context_has_portrait": true,
+        "context_anchor_hits": 3,
+        "job_status": "failed",
+        "memories_before": 2,
+        "memories_after": 2,
+        "writeback_memory_id": null,
+        "writeback_anchor_hits": 0,
+        "days_shift": 3,
+        "recall_hits": 2,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.8333,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "emotion:晚上",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 2
+      },
+      "e2_checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "checkpoints": {
+        "CP1_report_ready": true,
+        "CP2_report_to_dialogue": true,
+        "CP3_dialogue_to_writeback": false,
+        "CP4_memory_to_crossday_recall": true,
+        "CP5_recall_to_trigger": true
+      },
+      "overall_pass": false,
+      "evidence": {
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "missing_fields": [],
+        "report_anchors_matched": [
+          "橘子",
+          "橘猫",
+          "猫粮",
+          "肾衰竭",
+          "门口"
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 13,
+        "context_has_portrait": true,
+        "context_anchor_hits": 3,
+        "job_status": "failed",
+        "memories_before": 2,
+        "memories_after": 2,
+        "writeback_anchor_hits": 0,
+        "days_shift": 3,
+        "recall_hits": 2,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.8333,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "emotion:晚上",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 2,
+        "total_anchors": 5
+      },
+      "thresholds": {
+        "days_shift_min": 3,
+        "context_anchor_hits_min": 1,
+        "recall_hits_min": 1,
+        "negative_recall_hits_max": 0
+      },
+      "report": {
+        "title": "给还在路上的你（mock · pet）",
+        "keywords": [
+          "橘子",
+          "橘猫",
+          "猫粮",
+          "肾衰竭",
+          "门口"
+        ],
+        "summary": "mock 报告：橘子；橘猫；猫粮。你说起橘子，这些都还在；带着记忆继续生活。",
+        "quote": "mock quote: 慢慢来。",
+        "user_portrait": {
+          "失去类型": "pet",
+          "关系与背景": "橘子；橘猫；猫粮",
+          "当前情绪状态": "难过但愿意讲述",
+          "困惑点": "放不下"
+        },
+        "object_portrait": {
+          "称呼": "橘子",
+          "关系": "重要的人",
+          "共同记忆": "橘子；橘猫；猫粮"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "橘子；橘猫；猫粮"
+        },
+        "heal_plan": {
+          "summary": "先稳住，再慢慢走。",
+          "stages": [
+            {
+              "title": "先稳住",
+              "desc": "吃饭睡觉",
+              "time": "第1-2周"
+            },
+            {
+              "title": "慢慢走",
+              "desc": "允许想念",
+              "time": "第3-4周"
+            }
+          ]
+        },
+        "pet_grief_analysis": {
+          "summary": "橘子；橘猫；猫粮",
+          "patterns": "mock",
+          "narrative": "橘子；橘猫；猫粮"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "users": 3,
+    "checkpoint_pass_counts": {
+      "CP1_report_ready": 3,
+      "CP2_report_to_dialogue": 3,
+      "CP3_dialogue_to_writeback": 0,
+      "CP4_memory_to_crossday_recall": 3,
+      "CP5_recall_to_trigger": 3
+    },
+    "overall_pass": false,
+    "exit_code": 1
+  }
+}

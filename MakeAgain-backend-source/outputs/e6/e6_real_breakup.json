@@ -1,0 +1,272 @@
+{
+  "tool": "e6_full_journey",
+  "schema_version": "1.0",
+  "mode": "real",
+  "fault": null,
+  "口径": "真实 hy4 跑 1 场景（访谈→报告→对话→回写→跨天召回→触发）；persona=synthetic-handwritten；跨天用 ts 回拨3天+新session夹具；consent/companion 为 eval 夹具；key 不入库",
+  "thresholds": {
+    "simulated_days": 3,
+    "context_anchor_hits_min": 1,
+    "recall_hits_min": 1,
+    "negative_recall_hits_max": 0
+  },
+  "results": [
+    {
+      "id": "e6-synthetic-01",
+      "source_id": "e6-synthetic-01",
+      "tag": "分手-被出轨",
+      "loss_type": "breakup",
+      "trace": {
+        "tag": "分手-被出轨",
+        "loss_type": "breakup",
+        "session_id": "3f04607897af4dd1829ddf00d8a64307",
+        "n_turns": 19,
+        "gen_filler_turns": 14,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 532.9,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "先跟我聊聊 TA 吧——TA 是你什么人,叫什么(昵称也可以),你们在一起多久了?",
+            "answer": "她叫小雅,我们在一起三年,是大学同学。她出轨了,是被我发现的。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 2,
+            "question": "从大学一路走到三年，信任突然裂开的那一刻会特别难消化。你愿意慢慢说说，当时是在什么情境下发现的吗？",
+            "answer": "最常想起的是去年跨年,我们在江边倒计时,她说要到老。现在那句话像刀子。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 3,
+            "question": "江边倒计时那种把未来说得很确定的瞬间，后来被背叛一对照，会变得特别残忍。那句“到老”最刺痛你的，是当初那份认真，还是后来发生的事和它之间的落差？",
+            "answer": "走神最多是下班回到空房间,以前她会发消息问'到家了吗'。现在手机再也不响。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 4,
+            "question": "那种下班回家后突然安静下来的感觉，会把人一下子拽回关系里最疼的地方。你能慢慢说说，从发现出轨到真正分开，中间发生了什么吗？",
+            "answer": "放不下的是'为什么是我'。我把能给的都给了,还是被丢下。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 5,
+            "question": "真诚投入却被背叛，会让人不是单纯伤心，而是连公平感都被抽掉了。先不急着给自己找原因，从发现那天到真正分开，中间有没有一个关键对话或决定，把事情推到无法回头？",
+            "answer": "我想带着这段记忆往前走,但不想再信任何人。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 6,
+            "question": "哪怕还带着伤，心里已经有一个想往前挪的方向，这本身很不容易；而不再轻易相信，更像是在保护自己别被二次伤害。分开前最后那段日子，有没有哪一次她的解释或态度，让你突然觉得这段关系已经没法再靠信任撑下去了？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 7,
+            "question": "能讲出来之后，紧绷的地方终于有一点缝隙；可有些东西不是说完就会立刻散掉。现在最压着你的，是被丢下的难过，还是“为什么是我”的不甘？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 8,
+            "question": "一直憋着的东西终于有个出口，身体未必马上跟得上；如果愿意留意一下，此刻胸口、胃、喉咙哪里最紧？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 9,
+            "question": "有些话讲开后，真正难的是它会在安静里一遍遍回来。最近最常回到你脑子里的，是哪一个画面、场景，还是那句一直没得到解释的话？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 10,
+            "question": "能松一点，像是终于让压着的东西透了一口气；只是安静下来时，它还会自己回来。先不用讲完整，最先闪回来的那一下，更像一个画面，还是一句一直没得到解释的话？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 11,
+            "question": "能有一口气喘出来就够了，细节不用马上成形；那种反复回来的感觉，更常在睡前、下班回家后，还是看到某些地方时冒出来？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 12,
+            "question": "能松一点已经很不容易了，慢慢消化不用赶。被背叛之后，人很容易反过来怀疑自己；我想更稳地把责任放回它该在的位置——这段关系里，有哪些让你事后才看清的、不健康或不对等的地方？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 13,
+            "question": "这个部分如果现在碰着还疼，我们可以慢一点；先挑一个最小的点就好——这段关系里最早让你觉得不对等的是什么？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 14,
+            "question": "有些东西一旦有了出口，身体会先松下来，但日子里的惯性不会立刻变轻。最近吃饭、睡觉、上班和联系朋友里，最先被这段经历搅乱的是哪一块？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 15,
+            "question": "能讲出来后心里松一点，生活里的惯性却未必同步变轻；这种消化落到日子里，最先占掉你精力的是哪一块——入睡、胃口、工作学习，还是和朋友联系？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 16,
+            "question": "有些变化落到一天里，不是大问题，而是某个很小的动作突然变重。今天从醒来到现在，哪个平常的动作最费劲？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 17,
+            "question": "能把压着的东西说出来，已经是在给自己腾一点空间；日常那部分先不用急。你们以前闹别扭时，最早冒出来的那种老样子是什么——冷战、反复解释，还是一个人追问、另一个人躲开？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 18,
+            "question": "如果现在碰整段关系还太重，我们就只看一次很小的争执：当时你是更想立刻说清楚，还是先沉默、避开？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 19,
+            "question": "没关系，先不碰整段关系；只找一次很小的小事，争执起来时你最先做的动作更像把话收回去、继续解释，还是等对方先回应？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "complete",
+            "done": null
+          }
+        ],
+        "report_memory_count": 1,
+        "portrait_key_count": 1,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 20,
+        "memories_after": 21,
+        "writeback_memory_id": "4493f4e0bddd4488b88830761734b6c3",
+        "writeback_anchor_hits": 2,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.7020318723403822,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 1,
+        "dialogue_reply_preview": "",
+        "guide_preview": "说出来心里松一点后，愿意借着跨年那句话，不急着下结论，慢慢看懂关系里彼此怎样走到这里，也看见自己能怎样继续往前吗？"
+      },
+      "e2_checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": false,
+        "CP4_personalization_match": false,
+        "CP5_followup_turns_bounded": false
+      },
+      "checkpoints": {
+        "CP1_report_ready": false,
+        "CP2_report_to_dialogue": true,
+        "CP3_dialogue_to_writeback": true,
+        "CP4_memory_to_crossday_recall": true,
+        "CP5_recall_to_trigger": true
+      },
+      "overall_pass": false,
+      "evidence": {
+        "turns": {
+          "n_turns": 19,
+          "gen_filler_turns": 14,
+          "max_allowed_turns": 16,
+          "ok": false
+        },
+        "missing_fields": [
+          "quote(str,nonempty)",
+          "user_portrait(dict,nonempty)",
+          "goal(dict,nonempty)",
+          "heal_plan(dict,nonempty)",
+          "object_portrait.关系",
+          "object_portrait.共同记忆",
+          "relationship_analysis(dict,nonempty,loss_type=breakup)"
+        ],
+        "report_anchors_matched": [
+          "小雅"
+        ],
+        "report_memory_count": 1,
+        "portrait_key_count": 1,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 20,
+        "memories_after": 21,
+        "writeback_anchor_hits": 2,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.7020318723403822,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 1,
+        "total_anchors": 5
+      },
+      "thresholds": {
+        "days_shift_min": 3,
+        "context_anchor_hits_min": 1,
+        "recall_hits_min": 1,
+        "negative_recall_hits_max": 0
+      },
+      "report": {
+        "title": "带着裂缝往前走",
+        "keywords": [
+          "付出型",
+          "被背叛",
+          "不甘",
+          "信任防御",
+          "慢慢消化"
+        ],
+        "summary": "这段关系里，你投入得很认真：大学同学，一路走到三年，你把能给的都给了，却在发现小雅出轨后，被迫面对信任突然塌下来的疼。你最难受的不只是分开",
+        "object_portrait": {
+          "称呼": "小雅"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "users": 1,
+    "checkpoint_pass_counts": {
+      "CP1_report_ready": 0,
+      "CP2_report_to_dialogue": 1,
+      "CP3_dialogue_to_writeback": 1,
+      "CP4_memory_to_crossday_recall": 1,
+      "CP5_recall_to_trigger": 1
+    },
+    "overall_pass": false,
+    "exit_code": 1
+  }
+}
