@@ -1,0 +1,478 @@
+{
+  "batch": "E5_行动段触发",
+  "source": {
+    "dataset": "synthetic-handwritten",
+    "note": "自造时间×情绪条件矩阵（非真人标注、非线上采样）。每条触发规则均逐条追到本地产品实物 agent/nudge.py、agent/weekly.py、agent/daily.py；expected 由读码推导，不冒充真实用户偏好。"
+  },
+  "paper": "无（自造语料）。触发口径来源：agent/nudge.py（_now_tags/_is_late_night/_build_candidates/get_nudges/_quote_fallback/_fallback_text）、agent/weekly.py（week_key/due/mark_seen）、agent/daily.py（get_themes/generate_opening）；文案质量口径来源 agent/prompts_registry.py 的 nudge.system 与 nudge._fallback_text。",
+  "eval": "E5 行动段触发评测：①该触发时触发（时间×情绪矩阵，该触发/不触发各有 case）②不该触发时不打扰（同 rule_key 当天不重复、静默时段/关闭开关不推、周报已看不弹、每日主题当日缓存）③内容具体非空话（规则检查，口径来自产品 prompt 与模板兜底）。--mock 不烧 key，--real 真模型可选。",
+  "n": 19,
+  "items": [
+    {
+      "id": "e5-n01-deepnight-night-node",
+      "source_id": "e5-n01-deepnight-night-node",
+      "scene": "触发-深夜-夜间情绪节点",
+      "language": "zh",
+      "user_input": "23:30 打开 App；记忆里「深夜·难过」的情绪节点已累计 3 次",
+      "source": {
+        "id": "e5-n01-deepnight-night-node",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L86-110（_build_candidates 按 time_tag 聚合，freq>=2 出 emotion 候选）+ L63-64/_is_late_night + L114-125（有夜间节点时不再出 late_night）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T23:30:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [{"time_tag": "深夜", "emotion": "难过", "frequency": 3, "trigger": "深夜独处"}],
+        "memories": [{"time_tag": "深夜", "summary": "凌晨醒来又想起小雅说的到老"}],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["emotion:深夜"],
+        "trigger_source": "emotion",
+        "nudge_count": 1,
+        "emotion_push_count": 1,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n02-deepnight-no-node",
+      "source_id": "e5-n02-deepnight-no-node",
+      "scene": "触发-深夜-无情绪节点",
+      "language": "zh",
+      "user_input": "23:30 打开 App；没有任何带时间标签的情绪节点",
+      "source": {
+        "id": "e5-n02-deepnight-no-node",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L112-125（深夜且无夜间情绪节点 → 单独出 late_night 时间触发）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T23:30:00",
+      "setup": {
+        "loss_type": "loved_one",
+        "emotion_nodes": [],
+        "memories": [],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["late_night"],
+        "trigger_source": "time",
+        "nudge_count": 1,
+        "emotion_push_count": 0,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n03-deepnight-freq1-below-threshold",
+      "source_id": "e5-n03-deepnight-freq1-below-threshold",
+      "scene": "不触发情绪-深夜-freq1",
+      "language": "zh",
+      "user_input": "23:30 打开 App；「深夜」情绪节点只出现过 1 次（低于 freq>=2 门槛）",
+      "source": {
+        "id": "e5-n03-deepnight-freq1-below-threshold",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L95-97（a['freq'] < 2 → continue）+ L112-125（无合格夜间节点则回落 late_night）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T23:30:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [{"time_tag": "深夜", "emotion": "难过", "frequency": 1, "trigger": "深夜想起"}],
+        "memories": [],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["late_night"],
+        "trigger_source": "time",
+        "nudge_count": 1,
+        "emotion_push_count": 0,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n04-evening-emotion-node",
+      "source_id": "e5-n04-evening-emotion-node",
+      "scene": "触发-晚上-情绪节点",
+      "language": "zh",
+      "user_input": "20:00 打开 App；「晚上·孤独」情绪节点累计 2 次",
+      "source": {
+        "id": "e5-n04-evening-emotion-node",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L35-60（_now_tags: h=20 -> 晚上/夜里/深夜）+ L86-110"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T20:00:00",
+      "setup": {
+        "loss_type": "pet",
+        "emotion_nodes": [{"time_tag": "晚上", "emotion": "孤独", "frequency": 2, "trigger": "晚上回家"}],
+        "memories": [{"time_tag": "晚上", "summary": "加班回家橘猫蹲在门口等我"}],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["emotion:晚上"],
+        "trigger_source": "emotion",
+        "nudge_count": 1,
+        "emotion_push_count": 1,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n05-workday-afternoon-no-match",
+      "source_id": "e5-n05-workday-afternoon-no-match",
+      "scene": "不触发-工作日下午-节点时间不匹配",
+      "language": "zh",
+      "user_input": "周二 15:00 打开 App；只有「周末」节点（今天不是周末）",
+      "source": {
+        "id": "e5-n05-workday-afternoon-no-match",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L88-90（node.time_tag 不在当前 tags 则跳过）+ L240-242（无 due 走 _quote_fallback，每天最多一条语录陪伴）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T15:00:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [{"time_tag": "周末", "emotion": "难过", "frequency": 3, "trigger": "周末独处"}],
+        "memories": [],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["quote"],
+        "trigger_source": "quote",
+        "nudge_count": 1,
+        "emotion_push_count": 0,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n06-saturday-morning-node",
+      "source_id": "e5-n06-saturday-morning-node",
+      "scene": "触发-周六上午-周末情绪节点",
+      "language": "zh",
+      "user_input": "周六 10:00 打开 App；「周六·平静」情绪节点累计 2 次",
+      "source": {
+        "id": "e5-n06-saturday-morning-node",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L54-59（wd==5 -> 周六/周末 tags）+ L86-110"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-14T10:00:00",
+      "setup": {
+        "loss_type": "loved_one",
+        "emotion_nodes": [{"time_tag": "周六", "emotion": "平静", "frequency": 2, "trigger": "周六路线"}],
+        "memories": [{"time_tag": "周六", "summary": "周六常和建国去菜市场"}],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["emotion:周六"],
+        "trigger_source": "emotion",
+        "nudge_count": 1,
+        "emotion_push_count": 1,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n07-quiet-hours-suppress",
+      "source_id": "e5-n07-quiet-hours-suppress",
+      "scene": "不触发-静默时段",
+      "language": "zh",
+      "user_input": "23:30 打开 App；用户设了 23:00-07:00 静默，且命中深夜节点",
+      "source": {
+        "id": "e5-n07-quiet-hours-suppress",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L208-222（_in_quiet_hours，跨午夜）+ L234-235（静默期直接返回空）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T23:30:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [{"time_tag": "深夜", "emotion": "难过", "frequency": 3, "trigger": "深夜独处"}],
+        "memories": [],
+        "nudge_prefs": {"enabled": true, "quiet_start": "23:00", "quiet_end": "07:00"}
+      },
+      "expect": {
+        "trigger_rule_keys": [],
+        "trigger_source": "none",
+        "nudge_count": 0,
+        "emotion_push_count": 0,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n08-disabled-suppress",
+      "source_id": "e5-n08-disabled-suppress",
+      "scene": "不触发-用户关闭开关",
+      "language": "zh",
+      "user_input": "23:30 打开 App；用户已关闭软引导开关，且命中深夜节点",
+      "source": {
+        "id": "e5-n08-disabled-suppress",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L232-233（prefs.enabled=False 直接返回空）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T23:30:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [{"time_tag": "深夜", "emotion": "难过", "frequency": 3, "trigger": "深夜独处"}],
+        "memories": [],
+        "nudge_prefs": {"enabled": false, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": [],
+        "trigger_source": "none",
+        "nudge_count": 0,
+        "emotion_push_count": 0,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n09-early-morning-node",
+      "source_id": "e5-n09-early-morning-node",
+      "scene": "触发-凌晨-夜间情绪节点",
+      "language": "zh",
+      "user_input": "凌晨 03:00 打开 App；「凌晨·焦虑」情绪节点累计 2 次",
+      "source": {
+        "id": "e5-n09-early-morning-node",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L40-42（h<5 -> 凌晨/深夜/夜里 tags）+ L23（_NIGHT_TAGS 含凌晨）+ L114-125"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-11T03:00:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [{"time_tag": "凌晨", "emotion": "焦虑", "frequency": 2, "trigger": "半夜惊醒"}],
+        "memories": [{"time_tag": "凌晨", "summary": "半夜三点醒来睡不着"}],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["emotion:凌晨"],
+        "trigger_source": "emotion",
+        "nudge_count": 1,
+        "emotion_push_count": 1,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n10-dusk-node-not-night",
+      "source_id": "e5-n10-dusk-node-not-night",
+      "scene": "触发-傍晚-非夜间节点",
+      "language": "zh",
+      "user_input": "18:30 打开 App；「傍晚·平静」情绪节点累计 2 次（傍晚不是 _NIGHT_TAGS）",
+      "source": {
+        "id": "e5-n10-dusk-node-not-night",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L48-49（h<19 -> 傍晚 tag）+ L23（_NIGHT_TAGS 不含傍晚）+ L99"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T18:30:00",
+      "setup": {
+        "loss_type": "pet",
+        "emotion_nodes": [{"time_tag": "傍晚", "emotion": "平静", "frequency": 2, "trigger": "傍晚散步"}],
+        "memories": [],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["emotion:傍晚"],
+        "trigger_source": "emotion",
+        "nudge_count": 1,
+        "emotion_push_count": 1,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n11-freq-aggregation",
+      "source_id": "e5-n11-freq-aggregation",
+      "scene": "触发-同一时刻两节点频次聚合",
+      "language": "zh",
+      "user_input": "23:30 打开 App；「深夜·难过」1 次 +「深夜·孤独」1 次，聚合后 freq=2",
+      "source": {
+        "id": "e5-n11-freq-aggregation",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L86-98（agg[time_tag]['freq'] += node.frequency，主导情绪取众数）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T23:30:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [
+          {"time_tag": "深夜", "emotion": "难过", "frequency": 1, "trigger": "深夜想小雅"},
+          {"time_tag": "深夜", "emotion": "孤独", "frequency": 1, "trigger": "深夜独处"}
+        ],
+        "memories": [],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["emotion:深夜"],
+        "trigger_source": "emotion",
+        "nudge_count": 1,
+        "emotion_push_count": 1,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-n12-morning-node-at-afternoon",
+      "source_id": "e5-n12-morning-node-at-afternoon",
+      "scene": "不触发-下午命中早上节点",
+      "language": "zh",
+      "user_input": "15:00 打开 App；只有「早上·焦虑」节点 5 次（当前不是早上）",
+      "source": {
+        "id": "e5-n12-morning-node-at-afternoon",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/nudge.py L88-90（time_tag 不在当前 tags 则跳过）+ L240-242（quote 兜底）"
+      },
+      "module": "nudge",
+      "kind": "matrix",
+      "local_time": "2026-03-10T15:00:00",
+      "setup": {
+        "loss_type": "breakup",
+        "emotion_nodes": [{"time_tag": "早上", "emotion": "焦虑", "frequency": 5, "trigger": "晨起难受"}],
+        "memories": [],
+        "nudge_prefs": {"enabled": true, "quiet_start": null, "quiet_end": null}
+      },
+      "expect": {
+        "trigger_rule_keys": ["quote"],
+        "trigger_source": "quote",
+        "nudge_count": 1,
+        "emotion_push_count": 0,
+        "text_quality": true
+      }
+    },
+    {
+      "id": "e5-w01-weekly-archived",
+      "source_id": "e5-w01-weekly-archived",
+      "scene": "不触发-周报-已归档陪伴",
+      "language": "zh",
+      "user_input": "陪伴已归档（结束仪式完成），周一打开 App 不应再弹周报",
+      "source": {
+        "id": "e5-w01-weekly-archived",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/weekly.py L49-53（companion.archived_at 非空 → due=False）"
+      },
+      "module": "weekly",
+      "kind": "matrix",
+      "local_time": "2026-03-10T10:00:00",
+      "setup": {"phase": "main", "companion_archived": true, "weekly_report": null},
+      "expect": {"due": false, "reason_contains": "已结束陪伴", "week_key": "2026-W11"}
+    },
+    {
+      "id": "e5-w02-weekly-onboarding-incomplete",
+      "source_id": "e5-w02-weekly-onboarding-incomplete",
+      "scene": "不触发-周报-引导未完成",
+      "language": "zh",
+      "user_input": "新用户还没走完引导就打开 App，不应弹周报",
+      "source": {
+        "id": "e5-w02-weekly-onboarding-incomplete",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/weekly.py L55-58（onboarding.get_phase != 'main' → due=False）"
+      },
+      "module": "weekly",
+      "kind": "matrix",
+      "local_time": "2026-03-10T10:00:00",
+      "setup": {"phase": "new", "companion_archived": false, "weekly_report": null},
+      "expect": {"due": false, "reason_contains": "引导阶段未完成", "week_key": "2026-W11"}
+    },
+    {
+      "id": "e5-w03-weekly-unseen-then-seen",
+      "source_id": "e5-w03-weekly-unseen-then-seen",
+      "scene": "触发后抑制-周报-未看弹/看后不弹",
+      "language": "zh",
+      "user_input": "本周周报已生成未查看 → 弹一次；mark_seen 后本周不再弹",
+      "source": {
+        "id": "e5-w03-weekly-unseen-then-seen",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/weekly.py L60-66（existing & seen_at is None → due=True；已 seen → due=False）+ L98-101 mark_seen"
+      },
+      "module": "weekly",
+      "kind": "anti_nag",
+      "local_time": "2026-03-10T10:00:00",
+      "setup": {
+        "phase": "main",
+        "companion_archived": false,
+        "weekly_report": {"seen": false, "content": {"cards": [], "state": {}, "compared": {}}}
+      },
+      "expect": {"due": true, "after_seen_due": false, "after_seen_reason_contains": "已查看", "week_key": "2026-W11"}
+    },
+    {
+      "id": "e5-w04-weekly-already-seen",
+      "source_id": "e5-w04-weekly-already-seen",
+      "scene": "不触发-周报-本周已查看",
+      "language": "zh",
+      "user_input": "本周周报已查看过，再次打开 App 不应弹",
+      "source": {
+        "id": "e5-w04-weekly-already-seen",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/weekly.py L62-66（existing.seen_at 非空 → due=False '已查看'）"
+      },
+      "module": "weekly",
+      "kind": "matrix",
+      "local_time": "2026-03-10T10:00:00",
+      "setup": {
+        "phase": "main",
+        "companion_archived": false,
+        "weekly_report": {"seen": true, "content": {"cards": [], "state": {}, "compared": {}}}
+      },
+      "expect": {"due": false, "reason_contains": "已查看", "week_key": "2026-W11"}
+    },
+    {
+      "id": "e5-w05-week-key-boundary",
+      "source_id": "e5-w05-week-key-boundary",
+      "scene": "触发-周报-ISO周边界",
+      "language": "zh",
+      "user_input": "周日 23:30 与周一 00:30 属于不同 ISO 周，周报 week_key 必须翻转",
+      "source": {
+        "id": "e5-w05-week-key-boundary",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/weekly.py L30-35（week_key 用 local.isocalendar，周一为一周起点）"
+      },
+      "module": "weekly",
+      "kind": "matrix",
+      "local_time": "2026-03-16T00:30:00",
+      "setup": {"compare_local_time": "2026-03-15T23:30:00"},
+      "expect": {"week_key": "2026-W12", "compare_week_key": "2026-W11"}
+    },
+    {
+      "id": "e5-d01-daily-opening-cached",
+      "source_id": "e5-d01-daily-opening-cached",
+      "scene": "触发后抑制-每日主题-当日缓存",
+      "language": "zh",
+      "user_input": "分手用户当天首次打开生成两个主题开场，二次打开复用不重新生成",
+      "source": {
+        "id": "e5-d01-daily-opening-cached",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/daily.py L116-137（generate_opening 当日 DailyPick 缓存 + _opening_text 带两个主题）"
+      },
+      "module": "daily",
+      "kind": "anti_nag",
+      "local_time": "2026-03-10T09:00:00",
+      "setup": {"loss_type": "breakup"},
+      "expect": {"first_cached": false, "same_day_cached": true, "opening_has_two_themes": true, "text_quality": true}
+    },
+    {
+      "id": "e5-d02-daily-next-day-refresh",
+      "source_id": "e5-d02-daily-next-day-refresh",
+      "scene": "触发-每日主题-跨天刷新",
+      "language": "zh",
+      "user_input": "同一用户隔天打开，应生成新的当日主题开场（date_key 翻转）",
+      "source": {
+        "id": "e5-d02-daily-next-day-refresh",
+        "dataset": "synthetic-handwritten",
+        "derived_from": "agent/daily.py L58-62（_today_key 本地日）+ L116-137（不同 date_key 不命中缓存）"
+      },
+      "module": "daily",
+      "kind": "matrix",
+      "local_time": "2026-03-10T09:00:00",
+      "setup": {"loss_type": "loved_one", "second_local_time": "2026-03-11T09:00:00"},
+      "expect": {"first_cached": false, "same_day_cached": true, "next_day_cached": false, "opening_has_two_themes": true, "text_quality": true}
+    }
+  ]
+}

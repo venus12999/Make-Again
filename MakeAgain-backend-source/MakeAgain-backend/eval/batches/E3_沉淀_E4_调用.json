@@ -1,0 +1,1542 @@
+{
+  "batch": "E3_沉淀_E4_调用",
+  "source": {
+    "dataset": "synthetic-handwritten",
+    "note": "沿用 eval/recall_corpus.json（33 memories / 18 queries，source=synthetic-handwritten）。E3沉淀从 memories 的 content/facts 派生抽取与冲突用例；E4调用沿用 queries 原样。全部为手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定，口径与局限见 eval/RECALL_CORPUS_README.md §4。"
+  },
+  "paper": "无（自造语料）；指标口径来自 docs/OLD_REPO_QUALITY_METRICS.md（Recall@K/Precision@K/MRR/负例注入率），与 eval/run_recall_v2.py / eval/run_golden.py 一致",
+  "eval": "E3沉淀（抽取事实被原文支撑率 + 冲突事实 supersede 修正）+ E4调用（该召回时召回 Recall@K/MRR + 负例不召回注入率）；五段闭环统一记忆评测入口",
+  "n": 56,
+  "items": [
+    {
+      "id": "e3-extract-mem-loved-one-father",
+      "source_id": "recall_corpus_v2:mem-loved-one-father",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "外公去世后，用户收拾房间翻到外公的旧眼镜，会想起他坐在藤椅上的样子。",
+      "source": {
+        "id": "mem-loved-one-father",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-loved-one-father]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "外公已去世",
+        "外公留有旧眼镜",
+        "用户看到旧眼镜会想起外公"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 0
+      }
+    },
+    {
+      "id": "e3-extract-mem-cat-owned",
+      "source_id": "recall_corpus_v2:mem-cat-owned",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户养了一只猫，名字叫橘子，陪了用户八年。",
+      "source": {
+        "id": "mem-cat-owned",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-cat-owned]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户养猫",
+        "猫名叫橘子",
+        "陪伴八年"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 1
+      }
+    },
+    {
+      "id": "e3-extract-mem-cat-deceased",
+      "source_id": "recall_corpus_v2:mem-cat-deceased",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户养的猫橘子已于 2026-11-20 去世，被埋在楼下那棵树下。",
+      "source": {
+        "id": "mem-cat-deceased",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-cat-deceased]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户的猫橘子已去世",
+        "橘子被埋在楼下树下"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 2
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-01",
+      "source_id": "recall_corpus_v2:mem-b-01",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "前任叫林远，两人 2025 年 7 月分的手，之后就没再联系。",
+      "source": {
+        "id": "mem-b-01",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-01]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "前任叫林远",
+        "2025-07 分手",
+        "分手后未联系"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 3
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-02",
+      "source_id": "recall_corpus_v2:mem-b-02",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "半夜醒过来习惯性想找他说话，才想起已经分手三个月了。",
+      "source": {
+        "id": "mem-b-02",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-02]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "分手后半夜常醒",
+        "习惯性想联系前任"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 4
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-03",
+      "source_id": "recall_corpus_v2:mem-b-03",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "前任会弹吉他，喜欢在阳台唱歌给用户听。",
+      "source": {
+        "id": "mem-b-03",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-03]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "前任会弹吉他",
+        "前任喜欢唱歌"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 5
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-04",
+      "source_id": "recall_corpus_v2:mem-b-04",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "分手后用户把联系方式都删了，决定不再主动联系。",
+      "source": {
+        "id": "mem-b-04",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-04]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "已删除前任联系方式",
+        "决定不主动联系"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 6
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-05",
+      "source_id": "recall_corpus_v2:mem-b-05",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "前任爱喝冰美式，用户后来也跟着习惯了点冰美式。",
+      "source": {
+        "id": "mem-b-05",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-05]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "前任爱喝冰美式",
+        "用户也习惯喝冰美式"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 7
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-06",
+      "source_id": "recall_corpus_v2:mem-b-06",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "用户现在和别人在一起了，可对方总问有没有真的忘掉前任。",
+      "source": {
+        "id": "mem-b-06",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-06]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户已有新伴侣",
+        "新伴侣在意用户是否放下前任"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 8
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-07",
+      "source_id": "recall_corpus_v2:mem-b-07",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "两人本来约好今年一起去看海，现在用户的计划里没有这一项了。",
+      "source": {
+        "id": "mem-b-07",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-07]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "曾约定一起去看海",
+        "该计划已取消"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 9
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-08",
+      "source_id": "recall_corpus_v2:mem-b-08",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "用户觉得他说走就走、连一句解释都没有，心里一直很不甘。",
+      "source": {
+        "id": "mem-b-08",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-08]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "对方突然离开未解释",
+        "用户感到不甘"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 10
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-09",
+      "source_id": "recall_corpus_v2:mem-b-09",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "前任对狗毛过敏，当年两个人想养狗最后没养成。",
+      "source": {
+        "id": "mem-b-09",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-09]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "前任对狗毛过敏",
+        "曾想养狗未果"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 11
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-10",
+      "source_id": "recall_corpus_v2:mem-b-10",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "2026 年 7 月是分手一周年，用户那阵子情绪明显低落。",
+      "source": {
+        "id": "mem-b-10",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-10]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "分手周年在 2026-07",
+        "周年期间情绪低落"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 12
+      }
+    },
+    {
+      "id": "e3-extract-mem-b-11",
+      "source_id": "recall_corpus_v2:mem-b-11",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "分手后用户学会做饭，从只会煮泡面到能做一桌菜。",
+      "source": {
+        "id": "mem-b-11",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-11]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "分手后学会做饭",
+        "起点是只会煮泡面"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 13
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-01",
+      "source_id": "recall_corpus_v2:mem-l-01",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "奶奶的红烧肉配方写在一张泛黄的纸上，用户一直留着。",
+      "source": {
+        "id": "mem-l-01",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-01]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "奶奶有红烧肉配方",
+        "配方写在泛黄纸上"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 14
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-02",
+      "source_id": "recall_corpus_v2:mem-l-02",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "母亲织的围巾还在衣柜最上层，天冷时用户会拿出来披一下。",
+      "source": {
+        "id": "mem-l-02",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-02]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "母亲织过围巾",
+        "围巾保存在衣柜最上层"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 15
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-03",
+      "source_id": "recall_corpus_v2:mem-l-03",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "父亲爱喝龙井，茶杯还摆在书桌原来的位置没动过。",
+      "source": {
+        "id": "mem-l-03",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-03]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "父亲爱喝龙井",
+        "茶杯仍在书桌原处"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 16
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-04",
+      "source_id": "recall_corpus_v2:mem-l-04",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "爷爷留下的旧手表，用户一直戴在手上。",
+      "source": {
+        "id": "mem-l-04",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-04]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "爷爷留下旧手表",
+        "用户常戴"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 17
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-05",
+      "source_id": "recall_corpus_v2:mem-l-05",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "母亲于 2025-12-03 因病去世，走得很突然。",
+      "source": {
+        "id": "mem-l-05",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-05]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "母亲已去世",
+        "去世日期 2025-12-03",
+        "因病"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 18
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-06",
+      "source_id": "recall_corpus_v2:mem-l-06",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "母亲住院那段时间，用户和家里人每天轮流守夜。",
+      "source": {
+        "id": "mem-l-06",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-06]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "母亲曾住院",
+        "用户每天轮流守夜"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 19
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-07",
+      "source_id": "recall_corpus_v2:mem-l-07",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "2026 年 6 月是外公周年祭，用户会去墓地坐一会儿。",
+      "source": {
+        "id": "mem-l-07",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-07]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "外公周年祭在 2026-06",
+        "用户会去墓地"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 20
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-08",
+      "source_id": "recall_corpus_v2:mem-l-08",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "姑姑从老家寄来一封信，字迹和奶奶的很像。",
+      "source": {
+        "id": "mem-l-08",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-08]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "姑姑寄过信",
+        "字迹像奶奶"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 21
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-09",
+      "source_id": "recall_corpus_v2:mem-l-09",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "父亲以前常带用户去河边钓鱼，一坐就是半天。",
+      "source": {
+        "id": "mem-l-09",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-09]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "父亲带用户钓过鱼",
+        "地点是河边"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 22
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-10",
+      "source_id": "recall_corpus_v2:mem-l-10",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "奶奶说话总爱带一句'慢慢来'，用户现在偶尔会不自觉地学她说。",
+      "source": {
+        "id": "mem-l-10",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-10]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "奶奶口头禅是慢慢来",
+        "用户偶尔模仿"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 23
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-11",
+      "source_id": "recall_corpus_v2:mem-l-11",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "用户一直内疚没来得及见母亲最后一面。",
+      "source": {
+        "id": "mem-l-11",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-11]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户没见到母亲最后一面",
+        "因此长期内疚"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 24
+      }
+    },
+    {
+      "id": "e3-extract-mem-l-12",
+      "source_id": "recall_corpus_v2:mem-l-12",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "用户最近慢慢释怀了，但看到旧物还是会想念。",
+      "source": {
+        "id": "mem-l-12",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-12]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户逐渐释怀",
+        "看到旧物仍会想念"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 25
+      }
+    },
+    {
+      "id": "e3-extract-mem-p-01",
+      "source_id": "recall_corpus_v2:mem-p-01",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户还养了一只狗，叫豆豆，是只小土狗。",
+      "source": {
+        "id": "mem-p-01",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-p-01]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户养狗",
+        "狗名叫豆豆"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 26
+      }
+    },
+    {
+      "id": "e3-extract-mem-p-02",
+      "source_id": "recall_corpus_v2:mem-p-02",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "橘子最爱趴在阳台晒太阳，一晒就是一下午。",
+      "source": {
+        "id": "mem-p-02",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-p-02]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "橘子爱晒太阳",
+        "常在阳台"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 27
+      }
+    },
+    {
+      "id": "e3-extract-mem-p-03",
+      "source_id": "recall_corpus_v2:mem-p-03",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "橘子被埋在楼下那棵老槐树下。",
+      "source": {
+        "id": "mem-p-03",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-p-03]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "橘子埋在楼下老槐树下"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 28
+      }
+    },
+    {
+      "id": "e3-extract-mem-p-04",
+      "source_id": "recall_corpus_v2:mem-p-04",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户以前养过一只鹦鹉，叫小蓝，后来送人了。",
+      "source": {
+        "id": "mem-p-04",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-p-04]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "曾养鹦鹉小蓝",
+        "后来送人"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 29
+      }
+    },
+    {
+      "id": "e3-extract-mem-p-05",
+      "source_id": "recall_corpus_v2:mem-p-05",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户养了几条金鱼，放在客厅的鱼缸里。",
+      "source": {
+        "id": "mem-p-05",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-p-05]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户养金鱼",
+        "鱼缸在客厅"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 30
+      }
+    },
+    {
+      "id": "e3-extract-mem-p-06",
+      "source_id": "recall_corpus_v2:mem-p-06",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户其实对猫毛轻度过敏，但一直坚持养着橘子。",
+      "source": {
+        "id": "mem-p-06",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-p-06]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户轻度猫毛过敏",
+        "仍坚持养橘子"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 31
+      }
+    },
+    {
+      "id": "e3-extract-mem-p-07",
+      "source_id": "recall_corpus_v2:mem-p-07",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "橘子去世后，用户把它的饭盆洗干净收了起来。",
+      "source": {
+        "id": "mem-p-07",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-p-07]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "橘子去世后饭盆被洗净收好"
+      ],
+      "fact_support_expect": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 32
+      }
+    },
+    {
+      "id": "e3-extract-wrong-1",
+      "source_id": "recall_corpus_v2:e3-extract-wrong-1",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户养了一只猫，名字叫橘子，陪了用户八年。",
+      "source": {
+        "id": "mem-cat-owned",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-cat-owned]（负例对照：来自 mem-l-01 的实体，与猫无关）",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "奶奶的红烧肉配方写在泛黄的纸上"
+      ],
+      "fact_support_expect": false,
+      "negative_control": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 33
+      }
+    },
+    {
+      "id": "e3-extract-wrong-2",
+      "source_id": "recall_corpus_v2:e3-extract-wrong-2",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "前任叫林远，两人 2025 年 7 月分的手，之后就没再联系。",
+      "source": {
+        "id": "mem-b-01",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-b-01]（负例对照：来自 mem-loved-one-father 的实体，与前任无关）",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "外公的旧眼镜触发回忆"
+      ],
+      "fact_support_expect": false,
+      "negative_control": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 34
+      }
+    },
+    {
+      "id": "e3-extract-wrong-3",
+      "source_id": "recall_corpus_v2:e3-extract-wrong-3",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "父亲爱喝龙井，茶杯还摆在书桌原来的位置没动过。",
+      "source": {
+        "id": "mem-l-03",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json memories[mem-l-03]（负例对照：来自 mem-p-03 的实体，与父亲无关）",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "extraction",
+      "expected_facts": [
+        "用户的狗豆豆埋在楼下"
+      ],
+      "fact_support_expect": false,
+      "negative_control": true,
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 35
+      }
+    },
+    {
+      "id": "e3-conflict-cat",
+      "source_id": "recall_corpus_v2:e3-conflict-cat",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "用户养了一只猫，名字叫橘子，陪了用户八年。",
+      "source": {
+        "id": "e3-conflict-cat",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json mem-cat-owned → mem-cat-deceased（q-02 boundary=冲突事实-只召回新事实）",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "conflict",
+      "old_id": "e3-conflict-cat-mem",
+      "old_content": "用户养了一只猫，名字叫橘子，陪了用户八年。",
+      "new_content": "用户的猫橘子已于 2026-11-20 去世，被埋在楼下那棵树下。",
+      "reason": "猫已去世，旧事实「养猫」被新事实取代",
+      "query": "现在养猫吗？",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 36
+      }
+    },
+    {
+      "id": "e3-conflict-partner",
+      "source_id": "recall_corpus_v2:e3-conflict-partner",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "前任叫林远，2025 年 7 月分的手，之后就没再联系。",
+      "source": {
+        "id": "e3-conflict-partner",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json mem-b-01 → mem-b-06（q-15 boundary=冲突事实-新旧关系）",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E3",
+      "kind": "conflict",
+      "old_id": "e3-conflict-partner-mem",
+      "old_content": "前任叫林远，2025 年 7 月分的手，之后就没再联系。",
+      "new_content": "用户现在和别人在一起了，可对方总问有没有真的忘掉前任。",
+      "reason": "当前关系状态已变化，前任不再是「现在的对象」",
+      "query": "我现在有对象吗？",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 37
+      }
+    },
+    {
+      "id": "e4-q-01",
+      "source_id": "recall_corpus_v2:q-01",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "我是靠着什么想起外公的？",
+      "source": {
+        "id": "q-01",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-01]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-01",
+      "memory_query": "我是靠着什么想起外公的？",
+      "memory_expect": [
+        "mem-loved-one-father",
+        "mem-l-07"
+      ],
+      "expected_first": "mem-loved-one-father",
+      "boundary": null,
+      "note": "主答是旧眼镜；mem-l-07 同为外公相关可作中相关；爷爷手表是不同逝者，不相关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 38
+      }
+    },
+    {
+      "id": "e4-q-02",
+      "source_id": "recall_corpus_v2:q-02",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "现在养猫吗？",
+      "source": {
+        "id": "q-02",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-02]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-02",
+      "memory_query": "现在养猫吗？",
+      "memory_expect": [
+        "mem-cat-deceased"
+      ],
+      "expected_first": "mem-cat-deceased",
+      "boundary": "冲突事实-只召回新事实",
+      "note": "猫已于 2026-11-20 去世，旧事实'养猫橘子'被 mem-cat-deceased supersede；'现在'问当前状态，旧事实不应作为答案召回。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 39
+      }
+    },
+    {
+      "id": "e4-q-03",
+      "source_id": "recall_corpus_v2:q-03",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "我养的猫还在吗？",
+      "source": {
+        "id": "q-03",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-03]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-03",
+      "memory_query": "我养的猫还在吗？",
+      "memory_expect": [
+        "mem-cat-deceased",
+        "mem-cat-owned"
+      ],
+      "expected_first": "mem-cat-deceased",
+      "boundary": "冲突事实-新事实排前",
+      "note": "新事实必须在旧事实之前（用于 recall_metrics 的 conflict_new_fact_first_rate）；旧养猫事实仅作历史背景的中相关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 40
+      }
+    },
+    {
+      "id": "e4-q-04",
+      "source_id": "recall_corpus_v2:q-04",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "橘子喜欢待在哪儿？",
+      "source": {
+        "id": "q-04",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-04]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-04",
+      "memory_query": "橘子喜欢待在哪儿？",
+      "memory_expect": [
+        "mem-p-02",
+        "mem-cat-owned"
+      ],
+      "expected_first": "mem-p-02",
+      "boundary": null,
+      "note": "主答是爱晒太阳；养猫事实提供背景；去世事实与'喜欢待哪儿'无关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 41
+      }
+    },
+    {
+      "id": "e4-q-05",
+      "source_id": "recall_corpus_v2:q-05",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "我养过哪些宠物？",
+      "source": {
+        "id": "q-05",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-05]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-05",
+      "memory_query": "我养过哪些宠物？",
+      "memory_expect": [
+        "mem-cat-owned",
+        "mem-cat-deceased",
+        "mem-p-01",
+        "mem-p-04",
+        "mem-p-05"
+      ],
+      "expected_first": "mem-cat-owned",
+      "boundary": "相似主题干扰",
+      "note": "mem-b-09 讲的是'前任对狗毛过敏、没养成狗'，不是用户养宠，属相似主题干扰项，不应召回。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 42
+      }
+    },
+    {
+      "id": "e4-q-06",
+      "source_id": "recall_corpus_v2:q-06",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "去年我经历了什么？",
+      "source": {
+        "id": "q-06",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-06]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-06",
+      "memory_query": "去年我经历了什么？",
+      "memory_expect": [
+        "mem-l-05",
+        "mem-b-11",
+        "mem-b-04",
+        "mem-l-06",
+        "mem-loved-one-father"
+      ],
+      "expected_first": "mem-l-05",
+      "boundary": "时间敏感-去年",
+      "note": "固定 now=2026-11-21，'去年'=2025；2026 年的外公周年祭(2026-06)与猫去世(2026-11)不应召回。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 43
+      }
+    },
+    {
+      "id": "e4-q-07",
+      "source_id": "recall_corpus_v2:q-07",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "我们为什么分手？",
+      "source": {
+        "id": "q-07",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-07]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-07",
+      "memory_query": "我们为什么分手？",
+      "memory_expect": [
+        "mem-b-08",
+        "mem-b-04",
+        "mem-b-01"
+      ],
+      "expected_first": "mem-b-08",
+      "boundary": null,
+      "note": "主因是对方突然离开不解释；现伴侣记忆与分手原因无关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 44
+      }
+    },
+    {
+      "id": "e4-q-08",
+      "source_id": "recall_corpus_v2:q-08",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "前任叫什么名字？",
+      "source": {
+        "id": "q-08",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-08]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-08",
+      "memory_query": "前任叫什么名字？",
+      "memory_expect": [
+        "mem-b-01"
+      ],
+      "expected_first": "mem-b-01",
+      "boundary": "相似主题干扰",
+      "note": "mem-b-06 是现伴侣，不能当前任召回；mem-b-09 提到前任但不含姓名，仅中相关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 45
+      }
+    },
+    {
+      "id": "e4-q-09",
+      "source_id": "recall_corpus_v2:q-09",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "奶奶做饭有什么拿手的？",
+      "source": {
+        "id": "q-09",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-09]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-09",
+      "memory_query": "奶奶做饭有什么拿手的？",
+      "memory_expect": [
+        "mem-l-01",
+        "mem-l-10"
+      ],
+      "expected_first": "mem-l-01",
+      "boundary": "相似主题干扰",
+      "note": "爷爷手表、外公眼镜都是不同逝者，不能因'长辈旧物'语义相近就混召。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 46
+      }
+    },
+    {
+      "id": "e4-q-10",
+      "source_id": "recall_corpus_v2:q-10",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "外公的旧物是什么？",
+      "source": {
+        "id": "q-10",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-10]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-10",
+      "memory_query": "外公的旧物是什么？",
+      "memory_expect": [
+        "mem-loved-one-father",
+        "mem-l-07"
+      ],
+      "expected_first": "mem-loved-one-father",
+      "boundary": null,
+      "note": "旧眼镜是主答；周年祭提供外公相关背景。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 47
+      }
+    },
+    {
+      "id": "e4-q-11",
+      "source_id": "recall_corpus_v2:q-11",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "爷爷留了什么给我？",
+      "source": {
+        "id": "q-11",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-11]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-11",
+      "memory_query": "爷爷留了什么给我？",
+      "memory_expect": [
+        "mem-l-04"
+      ],
+      "expected_first": "mem-l-04",
+      "boundary": "相似主题干扰",
+      "note": "爷爷、外公、父亲是三位不同逝者，'长辈遗物'语义高度相似，须精准区分。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 48
+      }
+    },
+    {
+      "id": "e4-q-12",
+      "source_id": "recall_corpus_v2:q-12",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "妈妈留下什么？",
+      "source": {
+        "id": "q-12",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-12]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-12",
+      "memory_query": "妈妈留下什么？",
+      "memory_expect": [
+        "mem-l-02",
+        "mem-l-05",
+        "mem-l-11"
+      ],
+      "expected_first": "mem-l-02",
+      "boundary": null,
+      "note": "围巾是母亲留下的实物；去世与内疚是母亲相关背景；奶奶配方不相关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 49
+      }
+    },
+    {
+      "id": "e4-q-13",
+      "source_id": "recall_corpus_v2:q-13",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "最近有什么周年纪念？",
+      "source": {
+        "id": "q-13",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-13]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-13",
+      "memory_query": "最近有什么周年纪念？",
+      "memory_expect": [
+        "mem-l-07",
+        "mem-b-10"
+      ],
+      "expected_first": "mem-l-07",
+      "boundary": "时间敏感-周年",
+      "note": "外公周年(2026-06)、分手周年(2026-07)在固定 now 下都已过/临近，均属'最近周年'；母亲去世日非周年。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 50
+      }
+    },
+    {
+      "id": "e4-q-14",
+      "source_id": "recall_corpus_v2:q-14",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "我对什么过敏？",
+      "source": {
+        "id": "q-14",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-14]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-14",
+      "memory_query": "我对什么过敏？",
+      "memory_expect": [
+        "mem-p-06",
+        "mem-b-09"
+      ],
+      "expected_first": "mem-p-06",
+      "boundary": "相似主题干扰",
+      "note": "用户的猫毛过敏 vs 前任的狗毛过敏，主体不同；用户本人的过敏主答是 mem-p-06。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 51
+      }
+    },
+    {
+      "id": "e4-q-15",
+      "source_id": "recall_corpus_v2:q-15",
+      "scene": "分手失恋",
+      "scene_key": "breakup",
+      "language": "zh",
+      "user_input": "我现在有对象吗？",
+      "source": {
+        "id": "q-15",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-15]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-15",
+      "memory_query": "我现在有对象吗？",
+      "memory_expect": [
+        "mem-b-06"
+      ],
+      "expected_first": "mem-b-06",
+      "boundary": "冲突事实-新旧关系",
+      "note": "现伴侣才是当前状态；前任与'已删联系方式'不能作为'现在有对象'的答案。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 52
+      }
+    },
+    {
+      "id": "e4-q-16",
+      "source_id": "recall_corpus_v2:q-16",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "今天晚饭吃什么？",
+      "source": {
+        "id": "q-16",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-16]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-16",
+      "memory_query": "今天晚饭吃什么？",
+      "memory_expect": [],
+      "expected_first": null,
+      "boundary": "无关记忆-负例",
+      "note": "与所有记忆无关的 query，期望 top-k 不命中任何记忆。注意：当前 recall_metrics 会跳过空 memory_expect，负例查询的'不召回'判定需 runner 支持（见 README §5 的 gap 说明）。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 53
+      }
+    },
+    {
+      "id": "e4-q-17",
+      "source_id": "recall_corpus_v2:q-17",
+      "scene": "宠物离世",
+      "scene_key": "pet",
+      "language": "zh",
+      "user_input": "橘子埋在哪里？",
+      "source": {
+        "id": "q-17",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-17]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-17",
+      "memory_query": "橘子埋在哪里？",
+      "memory_expect": [
+        "mem-cat-deceased",
+        "mem-p-03"
+      ],
+      "expected_first": "mem-cat-deceased",
+      "boundary": null,
+      "note": "去世记忆含埋葬地点为主答；mem-p-03 是地点细节作中相关；养猫旧事实不相关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 54
+      }
+    },
+    {
+      "id": "e4-q-18",
+      "source_id": "recall_corpus_v2:q-18",
+      "scene": "亲人离世",
+      "scene_key": "loved_one",
+      "language": "zh",
+      "user_input": "父亲平时爱喝什么？",
+      "source": {
+        "id": "q-18",
+        "dataset": "recall_corpus_v2",
+        "kind": "synthetic-handwritten",
+        "derived_from": "eval/recall_corpus.json queries[q-18]",
+        "note": "手写模拟语料，非真实用户数据；标注者=生成者，相关度为主观判定"
+      },
+      "stage": "E4",
+      "kind": "recall",
+      "query_id": "q-18",
+      "memory_query": "父亲平时爱喝什么？",
+      "memory_expect": [
+        "mem-l-03"
+      ],
+      "expected_first": "mem-l-03",
+      "boundary": "相似主题干扰",
+      "note": "父亲的龙井是主答；爷爷手表、外公眼镜是不同逝者，不相关。",
+      "provenance": {
+        "dataset": "recall_corpus_v2",
+        "row_index": 55
+      }
+    }
+  ]
+}
