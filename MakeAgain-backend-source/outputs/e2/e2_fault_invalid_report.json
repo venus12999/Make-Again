@@ -1,0 +1,279 @@
+{
+  "tool": "e2_interview_chain",
+  "schema_version": "1.0",
+  "mode": "mock",
+  "fault": "invalid_report",
+  "口径": "mock=构造trace验评测结构，非产品行为证据；persona=synthetic-handwritten",
+  "threshold": {
+    "reasonable_max_turns": 16,
+    "filler_soft_limit": 5,
+    "personalization_min_anchors": 2
+  },
+  "results": [
+    {
+      "id": "e2-synthetic-01",
+      "source_id": "e2-synthetic-01",
+      "tag": "分手-被出轨",
+      "loss_type": "breakup",
+      "trace": {
+        "tag": "分手-被出轨",
+        "loss_type": "breakup",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": false,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "维度1的问题？",
+            "answer": "她叫小雅,我们在一起三年,是大学同学。她出轨了,是被我发现的。",
+            "action": "next"
+          },
+          {
+            "turn": 2,
+            "question": "维度2的问题？",
+            "answer": "最常想起的是去年跨年,我们在江边倒计时,她说要到老。现在那句话像刀子。",
+            "action": "next"
+          },
+          {
+            "turn": 3,
+            "question": "维度3的问题？",
+            "answer": "走神最多是下班回到空房间,以前她会发消息问'到家了吗'。现在手机再也不响。",
+            "action": "next"
+          },
+          {
+            "turn": 4,
+            "question": "维度4的问题？",
+            "answer": "放不下的是'为什么是我'。我把能给的都给了,还是被丢下。",
+            "action": "next"
+          },
+          {
+            "turn": 5,
+            "question": "维度5的问题？",
+            "answer": "我想带着这段记忆往前走,但不想再信任何人。",
+            "action": "complete"
+          }
+        ]
+      },
+      "checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": false,
+        "CP3_report_fields_complete": false,
+        "CP4_personalization_match": false,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": false,
+      "evidence": {
+        "missing_fields": [
+          "<report is empty or not a dict>"
+        ],
+        "personalization": {
+          "matched_anchors": [],
+          "missed_anchors": [
+            "小雅",
+            "跨年",
+            "江边",
+            "到老",
+            "到家了吗"
+          ],
+          "min_required": 2,
+          "total_anchors": 5
+        },
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "soft_warnings": [],
+        "done": true,
+        "report_ready": false,
+        "elapsed_s": 0.0
+      },
+      "report": {}
+    },
+    {
+      "id": "e2-synthetic-02",
+      "source_id": "e2-synthetic-02",
+      "tag": "丧亲-父亲突然离世",
+      "loss_type": "loved_one",
+      "trace": {
+        "tag": "丧亲-父亲突然离世",
+        "loss_type": "loved_one",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": false,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "维度1的问题？",
+            "answer": "我爸,他叫建国,退休前是中学数学老师。去年心梗走的,很突然。",
+            "action": "next"
+          },
+          {
+            "turn": 2,
+            "question": "维度2的问题？",
+            "answer": "反复想起他教我骑自行车,在小区那条路上扶着后座,说'别怕,我在'。",
+            "action": "next"
+          },
+          {
+            "turn": 3,
+            "question": "维度3的问题？",
+            "answer": "最难受是过年回家,进门喊'爸我回来了',没人应。",
+            "action": "next"
+          },
+          {
+            "turn": 4,
+            "question": "维度4的问题？",
+            "answer": "想不通的是他走前一天我们还通电话,他说明天包饺子,结果没等到明天。",
+            "action": "next"
+          },
+          {
+            "turn": 5,
+            "question": "维度5的问题？",
+            "answer": "我想带着他对我的好继续过,把他教我的耐心传下去。",
+            "action": "complete"
+          }
+        ]
+      },
+      "checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": false,
+        "CP3_report_fields_complete": false,
+        "CP4_personalization_match": false,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": false,
+      "evidence": {
+        "missing_fields": [
+          "<report is empty or not a dict>"
+        ],
+        "personalization": {
+          "matched_anchors": [],
+          "missed_anchors": [
+            "建国",
+            "骑自行车",
+            "别怕",
+            "包饺子",
+            "心梗"
+          ],
+          "min_required": 2,
+          "total_anchors": 5
+        },
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "soft_warnings": [],
+        "done": true,
+        "report_ready": false,
+        "elapsed_s": 0.0
+      },
+      "report": {}
+    },
+    {
+      "id": "e2-synthetic-03",
+      "source_id": "e2-synthetic-03",
+      "tag": "宠物离世-陪伴15年的猫",
+      "loss_type": "pet",
+      "trace": {
+        "tag": "宠物离世-陪伴15年的猫",
+        "loss_type": "pet",
+        "n_turns": 5,
+        "gen_filler_turns": 0,
+        "done": true,
+        "report_ready": false,
+        "reached_complete": true,
+        "elapsed_s": 0.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "维度1的问题？",
+            "answer": "是只橘猫,叫橘子,陪伴我十五年,从大学毕业到现在。上周走了,肾衰竭。",
+            "action": "next"
+          },
+          {
+            "turn": 2,
+            "question": "维度2的问题？",
+            "answer": "最想起的是每个加班深夜回家,它蹲在门口等我,尾巴甩啊甩。",
+            "action": "next"
+          },
+          {
+            "turn": 3,
+            "question": "维度3的问题？",
+            "answer": "最难的是早上醒来,习惯性要去倒猫粮,走到碗前才想起它不在了。",
+            "action": "next"
+          },
+          {
+            "turn": 4,
+            "question": "维度4的问题？",
+            "answer": "放不下的是最后那几天,我出差没在身边,它是自己走的。我一直自责。",
+            "action": "next"
+          },
+          {
+            "turn": 5,
+            "question": "维度5的问题？",
+            "answer": "我想记住它,不想快点忘记。它是我这十五年最稳的陪伴。",
+            "action": "complete"
+          }
+        ]
+      },
+      "checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": false,
+        "CP3_report_fields_complete": false,
+        "CP4_personalization_match": false,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": false,
+      "evidence": {
+        "missing_fields": [
+          "<report is empty or not a dict>"
+        ],
+        "personalization": {
+          "matched_anchors": [],
+          "missed_anchors": [
+            "橘子",
+            "橘猫",
+            "猫粮",
+            "肾衰竭",
+            "门口"
+          ],
+          "min_required": 2,
+          "total_anchors": 5
+        },
+        "turns": {
+          "n_turns": 5,
+          "gen_filler_turns": 0,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "soft_warnings": [],
+        "done": true,
+        "report_ready": false,
+        "elapsed_s": 0.0
+      },
+      "report": {}
+    }
+  ],
+  "summary": {
+    "users": 3,
+    "checkpoint_pass_counts": {
+      "CP1_reached_complete": 3,
+      "CP2_report_generated": 0,
+      "CP3_report_fields_complete": 0,
+      "CP4_personalization_match": 0,
+      "CP5_followup_turns_bounded": 3
+    },
+    "soft_warning_users": 0,
+    "overall_pass": false,
+    "exit_code": 1
+  }
+}

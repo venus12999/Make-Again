@@ -3,7 +3,6 @@
   "source": "CPsyCoun",
   "paper": "Findings ACL 2024",
   "eval": "HEART 5维 llm_judge（human_alignment/empathic_responsiveness/attunement/resonance/task_following）",
-  "n": 34,
   "rubric": {
     "framework": "HEART",
     "version": "1.0-zh",
@@ -22,6 +21,7 @@
     "note": "原自编维度（改动前 eval 字段值），保留作新 5 维 vs 旧自编 A/B 对照；不参与 HEART 打分，items 数据未改。",
     "spec": "eval/run_benchmarks.py::judge 旧 rubric 字符串"
   },
+  "n": 48,
   "power_analysis": {
     "research_basis": {
       "anthropic_blog": "https://www.anthropic.com/research/statistical-approach-to-model-evals (2024-11-18)",
@@ -29,12 +29,99 @@
       "airbnb_blog": "https://airbnb.tech/ai-ml/eval-driven-development-lessons-from-evaluating-genai-at-scale/ (2026-07)"
     },
     "target_n": 30,
-    "actual_n": 34,
+    "actual_n": 48,
     "alpha": 0.05,
     "power": 0.8,
     "repetitions": 5,
     "formula": "MDE=(z(1-alpha/2)+z(power))*sd_paired_diff/sqrt(n)  [iterate.py::mde]",
-    "note": " Anthropic Rec#3 同题多次重采样取均值降低题内方差；Rec#4 同 case 配对差值；Rec#5 power analysis 定 n。compare 用 --repetitions 5 才能兑现 MDE<0.15；默认 3 次时功效仍不足。Airbnb 50-100 起步为后续目标。"
+    "note": " Anthropic Rec#3 同题多次重采样取均值降低题内方差；Rec#4 同 case 配对差值；Rec#5 power analysis 定 n。compare 用 --repetitions 5 才能兑现 MDE<0.15；默认 3 次时功效仍不足。Airbnb 50-100 起步为后续目标。 E1 重造后 n 增至 48（含 8 条 PsyQA 权威 + 6 条自造宠物），统计功效不退化。"
+  },
+  "e1_rebuild": {
+    "date": "2026-11-23",
+    "goal": "表达段中文原生重造：去英文翻译集、按产品三场景配比、逐条可追溯",
+    "method": "旧34条逐字保留 + PsyQA 中文原生失恋 8 条 + 自造宠物离世 6 条（不翻译）",
+    "research_basis": {
+      "as_of": "2026-11-23",
+      "decay_curve": "AGENTS.md: <=6m=1.0 / 6-18m=0.7 / 18-36m=0.4 / >36m=0.1; months=(today-published).days/30.44",
+      "cpsycoun": {
+        "task_weight": 0.7,
+        "decay_weight": 0.4,
+        "published": "2024-05-26 (arXiv v1); 2024-08 (Findings ACL 2024)",
+        "age_days": 911,
+        "age_months": 29.9,
+        "urls": [
+          "https://arxiv.org/abs/2405.16433",
+          "https://aclanthology.org/2024.findings-acl.830/",
+          "https://huggingface.co/datasets/CAS-SIAT-XinHai/CPsyCoun"
+        ]
+      },
+      "psyqa": {
+        "task_weight": 0.4,
+        "decay_weight": 0.1,
+        "published": "2021-06-03 (arXiv v1); 2021-08 (Findings ACL-IJCNLP 2021)",
+        "age_days": 1999,
+        "age_months": 65.7,
+        "urls": [
+          "https://arxiv.org/abs/2106.01702",
+          "https://aclanthology.org/2021.findings-acl.130/",
+          "https://huggingface.co/datasets/lsy641/PsyQA"
+        ]
+      },
+      "deep_emotional_support_zh": {
+        "decay_weight": 1.0,
+        "published": "2026-07-07 (HF announcement)",
+        "age_days": 139,
+        "age_months": 4.6,
+        "used_in_batch": false,
+        "url": "https://huggingface.co/datasets/AngelWarmSmile123/deep-emotional-support-zh"
+      },
+      "auradial": {
+        "decay_weight": 0.7,
+        "published": "2025-11 (Findings EMNLP 2025)",
+        "age_days": 387,
+        "age_months": 12.7,
+        "used_in_batch": false,
+        "url": "https://aclanthology.org/2025.findings-emnlp.155/"
+      },
+      "matcha": {
+        "decay_weight": 1.0,
+        "published": "2026-10-25 (arXiv)",
+        "age_days": 29,
+        "age_months": 1.0,
+        "used_in_batch": false,
+        "url": "https://arxiv.org/abs/2610.35512"
+      },
+      "kardiabench": {
+        "decay_weight": 0.7,
+        "published": "2025-12-03 (arXiv 2512.01282)",
+        "age_days": 355,
+        "age_months": 11.7,
+        "used_in_batch": false,
+        "url": "https://huggingface.co/datasets/Jhcircle/KadiaBench"
+      }
+    },
+    "pet_loss_not_found": {
+      "status": "NOT_FOUND",
+      "scope": "中文原生宠物离世情感陪伴/心理咨询权威集",
+      "note": "CPsyCoun/PsyQA 无该类目；英文 pet-loss 集存在但语言错配，按 N-007 教训不翻译充当主力。故 6 条自造并明确标 synthetic-handwritten。",
+      "english_only_evidence": [
+        "https://huggingface.co/datasets/XingYuSSS/TEA-Dialog",
+        "https://huggingface.co/datasets/heegyu/augesc",
+        "https://public.attunebench.com/"
+      ]
+    },
+    "scene_distribution": {
+      "分手失恋": 9,
+      "亲人离世": 9,
+      "情绪困扰": 12,
+      "人际关系": 12,
+      "宠物离世": 6
+    },
+    "invariants": [
+      "旧 34 条 user_input/scene/provenance 逐字保留（H1 baseline 配对可比）",
+      "HEART 5 维 rubric / eval_control / power_analysis 保留，actual_n 同步",
+      "ci_runner.EXPECTED_SCENES 的四个旧场景名全保留，只新增宠物离世"
+    ]
   },
   "items": [
     {
@@ -749,6 +836,336 @@
         "split": "train",
         "row_index": 1097,
         "fetch": "HF datasets-server rows API (2026-11-23 实拉)"
+      }
+    },
+    {
+      "id": "psyqa-9165",
+      "source_id": "PsyQA:test:9165",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "28岁女生，想挽回六年初恋男友，不知怎么办？\n我和男朋友大学相识，是彼此的初恋，毕业后我工作，他上研究生，他毕业后考上老家的军队文职，他父母双方要求我必须有正式工作才同意我们结婚，男朋友为我争取一年考试，因比较反感这个门槛，觉着因为工作才和我结婚，就没有好好备考，后差五分没有考上，逼迫男朋友与我分手，分手后又发生一系列不愉快的问题，他父母姐姐都不太喜欢我，我们异地，我属于远嫁，之前没有考虑到现实问题，没做好沟通，导致彻底分手，但还保持有对方的联系方式，对方和我说已不再喜欢我，但我想挽回，现已分手20多天，请问我该怎么做，我们谈了6年，不想放弃",
+      "reference": "~楼主和男朋友相恋6年，是彼此的初恋。谈婚论嫁的时候，他的父母却要求你必须有正式工作才同意结婚，而且他父母姐姐都不太喜欢你。其实谈到结婚的时候，父母都会考虑一些现实的问题，对女方的条件有要求也是很正常的事情。不知道楼主现在做什么工作呢？工作是否稳定，待遇怎么呢？楼主自己喜欢这个工作呢？如果楼主自己的本来的工作不错，我也非常喜欢，而对方的父母偏执的要求，你必须要有正式工作。我认为这是不太恰当的。但如果楼主的工作不是特别好，对方家庭希望你有一个正式的工作，这是可以理解的。就跟他谈了6年，这6年里你们一定都付出了很多，楼主也很不舍得。但是我们不能因为过去付出的多而不想放弃。过去的已经过去了，现在对我们而言更重要的是未来。楼主是远嫁，而他的父母姐姐都不太喜欢你，他本人现在也不喜欢你。就算楼主挽回成功了，那真的能够保证你的后半辈子能够幸福吗？希望楼主好好的考虑一下这些现实的问题，再决定要不要挽回。",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-9165",
+        "question_id": 9165,
+        "keywords": "恋爱,失恋"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 9165,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "psyqa-16319",
+      "source_id": "PsyQA:test:16319",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "和男友分手了，知道不合适可是又舍不得，怎么办？\n前男友刚分手一个月，在一起的时候甜蜜的时候很恩爱，但是两个人经常吵架，因为一点小事就吵架。我是个爱多想的人，经常爱制造矛盾，但是他总会激化矛盾，我骂他他会用更恶毒的话来伤害我，甚至会威胁我，他说和我在一起两个人都容易情绪失控，再继续会抱着走向地狱，家里人知道我们俩的事也坚决不同意我俩了，他也没了信心。我也明白两个人不可能再有以后了，可是就是想到以前在一起的甜蜜，不吵架真的是超级甜，两个人也一起设想了好多未来，未来规划都有他，身边朋友也都知道我俩，突然没有他觉得好孤独无助。一直哭一直失眠，想挽回，又知道不可能，他也态度很坚决，我身边所有人也在劝我及时止损，我好难过。该怎么办呢？",
+      "reference": "楼主，你好，允许自己难过和崩溃，这是你的自由，但更应该被重视是爱自己。努力调整自己的状态，像努力喜欢一个人那样认真。从你的描述中，可以感受到你现在的痛苦和难过。一方面，和男友分手后，自己的状态一直是消极的，痛苦，失眠，无助等等；另一方面，知道无法挽回，但无法控制自己去回忆美好和甜蜜。非常可以理解你现在的感受，极度思念对方和怀念美好的过去，无法专心于眼前的生活，冷静下来后，也会给自己鼓励，让自己慢慢地放下，但对方却一直在你的脑海中，半步都未曾离开。痛苦的事情有很多很多，失恋算是一种。但那些不把失恋当回事的人，都曾经痛哭和崩溃过，只有硬扛着，扛着扛着，习惯了一个人的生活，知道有一天，自己也会开心了，也看到生活周围的美好了，可能才算是没有了悲伤，但那个人依然在那里，只是你不把他当回事儿了。你可以尝试的方法有很多，但在行动之前，有积极改变的心态和向前的动力，是很重要的。这一个月来，你做了什么事情呢",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-16319",
+        "question_id": 16319,
+        "keywords": "恋爱,失恋,吵架,恋爱经营"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 16319,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "psyqa-8004",
+      "source_id": "PsyQA:test:8004",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "今天分手了，该如何适应一个人不去想他？\n我们谈了一年多了。都是彼此的初恋。对于我而言，他一开始还好，但是慢慢的到后期，他变得爱打游戏，我们变得不爱交流说话，不爱互相约着出去玩，他不记我的生理期，对此我们还大吵了一架，他说的挺伤人。仿佛两个人之间有了隔阂。因为觉得僵持着，谁也不提爱也不提不爱，所以我昨晚提了，今天分了。心里有些郁闷..不舒服的感受",
+      "reference": "“爱不是安慰，爱是一道光。我爱你，不光因为你的样子，还因为，和你在一起时，我的样子。我爱你，不光因为你为我而做的事，还因为，为了你，我能做成的事。我爱你，因为你能唤出，我最真的那部分。”时光告诉我们，爱就是付出，喜欢一个人是很美好的，被喜欢也是很幸福的。最重要的就是自己会心甘情愿，毫无理由，是吧。所以，你想了就追回来吧。",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-8004",
+        "question_id": 8004,
+        "keywords": "恋爱,失恋"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 8004,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "psyqa-9965",
+      "source_id": "PsyQA:test:9965",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "分手半年，怎样熬过想念前男友的岁月？\n分手半年，彻底不联系一个多月，他骗了我，和我处对象期间，因为前女友怀孕匆匆结了婚，并生了孩子，之后才告诉我事实。但是坦白之后对我更好了，像极了爱情，我也信了，我也必须撤出，断地很干脆，他现在偶尔给我打钱，我都不予理会。可是最近一段时间好想他，浑身无力，和刚接受分手事实时候状态一样。好想摆脱，不想再想他了，想要彻底放下他。可是好难。希望大家帮帮我。",
+      "reference": "一段感情，说放下就放下，那是不可能的，所以一番离别，必然会是有所悲伤的，还望你请勿因此自责，然后也不要因为自己摆脱不了太着急，太想摆脱，可能就是依赖太紧，那么也要给自己机会，重新独立。具体说来你要真正的摆脱，可能要经历一个过程：1、承认失去我用的不是分离，而是失去，是因为这个词带有更加诀别的味道，至少目前看来，他已婚，离婚和你在一起，或者你在他的婚姻下与他继续生活的可能就不大了。这样一来，你就得必须承认这样一分失去，去面对这样一件事情，他从此不再与我有所关联，或者你们还可以当普通朋友，但是那一份爱的情感已经不再了，那个温存得画面，仅仅留在了印象之中；2、表达情绪这个时候得情感是复杂的，比如对他，有爱，有恨，有无奈，有失望，有悲伤，有舍不得等等，很多情绪混合在一起了，因为混杂在一起了，可以让你更难摆脱。你可以尝试着去分清楚，哪些是爱，哪些是恨，用文字，或图画，或者是叙述等等一些方式表达出来，",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-9965",
+        "question_id": 9965,
+        "keywords": "恋爱,失恋,出轨"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 9965,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "psyqa-2217",
+      "source_id": "PsyQA:test:2217",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "31岁男，跟女朋友分手了，感觉人生比较迷茫怎么办？\n跟女友相处1年多了，她追的我，我们互相喜欢，也谈到了婚姻，双方家长都见过了。由于礼金超过了我家的承受范围，每次谈到结婚我都会不自觉的选择回避。9月初她工作调动去了外地，渐渐感觉到关系有了疏远，这个月我们闹矛盾分手了，可是我还是舍不得，她却不想复合。她说她不爱了，累了，没耐心跟信心了，我该怎么办？我感到人生没有目标，找不到人生的意义，每天都提不起劲，工作生活都被影响，浑浑噩噩的。",
+      "reference": "与谈婚论嫁的女友分手，好像眼看着要跑道终点了，终点却没了，这种失去让人实在难过、气馁，没了目标和抓手。看到题主这个月刚刚分手，首先请允许我们自己的情绪存在，不用着急去“好”起来。这是正常的。其次，我们或许可以尝试去表达我们的情绪和感受，与朋友聊聊、自己写写画画、这里来倾诉、运动都行。只有当我们的情绪得到了充分的表达之后，或许我们才能慢慢地再次把注意力转移到其它事情上。此外，题主提到了“回避”一词，似乎是说这是我们的一贯的方式：比起主动的沟通和争取的努力，我们似乎更容易逃避等待，“浑浑噩噩”。心理咨询常说与我们的情绪待在一起，与我们的“浑浑噩噩”待在一起，但不是被动的等待它过去，而是一种更积极的态度，去看到它了解它，去倾听它背后的述求。再次回顾问题时，注意到题主的“怎么办”。这个问题是问这段感情怎么办？亦或是这种状态怎么办，怎么好起来？如果是前者，没人能代替你做决定。如果是后者，前面的问题已",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-2217",
+        "question_id": 2217,
+        "keywords": "恋爱,失恋,挽回前任"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 2217,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "psyqa-20689",
+      "source_id": "PsyQA:test:20689",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "与男友分手，总是忍不住想他怎么办？\n男友是我的男神，是我追的他。可是在一起并没有很开心，因为我们是异地，而他很少主动找我，所以我很不确定他是否真的爱我，总是担心他会离开。他是责任心很强的那一种，总说他担心给不了我想要的未来之前我们就因为这个分开过一次，可是我忍不住又找回他了。现在我们又分手了，我其实是比较接受这个事实的，因为我也觉得有点累，可是我依然很喜欢他，他也说他依然爱我可是我们又不得不因为现实而分开。我现在该怎么办？",
+      "reference": "可能是题主淡淡的描述有点打动我，抛开咨询师的身份，就以过来人的身份说两句：有人说其实人和人相遇，分离都是注定的结局，或早或晚。相爱容易相处难，若分离是为了彼此成全，虽有遗憾，但爱却留在了彼此心间，这何尝不美。总比明明很累却要将就，就算白头到老，也是一世折磨来的好，反正总要分开的。爱了就是爱了，不必为难自己非要忘记，默默留在心里就好；分了就是分了，不必责怪自己没有坚持，因为在那时那刻，这就是最好的选择。有时候我们很想望着天，可是命运就是不让我们抬头，一次又一次，TA让我们低下头颅，这感觉很受挫，很难过，很让人失望，但转念想，也许命运并非恶意，TA只是倔强地想指引我们看脚下的风景。生活那么丰富多彩，除了男朋友，还有很多美好的东西值得去体验，走着走着，不经意间遇到了同路的人，那时候你笑了，命运也笑了。我很喜欢你的描述，虽然有伤，但我看到这里面有爱，这真的很好，在提的问题里并不多见。你的问题是现在",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-20689",
+        "question_id": 20689,
+        "keywords": "恋爱,失恋,恋爱经营"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 20689,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "psyqa-1485",
+      "source_id": "PsyQA:test:1485",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "恋爱7年被分手，总是反复思念和难过，怎么走出来？\n和恋爱了7年的男友，异地四年，分手前依旧甜言蜜语规划未来，只是有的小细节表现出没那么爱我了但是我没察觉到。后来他跟别的女生聊天之后突然就告诉我他想通了必须要分手，离上次说甜言蜜语仅仅过去了4天，我们一个月没有联系了",
+      "reference": "#和恋爱了7年的男友，异地四年，分手前依旧甜言蜜语规划未来#异地，造成了你和他的信息差；也就是大部分情况下，你无法确认对方在那，做什么，干什么，他的真实需求。甜言蜜语只是一种形式，它不能说明你们关系稳固。四年异地，都没有考虑过解决异地的问题？那么这可能成为你们分手最大隐患之一。#后来他跟别的女生聊天之后突然就告诉我他想通了必须要分手，离上次说甜言蜜语仅仅过去了4天，我们一个月没有联系了#在你，你是真心付出。但你不能接受他付出跟你不对等？所以你现在很难受，也无法接受这样的结果。但对方好像接受这样结果的速度非常快，可能他很早就在接触其他女性了，只是用甜言蜜语形式继续对你，让你没有生疑；加上异地，就更难发现不对劲的地方。从事实的角度隐患很大，但从情感上来说难接受，这能理解。通过这事，如果你下次还是异地，你需要加强你的观察能力。你自己所在地，没有对象可以谈吗？需要沟通可以留言或者私信。",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-1485",
+        "question_id": 1485,
+        "keywords": "恋爱,失恋"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 1485,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "psyqa-18265",
+      "source_id": "PsyQA:test:18265",
+      "scene": "分手失恋",
+      "language": "zh",
+      "user_input": "分手两个月，怀疑自己能不能再爱？\n对方说的分手，谈了三年，理由对我没感觉了。已经过了两个月，慢慢接受，但是晚上睡觉还是会半夜醒来，一个人待着会难受，不断从自己身上找原因，也把前任删了，感觉自己被抛弃了，会怀疑自己能不能再爱",
+      "reference": "题主你好！三年的恋情，说没就没了，这真是让人难过伤心的事！尽管你觉得接受了，但是还是会半夜醒来找自己的原因。分手已经让你很难过了，自责可能会进一步伤害你自己！对于你前男友来说，这段感情已经结束了，但对于你来说是比较突然的，也许也比较意外，也许你在心理放不下，不愿意接受这样的结果。从失恋中恢复过来需要时间，一般来说需要半年左右。也许在这个阶段可以找一个信任的人说说，整理自己去的情绪，这段感情中你可能遗憾和收获。",
+      "source": {
+        "dataset": "PsyQA",
+        "paper": "arXiv 2106.01702 Findings ACL-IJCNLP 2021",
+        "id": "psyqa-18265",
+        "question_id": 18265,
+        "keywords": "恋爱,失恋,恋爱经营"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "PsyQA",
+        "split": "test",
+        "row_index": 18265,
+        "fetch": "HF lsy641/PsyQA test.json (2026-11-23 实拉)",
+        "url": "https://huggingface.co/datasets/lsy641/PsyQA/resolve/main/test.json"
+      }
+    },
+    {
+      "id": "pet-syn-001",
+      "source_id": "synthetic-handwritten:pet-loss:001",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我家那只橘猫昨天凌晨走了，十七岁。早上起来它常趴的那块地板还是温的，我下意识伸手去摸，什么都没有。我在卫生间哭了很久，转头又觉得自己没资格这么难过——它只是一只猫而已。可我知道，我失去的是一个每天等我回家的人。",
+      "reference": "十七年的清晨和傍晚，它把那块地板睡成了自己的位置，也把你的回家当成一天里最重要的事。你说「只是一只猫」，但这份难过不需要谁来批准。今天要是愿意，就跟我聊聊它吧——它最爱趴的姿势、它叫什么、它最后一次蹭你是什么时候。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无宠物离世类目，见 e1_rebuild.pet_loss_not_found）",
+        "id": "pet-syn-001"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "author": "E1 eval rebuild agent (自造起草，非真人标注、非权威集)",
+        "created": "2026-11-23",
+        "fetch": "synthetic-handwritten",
+        "note": "自造口径：中文原生起草，非权威集、非翻译、非真人金标；仅用于补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "pet-syn-002",
+      "source_id": "synthetic-handwritten:pet-loss:002",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "豆豆上周三走了，胰腺炎，抢救了一夜。我到现在没敢收拾它的窝，牵引绳还挂在门后。晚上遛弯我还是会绕去它最喜欢的那个花坛，走到一半才想起来它不在了。家里人说「再养一只就好了」，可我想念的是豆豆，不是一条狗。",
+      "reference": "牵引绳还挂在门后，这个细节比任何话都更像它还在。绕到花坛那半路突然停住的那一刻，我听着都心疼。「再养一只就好了」——他们大概不知道，你想念的是那个只属于你的豆豆。它的窝什么时候收、要不要收，都你自己说了算，没人催你。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无宠物离世类目，见 e1_rebuild.pet_loss_not_found）",
+        "id": "pet-syn-002"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "author": "E1 eval rebuild agent (自造起草，非真人标注、非权威集)",
+        "created": "2026-11-23",
+        "fetch": "synthetic-handwritten",
+        "note": "自造口径：中文原生起草，非权威集、非翻译、非真人金标；仅用于补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "pet-syn-003",
+      "source_id": "synthetic-handwritten:pet-loss:003",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我养了九年的边牧在小区门口被车撞了，就几秒钟，我连一句再见都没来得及说。现在一闭眼就是它最后看我的那个眼神。我反复想是不是那天我牵绳松了，如果我不松手它是不是还在。这种念头一天要转好几遍，停不下来。",
+      "reference": "几秒钟的事，却要拿好多个夜晚去消化。你反复回放那一刻，不是真的在怪自己，是因为太想再见它一面、太想给它一个交代。那个眼神里有它对你九年的信任，这一点没有被那几秒钟夺走。你说的那句「没来得及说再见」，它其实听了一辈子。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无宠物离世类目，见 e1_rebuild.pet_loss_not_found）",
+        "id": "pet-syn-003"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "author": "E1 eval rebuild agent (自造起草，非真人标注、非权威集)",
+        "created": "2026-11-23",
+        "fetch": "synthetic-handwritten",
+        "note": "自造口径：中文原生起草，非权威集、非翻译、非真人金标；仅用于补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "pet-syn-004",
+      "source_id": "synthetic-handwritten:pet-loss:004",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "花花是十四岁的泰迪，走之前那几天已经站不起来了，我每天把它抱在怀里喂水。它走的那天我在宠物医院签了字，手一直在抖。之后我总想起它临走前舔我手的那一下，不知道那是告别还是只是习惯。我不敢跟朋友讲，怕他们说我矫情。",
+      "reference": "十四岁，从蹦蹦跳跳到站不起来，你每天都抱着它喂水——那不是矫情，那是你把能给它的都给了。它最后舔你手那一下，是不是「告别」没人能替它定义，但它选择把最后一点力气留给你，这件事是真的。你愿意讲给谁听、什么时候讲，都由你定。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无宠物离世类目，见 e1_rebuild.pet_loss_not_found）",
+        "id": "pet-syn-004"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "author": "E1 eval rebuild agent (自造起草，非真人标注、非权威集)",
+        "created": "2026-11-23",
+        "fetch": "synthetic-handwritten",
+        "note": "自造口径：中文原生起草，非权威集、非翻译、非真人金标；仅用于补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "pet-syn-005",
+      "source_id": "synthetic-handwritten:pet-loss:005",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我一个人住，猫是我每天回家唯一会迎接我的。它走了一个月，家里安静得让我害怕。我现在下班不愿意回去，坐在车里能待一个小时。朋友劝我赶紧再养一只，可我一想到要重新认识一只猫、重新建立那种默契，就觉得累。",
+      "reference": "下班坐在车里那一个小时，我懂——不是不想回家，是怕推开家门没有那一声迎接。它是你在这个家里最稳定的那个「有人等你」，这份空缺不是再养一只就能立刻填上的。累了就先歇着，不用给自己定「什么时候该好起来」的期限。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无宠物离世类目，见 e1_rebuild.pet_loss_not_found）",
+        "id": "pet-syn-005"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "author": "E1 eval rebuild agent (自造起草，非真人标注、非权威集)",
+        "created": "2026-11-23",
+        "fetch": "synthetic-handwritten",
+        "note": "自造口径：中文原生起草，非权威集、非翻译、非真人金标；仅用于补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "pet-syn-006",
+      "source_id": "synthetic-handwritten:pet-loss:006",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "整理衣柜翻出一件旧卫衣，上面还有小雪的毛。它是我考研那年陪我的猫，天天趴在我腿上，我哭它也蹭我。它走了两年了，我以为自己早就好了，结果摸到这件衣服还是一下子绷不住。我是不是太没出息了？两年了还这样。",
+      "reference": "两年了，衣服上还留着它的毛，像是它替你把那段最难的日子一起存了下来。绷不住不是没出息，是那段一起熬过来的日子太真了，真到身体比脑子记得还牢。你不用「早就好了」才配得上它——它陪你走过的那一年，本来就值得你偶尔再哭一次。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无宠物离世类目，见 e1_rebuild.pet_loss_not_found）",
+        "id": "pet-syn-006"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "author": "E1 eval rebuild agent (自造起草，非真人标注、非权威集)",
+        "created": "2026-11-23",
+        "fetch": "synthetic-handwritten",
+        "note": "自造口径：中文原生起草，非权威集、非翻译、非真人金标；仅用于补产品三场景缺口，不可当真人语料统计"
       }
     }
   ]
