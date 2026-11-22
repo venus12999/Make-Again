@@ -487,13 +487,19 @@ def answer(db, session_id: str, user_answer: str, client: LLMClient, async_repor
     if action == "followup" and state["dimension_idx"] == goal_idx:
         action = "complete"
 
+    turns = len([h for h in state["history"] if h["role"] == "user"])
+
     # 覆盖度保护:所有维度都聊过之后,LLM 仍可能返回 followup 在旧话题上打转
-    # (实测走查出现答完5题后再追问15轮"能松一点/先不用急着下结论"的空转)。
-    # 全部维度 covered 且已到目标维度时,不再追问,直接收尾——真实用户没有那么多话可反复讲。
-    if action == "followup" and len(covered) >= len(dims) and state["dimension_idx"] >= goal_idx:
+    # (实测走查答完5题后又追问15轮"能松一点/先不用急着下结论")。
+    # 2026-11-23 U-017 修正:旧条件还要求 dimension_idx>=goal_idx,但 hy4 不稳定时会把
+    # dimension_idx 反复重置到中间维度(turn13-19 绕回 object/confusion),条件永远不满足→19轮空转。
+    # 改为纯客观计数,不依赖模型可操纵的 dimension_idx:
+    #   covered 全满 → 直接收尾;或用户发言数超过 维度数+2(每维度1次+2次机动)也强制收尾。
+    coverage_saturated = len(covered) >= len(dims)
+    turn_overflow = turns >= len(dims) + 2
+    if action == "followup" and (coverage_saturated or turn_overflow):
         action = "complete"
 
-    turns = len([h for h in state["history"] if h["role"] == "user"])
     if turns >= MAX_TURNS:
         action = "complete"
 
@@ -644,13 +650,28 @@ class ReportGenerationError(RuntimeError):
     """The provider did not return a valid displayable report."""
 
 
+# 报告必需字段（与 _report_system 的 JSON 契约一致）。2026-11-23 U-017：
+# 之前用 get(k, default) 校验，缺失字段拿默认值也算通过，导致 hy4 输出被截断时
+# "部分 JSON" 蒙混过关落库（E6 真跑报告只剩 title/keywords/summary/半个 object_portrait）。
+# 改为：必需字段必须存在且非空，绝不默认填充。
+_REPORT_REQUIRED_STR = ("title", "summary", "quote")
+_REPORT_REQUIRED_DICT = ("user_portrait", "object_portrait", "goal", "heal_plan", "relationship_analysis")
+
+
 def _valid_report(parsed):
-    return (isinstance(parsed,dict)
-            and all(isinstance(parsed.get(k),str) and parsed[k].strip() for k in ("title","summary"))
-            and isinstance(parsed.get("quote",""),str)
-            and isinstance(parsed.get("keywords",[]),list)
-            and all(isinstance(k,str) for k in parsed.get("keywords",[]))
-            and all(isinstance(parsed.get(k,{}),dict) for k in ("user_portrait","object_portrait")))
+    if not isinstance(parsed, dict):
+        return False
+    # 字符串字段：必须存在、是字符串、非空
+    if not all(isinstance(parsed.get(k), str) and parsed[k].strip() for k in _REPORT_REQUIRED_STR):
+        return False
+    # keywords：必须存在、非空列表、元素都是字符串
+    kws = parsed.get("keywords")
+    if not (isinstance(kws, list) and kws and all(isinstance(k, str) and k.strip() for k in kws)):
+        return False
+    # dict 字段：必须存在、是 dict、非空
+    if not all(isinstance(parsed.get(k), dict) and parsed[k] for k in _REPORT_REQUIRED_DICT):
+        return False
+    return True
 
 
 def _build_report_parsed(client: LLMClient, loss_type: str | None, history: list[dict],
@@ -667,13 +688,18 @@ def _build_report_parsed(client: LLMClient, loss_type: str | None, history: list
     ]
     # 报告走热路径快模型(默认),时延优先;要更高分析质量时,在 .env 把 llm_report_model 设为 llm_model。
     model = client.settings.llm_report_model or client.settings.llm_fast_model
-    # 推理模型(hy4 等)的 reasoning 会先吃 token:实测 4000 时 completion 用满 4000 而 raw 为空,
-    # 报告 JSON 实际需 ~6800 tokens。给足 8000;非推理模型(deepseek-chat)只用其中一部分,无副作用。
-    parsed, meta = client.chat_json(messages, temperature=0.5, max_tokens=8000, model=model)
+    # 推理模型(hy4 等)的 reasoning 会先吃 token:实测 4000 全被 reasoning 吃掉(raw 空),
+    # 8000 时偶发截断(U-017: E6 真跑报告只剩前4字段)。9字段完整 JSON 实测需 ~6800+
+    # reasoning,给 12000 留足余量;非推理模型(deepseek-chat)只用其中一部分,无副作用。
+    parsed, meta = client.chat_json(messages, temperature=0.5, max_tokens=12000, model=model)
     if not _valid_report(parsed):
-        # 输出可能被截断或格式错误,再试一次
-        messages.append({"role": "user", "content": "请只输出一个完整、合法的 JSON 对象,不要任何其他文字。"})
-        parsed, _ = client.chat_json(messages, temperature=0.3, max_tokens=8000, model=model)
+        # 输出可能被截断或格式错误,再试一次(更强提示:字段全列+不许省略)
+        messages.append({"role": "user", "content": (
+            "上次输出不完整。请重新输出一个完整 JSON，必须包含全部9个字段："
+            "title, keywords, summary, quote, user_portrait, object_portrait, "
+            "goal, heal_plan, relationship_analysis，一个都不能少，不要省略号，不要中途截断。"
+        )})
+        parsed, _ = client.chat_json(messages, temperature=0.3, max_tokens=12000, model=model)
     if not _valid_report(parsed):
         raise ReportGenerationError("INVALID_REPORT_OUTPUT")
     return parsed
