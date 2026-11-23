@@ -1,0 +1,344 @@
+{
+  "tool": "e6_three_scenario",
+  "schema_version": "1.0",
+  "mode": "real",
+  "fault": null,
+  "scenario": "breakup",
+  "口径": "真实 hy4 三场景各1次完整五段链路（访谈→报告→对话→回写→跨天召回→触发）；5CP判定复用 e6_full_journey.evaluate_journey；跨天用 ts 回拨3天+新session夹具；A/B探针=确定性产品函数零LLM（场景切换不误触发/画像隔离注入）；key 不入库",
+  "reuse": "e6_full_journey.{evaluate_journey,real_journey,mock_trace,prepare_real_env,load_batch}; scenario_run.report_field_count (9字段口径)",
+  "ab_context": "A=场景切换接线 d059174a; B=画像隔离 55589d20; 基线 main af2821ae (544 passed)",
+  "results": [
+    {
+      "id": "e6-synthetic-01",
+      "source_id": "e6-synthetic-01",
+      "tag": "分手-被出轨",
+      "loss_type": "breakup",
+      "trace": {
+        "tag": "分手-被出轨",
+        "loss_type": "breakup",
+        "session_id": "9348be844fc549028c39b33b27469232",
+        "n_turns": 11,
+        "gen_filler_turns": 6,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 347.8,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "先跟我聊聊 TA 吧——TA 是你什么人,叫什么(昵称也可以),你们在一起多久了?",
+            "answer": "她叫小雅,我们在一起三年,是大学同学。她出轨了,是被我发现的。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 2,
+            "question": "那种被背叛的感觉一定很刺人；你第一次察觉不对劲，是因为什么？",
+            "answer": "最常想起的是去年跨年,我们在江边倒计时,她说要到老。现在那句话像刀子。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 3,
+            "question": "那句曾经指向未来的承诺，现在反过来扎人，难怪会在脑子里反复冒出来。先不急着给自己解释什么，你第一次发现她出轨的线索，是在什么场景下？",
+            "answer": "走神最多是下班回到空房间,以前她会发消息问'到家了吗'。现在手机再也不响。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 4,
+            "question": "那种安静最难受的地方，是原本每天都会有的回应突然断掉了，人很容易在那个空档里被过去拽回去。回到分开前，最先让你意识到关系已经变了的那个具体瞬间，是在什么场景下发生的？",
+            "answer": "放不下的是'为什么是我'。我把能给的都给了,还是被丢下。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 5,
+            "question": "被出轨这件事里，责任不该被你一个人揽过去；现在这股劲儿，最像委屈、愤怒，还是那种突然空掉的孤单？",
+            "answer": "我想带着这段记忆往前走,但不想再信任何人。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 6,
+            "question": "能给自己留一条往前走的路，已经很不容易；可心一旦重新交出去，好像又要面对被辜负的风险。你最怕再次信任之后，发生什么？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 7,
+            "question": "能讲出来有一点松动，通常说明它压了很久；之前让你开不了口的，是怕再疼一次，还是怕别人急着劝你放下？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 8,
+            "question": "能有一点松动，就先不用逼自己把感受整理完整；等你愿意碰这块，我们不往你身上找错，有没有哪些当时的细节，现在回头看会让你觉得那段关系里的安全感其实早就被破坏了？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 9,
+            "question": "压着的东西终于露出一点缝隙，人却还没缓过来，先不用急着找自己的错；真正让你受伤的，是她背叛这件事本身，还是你后来才发现自己在这段关系里一直在独自撑着？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 10,
+            "question": "有些东西不是一下子能说清，先不急着给这段关系下结论；在事情摊开之前，最常让你一个人压着的，是她的忽冷忽热、回避沟通，还是承诺很多却很少兑现？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 11,
+            "question": "这份能说出来的松动很珍贵，先不用把它变成结论；等你愿意看回那段关系，一旦出现分歧，最后常常是被冷处理掉，还是被一句承诺先盖过去？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "complete",
+            "done": null
+          }
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 20,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 13,
+        "memories_after": 14,
+        "writeback_memory_id": "2570aa315eae478a8c766a41f230f7e2",
+        "writeback_anchor_hits": 2,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.6382403650404846,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 3,
+        "dialogue_reply_preview": "",
+        "guide_preview": "愿意的话，从跨年江边那句“到老”和忠诚边界被越过说起，看看付出换安全感怎样慢慢松开。"
+      },
+      "checkpoints": {
+        "CP1_report_ready": true,
+        "CP2_report_to_dialogue": true,
+        "CP3_dialogue_to_writeback": true,
+        "CP4_memory_to_crossday_recall": true,
+        "CP5_recall_to_trigger": true
+      },
+      "e2_checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": true,
+      "evidence": {
+        "turns": {
+          "n_turns": 11,
+          "gen_filler_turns": 6,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "missing_fields": [],
+        "report_anchors_matched": [
+          "小雅",
+          "跨年",
+          "江边",
+          "到老",
+          "到家了吗"
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 20,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 13,
+        "memories_after": 14,
+        "writeback_anchor_hits": 2,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.6382403650404846,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 3,
+        "total_anchors": 5
+      },
+      "thresholds": {
+        "days_shift_min": 3,
+        "context_anchor_hits_min": 1,
+        "recall_hits_min": 1,
+        "negative_recall_hits_max": 0
+      },
+      "report_field_count": 9,
+      "ab_probes": {
+        "mode": "real",
+        "query": "又想起小雅和跨年那句话，我想带着这段记忆往前走，能陪我说说吗？",
+        "loss_type": "breakup",
+        "scene": {
+          "detector_on": true,
+          "dialogue_should_switch": false,
+          "dialogue_matched": null,
+          "positive_control_should_switch": true,
+          "positive_target_scene": "friend",
+          "third_person_should_switch": false,
+          "companion_count_before": 1,
+          "companion_count_after": 1,
+          "loss_type_before": "breakup",
+          "loss_type_after": "breakup",
+          "pass": true
+        },
+        "portrait": {
+          "written_with_companion_id": true,
+          "read_right_cid_nonempty": true,
+          "read_wrong_cid_empty": true,
+          "read_3arg_backcompat_nonempty": true,
+          "subject_name": "小雅",
+          "subject_matches_anchor": true,
+          "context_has_portrait": true,
+          "context_anchor_hits": 5,
+          "journey_context_has_portrait": true,
+          "journey_context_anchor_hits": 5,
+          "journey_portrait_key_count": 20,
+          "pass": true
+        },
+        "pass": true
+      },
+      "journey_pass": true,
+      "ab_pass": true,
+      "report": {
+        "title": "别把背叛背在身上",
+        "keywords": [
+          "被出轨",
+          "付出型",
+          "委屈",
+          "信任受损",
+          "慢慢消化"
+        ],
+        "summary": "你讲的是一段被背叛后还舍不得放下的关系：你和大学同学小雅恋爱三年，最疼的不是结束本身，而是发现出轨之后，过去那些指向未来的话都反噬成疑问。你还记得去年跨年在江边倒计时，她说“到老”，那一刻曾像承诺，如今却像刀子；下班回到空房间，手机不再响起那句“到家了吗”，也把孤单放大了。你说把能给的都给了，还是被丢下，这里面有委屈、愤怒，也有一种被迫怀疑自我的疼。你愿意讲出来，心里已经有一点松动。先记住：出轨不是你的错，慢慢消化不是软弱，而是在把破碎的信息一点点捡回自己手里。",
+        "quote": "你可以带着记忆走，不必带着自责走。",
+        "user_portrait": {
+          "失去类型": "分手（发现小雅出轨后）",
+          "关系与背景": "与小雅是大学同学，恋爱三年",
+          "当前情绪状态": "委屈、愤怒、孤单与被背叛感；讲出来后心里松一点，仍在慢慢消化",
+          "情绪波动点": "去年跨年的承诺、下班回到空房间手机不再响、反复追问“为什么是我”",
+          "困惑点": "想带着记忆往前走，却不想再信任何人；不明白为什么付出很多仍被丢下",
+          "未说出口的话": "一直没细说的细节暂未提及；已表达的是“我把能给的都给了，还是被丢下”。",
+          "依恋类型": "焦虑型",
+          "关系中的模式": "倾向用付出和期待回应确认安全感，受伤后反复追问原因、难以放下。",
+          "自身盲区": "容易把付出等同于关系保障，忽略自身边界；这不是出轨责任。",
+          "可成长方向": "建立清晰底线，区分爱与被背叛的责任，练习在安全关系中逐步恢复信任。",
+          "关系症结": "小雅出轨破坏忠诚与信任，是关系破裂的核心；具体修复过程暂未提及。",
+          "关系复盘": "这段关系最深的断裂，不在你有没有做得足够多，而在忠诚边界被越过之后，信任系统突然失去支点。你更偏向通过持续付出、期待回应来确认安全感，所以当背叛发生，追问原因几乎成了本能；但这不是你的错，也不该由你替出轨承担道德责任。也值得看见的是，付出型的人容易把爱理解成“再多给一点就能稳住关系”，却较少把边界、底线和早期不安拿出来谈。小雅的问题在于破坏了关系最基本的承诺；至于裂痕出现后是否还有修复，现有信息不足，不必替它补上解释。接下来，先把责任归位，再把信任拆成小步骤：列出不可接受的底线，练习在安全关系里表达需要，不急着把“不再相信任何人”当成长期答案。你可以带着记忆走，但不必带着自责走。"
+        },
+        "object_portrait": {
+          "称呼": "小雅",
+          "关系": "大学同学、前恋人，恋爱三年",
+          "性格": "暂未提及",
+          "共同记忆": "去年跨年江边倒计时，她曾说“到老”；过去会发消息问“到家了吗”。",
+          "重要地点与时间": "去年跨年、江边；大学时期相识；恋爱三年；分手后下班回家的空房间。",
+          "TA的行为模式": "已知出轨并被发现；其他反复行为暂未提及。",
+          "TA的依恋倾向": "暂未提及",
+          "TA在关系中的问题": "出轨，破坏忠诚与信任；具体沟通与修复情况暂未提及。"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "用户明确说想带着这段记忆往前走，但不想再信任何人，说明目标不是遗忘，而是带着记忆恢复生活与信任边界。"
+        },
+        "heal_plan": {
+          "summary": "先把责任归位，再慢慢重建边界与信任。",
+          "stages": [
+            {
+              "title": "把责任放回原处",
+              "desc": "允许委屈、愤怒和孤单同时存在，写下“这不是我的错”，不急着给整段关系下结论。",
+              "time": "1-2周"
+            },
+            {
+              "title": "减少触发回路",
+              "desc": "识别跨年承诺、手机安静、空房间等触发源，减少反复翻看旧消息，给下班回家设置新的过渡动作。",
+              "time": "2-4周"
+            },
+            {
+              "title": "练习边界与信任",
+              "desc": "列出忠诚、沟通、边界等底线，练习表达需要，从低风险的小约定开始观察信任是否可被重建。",
+              "time": "1-3个月"
+            },
+            {
+              "title": "带着记忆前行",
+              "desc": "把这段经历转化为对自身需求的理解，按自己的节奏接触朋友、咨询或新的关系，不强迫自己立刻相信所有人。",
+              "time": "3个月后或按自己的节奏"
+            }
+          ]
+        },
+        "relationship_analysis": {
+          "attachment": {
+            "user": "焦虑型依恋倾向",
+            "basis": "过去那句“到家了吗”消失会强烈刺痛，反复追问“为什么是我”，并担心再次信任。",
+            "other": "暂未提及",
+            "other_basis": "仅确认小雅出轨，未提供足够的依恋行为线索。"
+          },
+          "causes": [
+            {
+              "factor": "小雅出轨",
+              "side": "对方",
+              "explain": "背叛忠诚边界，是关系破裂和被伤害的核心原因。"
+            },
+            {
+              "factor": "把付出当作安全感来源",
+              "side": "自己",
+              "explain": "这不构成出轨责任，但可能让边界与不安更早被忽略，影响关系中的自我保护。"
+            },
+            {
+              "factor": "承诺与关系现实之间的落差",
+              "side": "双方",
+              "explain": "“到老”的承诺与后来的背叛形成强烈撕裂，关系未能承受这一信任断裂。"
+            },
+            {
+              "factor": "分手后的日常触发环境",
+              "side": "外部",
+              "explain": "空房间、手机安静和跨年记忆持续放大痛感，让恢复变慢。"
+            }
+          ],
+          "patterns": "用户以付出和期待回应维系安全感，小雅的背叛让承诺突然失效，关系最终转入追问原因和自我保护。",
+          "blind_spots": [
+            "把付出等同于关系保障，容易忽略自身边界。",
+            "把背叛后的追问变成对自我价值的审判。",
+            "把不再相信任何人当作唯一保护方式。"
+          ],
+          "suggestions": [
+            "区分事实与自责：事实是小雅出轨，责任不在你；自责出现时提醒自己“这不是我的错”。",
+            "列出关系底线清单，包括忠诚、沟通、承诺兑现和边界尊重，作为未来重新信任的参考。",
+            "先不急着进入新关系，从可预测的小事练习信任，比如稳定回应、明确约定、观察一致性。",
+            "当记忆触发时，先做身体落地：命名情绪、双脚踩地、喝水，再决定是否联系朋友或咨询。"
+          ],
+          "narrative": "这段关系最深的断裂，不在你有没有做得足够多，而在忠诚边界被越过之后，信任系统突然失去支点。你更偏向通过持续付出、期待回应来确认安全感，所以当背叛发生，追问原因几乎成了本能；但这不是你的错，也不该由你替出轨承担道德责任。也值得看见的是，付出型的人容易把爱理解成“再多给一点就能稳住关系”，却较少把边界、底线和早期不安拿出来谈。小雅的问题在于破坏了关系最基本的承诺；至于裂痕出现后是否还有修复，现有信息不足，不必替它补上解释。接下来，先把责任归位，再把信任拆成小步骤：列出不可接受的底线，练习在安全关系里表达需要，不急着把“不再相信任何人”当成长期答案。你可以带着记忆走，但不必带着自责走。"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "users": 1,
+    "checkpoint_pass_counts": {
+      "CP1_report_ready": 1,
+      "CP2_report_to_dialogue": 1,
+      "CP3_dialogue_to_writeback": 1,
+      "CP4_memory_to_crossday_recall": 1,
+      "CP5_recall_to_trigger": 1
+    },
+    "journey_pass": true,
+    "ab_pass": true,
+    "scene_no_false_trigger": 1,
+    "portrait_isolation_ok": 1,
+    "overall_pass": true,
+    "exit_code": 0
+  }
+}

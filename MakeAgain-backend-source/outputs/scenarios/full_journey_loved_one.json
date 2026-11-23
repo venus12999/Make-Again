@@ -1,0 +1,324 @@
+{
+  "tool": "e6_three_scenario",
+  "schema_version": "1.0",
+  "mode": "real",
+  "fault": null,
+  "scenario": "loved_one",
+  "口径": "真实 hy4 三场景各1次完整五段链路（访谈→报告→对话→回写→跨天召回→触发）；5CP判定复用 e6_full_journey.evaluate_journey；跨天用 ts 回拨3天+新session夹具；A/B探针=确定性产品函数零LLM（场景切换不误触发/画像隔离注入）；key 不入库",
+  "reuse": "e6_full_journey.{evaluate_journey,real_journey,mock_trace,prepare_real_env,load_batch}; scenario_run.report_field_count (9字段口径)",
+  "ab_context": "A=场景切换接线 d059174a; B=画像隔离 55589d20; 基线 main af2821ae (544 passed)",
+  "results": [
+    {
+      "id": "e6-synthetic-02",
+      "source_id": "e6-synthetic-02",
+      "tag": "丧亲-父亲突然离世",
+      "loss_type": "loved_one",
+      "trace": {
+        "tag": "丧亲-父亲突然离世",
+        "loss_type": "loved_one",
+        "session_id": "c9e9bc1c59d74197a098058f8fe41c05",
+        "n_turns": 11,
+        "gen_filler_turns": 6,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 448.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "先跟我聊聊 TA 吧——TA 是你什么人,叫什么(昵称也可以)?",
+            "answer": "我爸,他叫建国,退休前是中学数学老师。去年心梗走的,很突然。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 2,
+            "question": "当老师的人，常常会在讲题、板书或批改作业里留下很鲜明的画面；你脑子里最先浮出来的，是关于他的哪一个瞬间？",
+            "answer": "反复想起他教我骑自行车,在小区那条路上扶着后座,说'别怕,我在'。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 3,
+            "question": "小区那条路、后座上的手，像把世界的危险先替你挡住了一瞬；现在这个画面反复回来时，最让你心里发紧的是哪一部分？",
+            "answer": "最难受是过年回家,进门喊'爸我回来了',没人应。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 4,
+            "question": "推开门的一瞬间，身体好像还按旧习惯等着被接住，这和他在后座上给你的那种安稳像是撞在了一起；最让你疼的，是那份安全感突然没有落处了吗？",
+            "answer": "想不通的是他走前一天我们还通电话,他说明天包饺子,结果没等到明天。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 5,
+            "question": "那通电话里还留着第二天的安排，像“明天”本来已经被他放在家门口了；后来那一天发生的事，你愿意慢慢讲给我听吗？",
+            "answer": "我想带着他对我的好继续过,把他教我的耐心传下去。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 6,
+            "question": "把那份耐心继续活出来，像是你给这份失去找了一个能落下的地方；只是那天从电话之后到突然失去他之间，你愿意慢慢说说你记得的部分吗？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 7,
+            "question": "心里刚松开的这点空间，先不用急着把那天补全；你最想停在哪一刻——电话里约好包饺子的温暖，还是后来突然知道消息时的空白？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 8,
+            "question": "有些失去不是没说完，而是身体还在一点点承认它；先不往那天的细节里走也没关系。最近哪个最普通的瞬间，会突然让你很想他？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 9,
+            "question": "讲述之后稍微松开，并不等于这件事就轻了；这种还没落定的感觉，在身体里最先表现为胸口发紧、眼睛发热，还是整个人发空？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 10,
+            "question": "如果先不碰那天的细节，父亲的样子浮上来时，心里更像是想哭，还是更想安安静静地待一会儿？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 11,
+            "question": "哀伤被讲出来后，常常只是换了个地方待着；有些没来得及做的小事，会在这时候慢慢浮上来。有没有哪件很小的事，到现在还会让你觉得‘当时要是……就好了’？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "complete",
+            "done": null
+          }
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 18,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 13,
+        "memories_after": 14,
+        "writeback_memory_id": "e1cc0fd361954f88aa3d73b433069afa",
+        "writeback_anchor_hits": 2,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.36809203817344616,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 1,
+        "dialogue_reply_preview": "",
+        "guide_preview": "你把一些没细说的事讲出来后，心里松了一点，接下来我陪你慢慢说说，带着那句“别怕，我在”先从哪件小事开始？"
+      },
+      "checkpoints": {
+        "CP1_report_ready": true,
+        "CP2_report_to_dialogue": true,
+        "CP3_dialogue_to_writeback": true,
+        "CP4_memory_to_crossday_recall": true,
+        "CP5_recall_to_trigger": true
+      },
+      "e2_checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": true,
+      "evidence": {
+        "turns": {
+          "n_turns": 11,
+          "gen_filler_turns": 6,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "missing_fields": [],
+        "report_anchors_matched": [
+          "建国",
+          "骑自行车",
+          "别怕",
+          "包饺子",
+          "心梗"
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 18,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 13,
+        "memories_after": 14,
+        "writeback_anchor_hits": 2,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.36809203817344616,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 1,
+        "total_anchors": 5
+      },
+      "thresholds": {
+        "days_shift_min": 3,
+        "context_anchor_hits_min": 1,
+        "recall_hits_min": 1,
+        "negative_recall_hits_max": 0
+      },
+      "report_field_count": 9,
+      "ab_probes": {
+        "mode": "real",
+        "query": "又想起建国教我骑车那句别怕，我想带着他对我的好继续过，能陪我说说吗？",
+        "loss_type": "loved_one",
+        "scene": {
+          "detector_on": true,
+          "dialogue_should_switch": false,
+          "dialogue_matched": null,
+          "positive_control_should_switch": true,
+          "positive_target_scene": "friend",
+          "third_person_should_switch": false,
+          "companion_count_before": 1,
+          "companion_count_after": 1,
+          "loss_type_before": "loved_one",
+          "loss_type_after": "loved_one",
+          "pass": true
+        },
+        "portrait": {
+          "written_with_companion_id": true,
+          "read_right_cid_nonempty": true,
+          "read_wrong_cid_empty": true,
+          "read_3arg_backcompat_nonempty": true,
+          "subject_name": "建国",
+          "subject_matches_anchor": true,
+          "context_has_portrait": true,
+          "context_anchor_hits": 5,
+          "journey_context_has_portrait": true,
+          "journey_context_anchor_hits": 5,
+          "journey_portrait_key_count": 18,
+          "pass": true
+        },
+        "pass": true
+      },
+      "journey_pass": true,
+      "ab_pass": true,
+      "report": {
+        "title": "把耐心过成明天",
+        "keywords": [
+          "父爱",
+          "突然失去",
+          "耐心",
+          "未竟的明天",
+          "慢慢消化"
+        ],
+        "summary": "我听到的是一位父亲突然离开后，留在日常里的回响。建国退休前是中学数学老师，去年因心梗很突然地走了。你反复回到小区那条路：他扶着自行车后座，对你说“别怕，我在”。这句话像一种托住人生的力量，也让你在过年回家喊“爸我回来了”却没人应时，疼得更深。更难受的是，走前一天他还说要包饺子，“明天”明明已经被约好，却没能到来。你说一直没细讲，讲出来心里松了一点，但还在慢慢消化。你也在寻找一个方向：带着他对你的好继续过，把他的耐心传下去。这不是急着向前，而是在用自己的方式，让爱有一个可以停留的地方。",
+        "quote": "没等到的明天，可以由你慢慢过下去。",
+        "user_portrait": {
+          "失去类型": "亲友离世：父亲突然离世",
+          "关系与背景": "父亲建国，退休前是中学数学老师；去年因心梗突然离世。",
+          "当前情绪状态": "讲述一直没细说的经历后心里松一点，但仍在慢慢消化；想念会在日常场景里回来。",
+          "情绪波动点": "反复想起建国教骑车的画面；过年回家喊“爸我回来了”却没人应；走前一天电话里约好包饺子却没等到明天。",
+          "困惑点": "想不通前一天还通电话、约定还在，结果没等到明天；也在寻找如何带着他的好继续生活。",
+          "未说出口的话": "暂未提及；若愿意，可以慢慢想象建国会想对你说的一句肯定，不必急着替自己定答案。",
+          "内疚与未竟之事": "暂未提及明确自责；放不下的是“明天包饺子”的约定没能实现，以及一直没细说的失去过程。",
+          "死亡接受状态": "接受中",
+          "意义重建": "带着建国对他的好继续过，把建国教给用户的耐心传下去。",
+          "现在的日常状态": "具体作息、社交和工作暂未提及；过年回家等日常场景会触发想念，讲述后心里松一点。",
+          "哀伤叙事": "你可以不用把那天的空白补成完整的答案。突如其来的离开不是你没做好，也不是你能提前拦住的事；你已经在能陪伴的时候，给了他最普通的在乎。接下来，允许自己有时想安静，有时想哭，有时只是照常过日子。把从他那里学到的耐心，放进一次回应、一件小事、一段愿意慢慢听别人说话的时间里。这样，他不是被留在过去，而是以你活出来的样子，继续参与你的生活。想念来时，不必急着赶走它；你可以给它一个位置，然后继续把今天过好。"
+        },
+        "object_portrait": {
+          "称呼": "建国",
+          "关系": "用户的父亲",
+          "性格": "退休前是中学数学老师；在用户记忆里耐心、安稳，能用简短的话托住孩子。",
+          "共同记忆": "在小区路上教用户骑自行车并扶着后座说“别怕，我在”；走前一天电话里约好明天包饺子；过年回家场景。",
+          "重要地点与时间": "小区那条路；去年建国因心梗离世；走前一天通电话；过年回家。",
+          "TA留给你的": "耐心、安全感，以及把他的好继续活下去、传下去的方向。",
+          "你心里的TA": "那个在小区路上扶着后座说“别怕，我在”的父亲，也停在“明天包饺子”的约定里。"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "用户明确说想带着建国对他的好继续过，并把建国教给他的耐心传下去。"
+        },
+        "heal_plan": {
+          "summary": "慢慢承认失去，让想念有位置，把建国的耐心带回日常。",
+          "stages": [
+            {
+              "title": "先停在能讲的地方",
+              "desc": "只讲愿意讲的部分，不急着补全那天；讲述后心里松一点，也可以先停在那里。",
+              "time": "接下来1-2周"
+            },
+            {
+              "title": "承认没等到的明天",
+              "desc": "当未完成的约定浮上来时，允许自己难过，也温柔承认建国已经离开，不再逼自己寻找答案。",
+              "time": "1个月内"
+            },
+            {
+              "title": "把耐心放进小事",
+              "desc": "从一次认真倾听、一件慢慢完成的小事开始，把建国留给你的耐心活出来。",
+              "time": "之后的日子，按自己的节奏"
+            },
+            {
+              "title": "给想念一个位置",
+              "desc": "在过年、周年或普通想念来时，写下想说的话、做一顿饺子，或留一段安静时间纪念建国。",
+              "time": "长期"
+            }
+          ]
+        },
+        "grief_analysis": {
+          "meaning": "让你更清楚地看见，建国的好可以成为自己生活里的耐心与力量。",
+          "guilt": {
+            "still_guilty": "暂未提及明确自责；心里放不下的是“前一天还约好明天包饺子，却没等到明天”的未完成感。",
+            "reframe": "这不是你的错。突如其来的心梗不是你能预见或阻止的；你已经在能陪伴的时候给了他普通的在乎。没说完的明天不必逼自己立刻放下，可以慢慢承认它停在了那里。"
+          },
+          "continuing_bond": {
+            "current": "反复想起建国的保护与约定，讲述未细说的经历后心里松一点，并想把他的耐心传下去。",
+            "suggestions": [
+              "在过年或周年日留一段安静时间，写下想对建国说的话。",
+              "做一顿饺子，把那个没等到的明天放进今天的餐桌里。",
+              "保存一件与建国有关的小物或照片，在想念来时看一看。",
+              "遇到需要耐心的事时，提醒自己：这也是在把建国的好继续活出来。"
+            ]
+          },
+          "death_acceptance": "接受中：知道建国已因心梗离世，也承认“明天”没有到来；但仍在慢慢消化，讲述后心里稍松，尚未完全安稳。",
+          "narrative": "你可以不用把那天的空白补成完整的答案。突如其来的离开不是你没做好，也不是你能提前拦住的事；你已经在能陪伴的时候，给了他最普通的在乎。接下来，允许自己有时想安静，有时想哭，有时只是照常过日子。把从他那里学到的耐心，放进一次回应、一件小事、一段愿意慢慢听别人说话的时间里。这样，他不是被留在过去，而是以你活出来的样子，继续参与你的生活。想念来时，不必急着赶走它；你可以给它一个位置，然后继续把今天过好。"
+        },
+        "relationship_analysis": {
+          "core_bond": "父亲与孩子之间的保护、信任和日常牵挂；建国在用户心里是能带来安稳的人。",
+          "interaction_pattern": "建国以老师般的耐心和简短坚定的支持回应孩子；用户通过回忆、讲述和继承耐心维系与他的联结。",
+          "current_challenge": "突然失去让原本熟悉的日常回应落空，未完成的约定和过年回家的场景尤其容易触发悲伤。",
+          "growth_direction": "不把想念当作病态，也不催促忘记；在承认死亡不可逆的前提下，把建国的影响慢慢活进生活。",
+          "supportive_boundary": "尊重用户反复讲述同一段感受的节奏，不追问细节，不要求立刻接受或放下。"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "users": 1,
+    "checkpoint_pass_counts": {
+      "CP1_report_ready": 1,
+      "CP2_report_to_dialogue": 1,
+      "CP3_dialogue_to_writeback": 1,
+      "CP4_memory_to_crossday_recall": 1,
+      "CP5_recall_to_trigger": 1
+    },
+    "journey_pass": true,
+    "ab_pass": true,
+    "scene_no_false_trigger": 1,
+    "portrait_isolation_ok": 1,
+    "overall_pass": true,
+    "exit_code": 0
+  }
+}

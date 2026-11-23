@@ -1,0 +1,135 @@
+{
+  "tool": "persona_drift_eval",
+  "schema_version": "1.0",
+  "mode": "real",
+  "scenario": "breakup",
+  "status": "OK",
+  "fault": null,
+  "口径": "真实 hy4-flash-free 逐轮生成；prompt/规则全部取自产品原文；key 从文件读入内存、值不入库；对话历史窗口=6对(对齐生产)；context 固定空记忆",
+  "key_source": "work/local-test-key.txt（仅路径口径，值不入库）",
+  "features": [
+    "non_empty",
+    "no_judgment",
+    "no_diagnosis",
+    "no_empty_platitude",
+    "no_bracketed_action",
+    "no_unprompted_memory",
+    "no_question_spam",
+    "gentle_specific"
+  ],
+  "core_features": [
+    "non_empty",
+    "no_judgment",
+    "no_diagnosis",
+    "no_empty_platitude",
+    "no_bracketed_action",
+    "no_unprompted_memory",
+    "no_question_spam"
+  ],
+  "sample_turns": [
+    1,
+    10,
+    20,
+    30
+  ],
+  "setup": {
+    "session_id": "persona-drift-81d5e500",
+    "model": "hy4-flash-free",
+    "max_tokens": 2000
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "stage": "acute",
+      "is_probe": true,
+      "user": "我今天又想起他了，心里空落落的，说不上来为什么。",
+      "reply": "今天又想起他，心里空落落的，这种说不上原因的想念会让人一下子没着没落。它不代表你没往前走，只是熟悉的位置还在轻轻响一下；先不用找答案，我在这儿陪你。",
+      "reply_len": 74,
+      "empty_reply": false,
+      "features": {
+        "non_empty": {
+          "hit": true,
+          "evidence": "len=74"
+        },
+        "no_judgment": {
+          "hit": true,
+          "evidence": "no judgment phrase"
+        },
+        "no_diagnosis": {
+          "hit": true,
+          "evidence": "no diagnosis phrase"
+        },
+        "no_empty_platitude": {
+          "hit": false,
+          "evidence": "opener=[], cliche=['往前走']"
+        },
+        "no_bracketed_action": {
+          "hit": true,
+          "evidence": "no stage direction"
+        },
+        "no_unprompted_memory": {
+          "hit": true,
+          "evidence": "no fabricated recall"
+        },
+        "no_question_spam": {
+          "hit": true,
+          "evidence": "qmarks=0, ends_question=False"
+        },
+        "gentle_specific": {
+          "hit": true,
+          "evidence": "anchors_hit=['心里空落落', '想起他'] / ['心里空落落', '想起他', '说不上来']"
+        }
+      },
+      "hits": 7,
+      "core_all_hit": false,
+      "usage": {
+        "prompt_tokens": 1903,
+        "completion_tokens": 507
+      },
+      "elapsed_s": 15.3
+    }
+  ],
+  "analysis": {
+    "sample_turns": [
+      1,
+      10,
+      20,
+      30
+    ],
+    "first_vs_last": null,
+    "segments": [
+      {
+        "range": "1-10",
+        "n": 1,
+        "mean_feature_hit_rate": 0.875,
+        "core_all_hit_turns": 0
+      }
+    ],
+    "drift_detection": {
+      "onset_turn": null,
+      "per_feature_onset": {
+        "non_empty": null,
+        "no_judgment": null,
+        "no_diagnosis": null,
+        "no_empty_platitude": null,
+        "no_bracketed_action": null,
+        "no_unprompted_memory": null,
+        "no_question_spam": null,
+        "gentle_specific": null
+      },
+      "baseline_turns": 1,
+      "verdict": "NO_DRIFT"
+    }
+  },
+  "judge": null,
+  "summary": {
+    "n_turns": 1,
+    "expected_turns": 1,
+    "complete": true,
+    "status": "OK",
+    "env_fail_reason": null,
+    "elapsed_s": 15.3,
+    "overall_pass": false,
+    "exit_code": 1
+  }
+}

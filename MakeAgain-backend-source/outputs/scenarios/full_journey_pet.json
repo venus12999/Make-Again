@@ -1,0 +1,326 @@
+{
+  "tool": "e6_three_scenario",
+  "schema_version": "1.0",
+  "mode": "real",
+  "fault": null,
+  "scenario": "pet",
+  "口径": "真实 hy4 三场景各1次完整五段链路（访谈→报告→对话→回写→跨天召回→触发）；5CP判定复用 e6_full_journey.evaluate_journey；跨天用 ts 回拨3天+新session夹具；A/B探针=确定性产品函数零LLM（场景切换不误触发/画像隔离注入）；key 不入库",
+  "reuse": "e6_full_journey.{evaluate_journey,real_journey,mock_trace,prepare_real_env,load_batch}; scenario_run.report_field_count (9字段口径)",
+  "ab_context": "A=场景切换接线 d059174a; B=画像隔离 55589d20; 基线 main af2821ae (544 passed)",
+  "results": [
+    {
+      "id": "e6-synthetic-03",
+      "source_id": "e6-synthetic-03",
+      "tag": "宠物离世-陪伴15年的猫",
+      "loss_type": "pet",
+      "trace": {
+        "tag": "宠物离世-陪伴15年的猫",
+        "loss_type": "pet",
+        "session_id": "e712047c28744a41bcc48ee19ed572b5",
+        "n_turns": 11,
+        "gen_filler_turns": 6,
+        "done": true,
+        "report_ready": true,
+        "reached_complete": true,
+        "elapsed_s": 382.0,
+        "turns": [
+          {
+            "turn": 1,
+            "question": "先跟我聊聊它吧——它叫什么名字、是什么(猫/狗/别的)、陪你多久了?",
+            "answer": "是只橘猫,叫橘子,陪伴我十五年,从大学毕业到现在。上周走了,肾衰竭。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 2,
+            "question": "十五年从大学毕业一路陪到现在，这段时间里它像是见证了你很多变化。你脑海里最先浮出来的、和橘子有关的一个画面是什么？",
+            "answer": "最想起的是每个加班深夜回家,它蹲在门口等我,尾巴甩啊甩。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 3,
+            "question": "那种一开门就被等着的感觉，好像再晚回家也有个地方把你接住。你能想起其中一次开门后的几分钟，你们是怎么待在一起的吗？",
+            "answer": "最难的是早上醒来,习惯性要去倒猫粮,走到碗前才想起它不在了。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 4,
+            "question": "身体比心先一步走到喂它的位置，这种迟来的反应，最让你难受的是什么？",
+            "answer": "放不下的是最后那几天,我出差没在身边,它是自己走的。我一直自责。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 5,
+            "question": "那种没能陪它走完最后一程的遗憾，像一根刺一样卡着；你最反复回想的是哪一段——离开家前、出差路上，还是知道它走了的那一刻？",
+            "answer": "我想记住它,不想快点忘记。它是我这十五年最稳的陪伴。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 6,
+            "question": "想把它留在心里，而不是逼自己快点翻过去，这像是在给这十五年一个该有的位置。这份自责也不一定等于你真的做错了什么，它更像是在替没来得及告别找出口；责怪自己的时候，脑子里最常冒出来的那句话是什么？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 7,
+            "question": "讲到这儿有一点松，可能也会让人不安，好像不该让自己轻松；这种“不敢松下来”的感觉有没有出现？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 8,
+            "question": "先把节奏放慢一点也没关系，情绪不用马上整理成答案；等你有力气，能不能从橘子最后那几天的状态说起，慢慢带我回到它离开的经过？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 9,
+            "question": "不急着还原完整经过，有时候一个小画面比完整经过更容易靠近；在它离开之前，你最后一次见到橘子时，它在哪里、正在做什么？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "followup",
+            "done": null
+          },
+          {
+            "turn": 10,
+            "question": "能有一点松动就先让它待着，不用逼自己把经过讲完整；你出差前离家那一瞬，橘子是看着你走、躲开了，还是像平常一样待在自己的位置？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "next",
+            "done": null
+          },
+          {
+            "turn": 11,
+            "question": "这点松动先留着，不用再往经过里挖；等你有力气，橘子陪你走过的这十五年，在你身上留下了什么？",
+            "answer": "嗯，我补充一点：这件事我一直没细说，现在跟你讲了心里松一点，还在慢慢消化。",
+            "action": "complete",
+            "done": null
+          }
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 19,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 13,
+        "memories_after": 14,
+        "writeback_memory_id": "41d3e48228664c29b5227f8be4f1e763",
+        "writeback_anchor_hits": 3,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.6207024663721844,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 1,
+        "dialogue_reply_preview": "",
+        "guide_preview": "心里松了一点，你也还在慢慢消化；如果愿意，想不想说说接下来的日子，怎样把橘子甩着尾巴等你的暖，轻轻带进早晨和回家的路上？"
+      },
+      "checkpoints": {
+        "CP1_report_ready": true,
+        "CP2_report_to_dialogue": true,
+        "CP3_dialogue_to_writeback": true,
+        "CP4_memory_to_crossday_recall": true,
+        "CP5_recall_to_trigger": true
+      },
+      "e2_checkpoints": {
+        "CP1_reached_complete": true,
+        "CP2_report_generated": true,
+        "CP3_report_fields_complete": true,
+        "CP4_personalization_match": true,
+        "CP5_followup_turns_bounded": true
+      },
+      "overall_pass": true,
+      "evidence": {
+        "turns": {
+          "n_turns": 11,
+          "gen_filler_turns": 6,
+          "max_allowed_turns": 16,
+          "ok": true
+        },
+        "missing_fields": [],
+        "report_anchors_matched": [
+          "橘子",
+          "橘猫",
+          "猫粮",
+          "肾衰竭",
+          "门口"
+        ],
+        "report_memory_count": 2,
+        "portrait_key_count": 19,
+        "context_has_portrait": true,
+        "context_anchor_hits": 5,
+        "job_status": "completed",
+        "memories_before": 13,
+        "memories_after": 14,
+        "writeback_anchor_hits": 3,
+        "days_shift": 3,
+        "recall_hits": 5,
+        "recall_top_has_anchor": true,
+        "recall_top_score": 0.6207024663721844,
+        "negative_recall_hits": 0,
+        "late_nudge_rule": "late_night",
+        "daytime_late_nudge_rule": null,
+        "guide_personalized": true,
+        "guide_anchor_hits": 1,
+        "total_anchors": 5
+      },
+      "thresholds": {
+        "days_shift_min": 3,
+        "context_anchor_hits_min": 1,
+        "recall_hits_min": 1,
+        "negative_recall_hits_max": 0
+      },
+      "report_field_count": 9,
+      "ab_probes": {
+        "mode": "real",
+        "query": "早上又习惯性去倒猫粮，想起橘子在门口等我，能陪我说说吗？",
+        "loss_type": "pet",
+        "scene": {
+          "detector_on": true,
+          "dialogue_should_switch": false,
+          "dialogue_matched": null,
+          "positive_control_should_switch": true,
+          "positive_target_scene": "friend",
+          "third_person_should_switch": false,
+          "companion_count_before": 1,
+          "companion_count_after": 1,
+          "loss_type_before": "pet",
+          "loss_type_after": "pet",
+          "pass": true
+        },
+        "portrait": {
+          "written_with_companion_id": true,
+          "read_right_cid_nonempty": true,
+          "read_wrong_cid_empty": true,
+          "read_3arg_backcompat_nonempty": true,
+          "subject_name": "橘子",
+          "subject_matches_anchor": true,
+          "context_has_portrait": true,
+          "context_anchor_hits": 5,
+          "journey_context_has_portrait": true,
+          "journey_context_anchor_hits": 5,
+          "journey_portrait_key_count": 19,
+          "pass": true
+        },
+        "pass": true
+      },
+      "journey_pass": true,
+      "ab_pass": true,
+      "report": {
+        "title": "橘子在心里亮着",
+        "keywords": [
+          "橘子",
+          "十五年陪伴",
+          "慢慢消化",
+          "想记住",
+          "未竟告别"
+        ],
+        "summary": "橘子陪你从大学毕业走到现在，十五年的日子不是一段轻的时光。你最常想起的，是加班深夜回家时，它蹲在门口等你，尾巴甩啊甩；那种被等着的感觉，像把一天的疲惫都接住了。上周它因肾衰竭离开后，最难的不是只有一个瞬间：早上醒来习惯性去倒猫粮，走到碗前才想起它不在了；最后几天你出差没在身边，它自己走，也让你一直自责。你说想记住它，不想快点忘记，也说到一直没细讲，现在讲出来心里松一点，还在慢慢消化。这份松和疼可以同时存在，它们都说明这十五年真的重要。",
+        "quote": "把想念留下，把自责慢慢松开。",
+        "user_portrait": {
+          "失去类型": "宠物离世",
+          "关系与背景": "橘子是陪伴用户十五年的橘猫，从大学毕业到现在；上周因肾衰竭离世。",
+          "当前情绪状态": "悲伤、自责、仍在消化；讲述后心里松一点。",
+          "情绪波动点": "早上习惯性倒猫粮时意识到橘子不在；想到最后几天出差没在身边、橘子自己走时自责；被问及经过时暂时不愿细说。",
+          "困惑点": "如何面对没能陪最后一程的自责；如何在不忘记的情况下继续生活；怎样安放这十五年的陪伴。",
+          "未说出口的话": "暂未提及（具体内容未说出；自责集中在没能陪橘子走完最后一程）",
+          "内疚与未竟之事": "用户因最后几天出差不在身边、橘子自己走而自责；没来得及陪伴和告别。",
+          "死亡接受状态": "接受中",
+          "意义重建": "想把橘子留在心里，不想快点忘记；把十五年最稳的陪伴转化为可继续携带的纪念。",
+          "现在的日常状态": "早上醒来仍会习惯性去倒猫粮，走到碗前才想起橘子不在；对细节讲述保持停顿，愿意慢慢消化。",
+          "哀伤正名": "用户未明显自我矮化，但一直没细说；需要温柔确认：为陪伴十五年的橘子悲伤是真实正当的，它从来不是“只是一只猫”。",
+          "哀伤叙事": "你可以不必急着把那根刺拔掉，它并不证明你做错了什么，只说明那份爱太认真，认真到连来不及都显得疼。没能在场，不等于没有陪过；十五年的相守也不会因为最后几天的缺席被抹去。以后若想念忽然靠近，就让它坐一会儿，不必赶它走，也不必用自责来证明你记得。你可以把这份爱放在心里一个安稳的位置，带着它吃饭、睡觉、工作、重新感受日子；继续生活不是离开它，而是让它给过你的稳，慢慢成为你往前走时的一部分。"
+        },
+        "object_portrait": {
+          "称呼": "橘子",
+          "关系": "橘猫，陪伴用户十五年，从大学毕业到现在。",
+          "性格": "从回忆看，亲近、守候、有稳定的依恋感；更细的性格暂未提及。",
+          "共同记忆": "加班深夜回家时蹲在门口等用户，尾巴甩啊甩；也存在于每天倒猫粮的日常里。",
+          "重要地点与时间": "家门口、猫粮碗前；加班深夜、每个早上、最后那几天出差期间、上周离世。",
+          "它留给你的": "十五年稳定的陪伴、被等待和被接住的感觉，以及见证用户从大学毕业到现在的生活记忆。",
+          "你心里的它": "用户心里持续记着的橘子，是那个在十五年里稳定陪伴、让生活有踏实感的存在；具体画面以门口等待和日常喂养为主。"
+        },
+        "goal": {
+          "type": "carry_on",
+          "label": "带着记忆走下去",
+          "reason": "用户明确说想记住橘子、不想快点忘记，并称它是十五年最稳的陪伴；适合以接受失去、保留健康持续联结为目标，而非遗忘。"
+        },
+        "heal_plan": {
+          "summary": "不催促忘记，陪用户接受橘子已离开，并把十五年的爱安放成可继续生活的力量。",
+          "stages": [
+            {
+              "title": "允许慢慢消化",
+              "desc": "不急着还原最后经过，允许讲述一点、停一点；把讲出来后的松动当作可以呼吸的缝隙。",
+              "time": "现在起2周内"
+            },
+            {
+              "title": "安放自责",
+              "desc": "把“没能陪最后一程”从“我错了”改写为“我已在当时条件下尽力”；不强迫放下，只给自责一个被看见的位置。",
+              "time": "2-6周"
+            },
+            {
+              "title": "给想念一个位置",
+              "desc": "选择一种可持续的纪念方式，如写给它的一封信、保留一件小物、在特别的日子留一段安静时间。",
+              "time": "1-3个月"
+            },
+            {
+              "title": "带着它继续生活",
+              "desc": "在日常里保留健康联结，允许想念出现，也允许自己重新投入工作、休息和关系，不把继续生活视为背叛。",
+              "time": "3个月后"
+            }
+          ]
+        },
+        "pet_grief_analysis": {
+          "meaning": "橘子陪用户走过从大学毕业到现在的十五年，它的离开让这段稳定陪伴成为需要被郑重安放的生命记忆。",
+          "guilt": {
+            "still_guilty": "最后几天出差不在身边，橘子自己走，用户一直自责没能陪它走完最后一程。",
+            "reframe": "这份自责更像是告别来不及找到出口，不等于用户不爱或做错了什么；在当时的信息和条件下，用户已经以自己的方式尽力，不必用责备来证明这份爱。"
+          },
+          "continuing_bond": {
+            "current": "用户明确想记住橘子、不想快点忘记，并把它视为十五年最稳的陪伴；讲述后心里松一点，仍在慢慢消化。",
+            "suggestions": [
+              "写几封不必寄出的信，把没来得及说的话慢慢写下来",
+              "保留一件与橘子有关的小物，如项圈、梳子或它常待位置的一张照片",
+              "在它离世周年或某个安静日子，留一小段时间纪念它",
+              "当习惯性走向猫粮碗时，不急着否定自己，可以轻轻承认：这是爱留下来的回声"
+            ]
+          },
+          "death_acceptance": "接受中：用户知道橘子已因肾衰竭离世，也能说“不在了”，但仍处在慢慢消化和自责中，尚未完全安放这个现实。",
+          "disenfranchised": "用户没有明显自我矮化，但一直没细说，说明哀伤被独自放在心里；需要温柔确认，为一只陪伴十五年的猫悲伤是真实正当的，它从来不是“只是一只猫”。",
+          "narrative": "你可以不必急着把那根刺拔掉，它并不证明你做错了什么，只说明那份爱太认真，认真到连来不及都显得疼。没能在场，不等于没有陪过；十五年的相守也不会因为最后几天的缺席被抹去。以后若想念忽然靠近，就让它坐一会儿，不必赶它走，也不必用自责来证明你记得。你可以把这份爱放在心里一个安稳的位置，带着它吃饭、睡觉、工作、重新感受日子；继续生活不是离开它，而是让它给过你的稳，慢慢成为你往前走时的一部分。"
+        },
+        "relationship_analysis": {
+          "core_bond": "橘子与用户共同跨越从大学毕业到现在的成年阶段，是稳定、日常、深度嵌入生活节奏的陪伴关系。",
+          "relationship_pattern": "用户习惯照顾橘子，也从橘子的守候中获得被接住的感觉；关系里有照顾，也有被陪伴。",
+          "loss_rupture": "橘子的离世打破了这些日常惯性，并让用户在习惯动作和最后几天的缺席中感到疼痛。",
+          "continuing_connection": "用户想记住、不想快点忘记，说明这段关系仍在通过记忆、习惯和内在位置延续。",
+          "repair_direction": "不把继续生活理解为背叛，让橘子给过用户的稳定感，逐渐成为用户照顾自己的资源。"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "users": 1,
+    "checkpoint_pass_counts": {
+      "CP1_report_ready": 1,
+      "CP2_report_to_dialogue": 1,
+      "CP3_dialogue_to_writeback": 1,
+      "CP4_memory_to_crossday_recall": 1,
+      "CP5_recall_to_trigger": 1
+    },
+    "journey_pass": true,
+    "ab_pass": true,
+    "scene_no_false_trigger": 1,
+    "portrait_isolation_ok": 1,
+    "overall_pass": true,
+    "exit_code": 0
+  }
+}
