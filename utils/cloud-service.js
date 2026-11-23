@@ -41,16 +41,21 @@ function request(path, method, body) {
 }
 
 function ensureAccount() {
+  // 关键：只有 TOKEN 存在才算就绪，否则每次重试。
+  // 页面 onShow 会先 getOverview()（此时用户未同意、无 guest），不能把那次的 false 永久缓存，
+  // 否则 acceptConsent() 建 guest 后所有请求仍拿不到 token。
+  if (TOKEN) return Promise.resolve(true)
+  const state = storage.read()
+  if (!state.guest) return Promise.resolve(false)
   if (!accountReady) {
     accountReady = (async () => {
-      const state = storage.read()
-      if (!state.guest) return false
       const username = 'ma_' + state.guest.id
       const password = 'ma-local-password'
       let r = await request('/auth/register', 'POST', { username, password })
       if (!r.ok) r = await request('/auth/login', 'POST', { username, password })
       if (!r.ok || !r.data || !r.data.token) {
         console.warn('[cloud] 后端登录失败，回退本地模式', r.status)
+        accountReady = null  // 失败不缓存，允许重试
         return false
       }
       TOKEN = r.data.token
@@ -68,36 +73,40 @@ function isOnboardingDone() { try { return !getGuide(local.getProfile()).step } 
 
 function acceptConsent() {
   const overview = local.acceptConsent()
+  // 后端契约（干净探针确认）：POST /api/consent 会自动建好 companion + chat_session_id。
+  // 不要再调 POST /companions——那会 409 ACTIVE_COMPANION_EXISTS，且让 ready 链误判失败。
   companionReady = ensureAccount().then(ok => {
     if (!ok) return false
-    const state = storage.read()
-    const j = state.journeys.find(x => x.id === state.currentJourneyId)
-    const lt = toBackendLossType(j && j.profile && j.profile.lossType ? j.profile.lossType.value : '')
-    return request('/consent', 'POST', { user_id: BACKEND_UID, version: 1 })
-      .then(() => request('/companions', 'POST', { user_id: BACKEND_UID, relationship_type: lt }))
-      .then(r => {
-        // 409 ACTIVE_COMPANION_EXISTS 也算就绪（companion 已在）
-        if (!r.ok && r.status !== 409) console.warn('[cloud] companion 创建失败', r.status, r.data)
-        return true
-      })
+    return request('/consent', 'POST', { user_id: BACKEND_UID, version: 1 }).then(r => {
+      if (!r.ok && r.status !== 409) console.warn('[cloud] consent 失败', r.status, r.data)
+      return true
+    })
   }).catch(e => { console.warn('[cloud] consent 同步失败', e); return false })
   return overview
 }
 
 function getOverview() {
   const ov = local.getOverview()
-  ensureAccount().then(ok => {
-    if (!ok || !ov.hasGuest) return
-    Promise.all([
+  // 必须等 companion 建好（consent 完成）才拉 state/home——否则 home 返回 409 COMPANION_REQUIRED。
+  const ready = companionReady || ensureAccount()
+  ready.then(() => ensureAccount()).then(ok => {
+    if (!ok || !ov.hasGuest || !BACKEND_UID) return
+    return Promise.all([
       request('/state', 'GET'),
       request('/home/' + encodeURIComponent(BACKEND_UID), 'GET'),
     ]).then(([st, home]) => {
-      ov.backendState = st.ok ? st.data : null
-      ov.backendHome = home.ok ? home.data : null
-      storage.update(s => { s.backendSnapshot = { state: ov.backendState, home: ov.backendHome, at: Date.now() } })
-    }).catch(() => {})
-  })
-  // 若之前已缓存快照，直接带上（同步可见）
+      // 只缓存成功的结果；409（并发/未就绪）不写空快照
+      const state = st.ok ? st.data : null
+      const hdata = home.ok ? home.data : null
+      if (!state && !hdata) return
+      const snap = storage.read().backendSnapshot || {}
+      storage.update(s => {
+        s.backendSnapshot = {
+          state: state || snap.state, home: hdata || snap.home, at: Date.now(),
+        }
+      })
+    })
+  }).catch(() => {})
   const snap = storage.read().backendSnapshot
   if (snap) { ov.backendState = snap.state; ov.backendHome = snap.home }
   return ov
@@ -112,10 +121,8 @@ function getProfile() { return local.getProfile() }
 
 function saveProfile(fields) {
   const result = local.saveProfile(fields)
-  const lt = toBackendLossType((fields.lossType || {}).value || '')
-  ensureAccount().then(ok => {
-    if (ok) request('/companions', 'POST', { user_id: BACKEND_UID, relationship_type: lt }).catch(() => {})
-  })
+  // 后端场景切换走 detect_scene_transition（自然语言），无直接改 relationship_type 的 API。
+  // 不再调 POST /companions（会 409 ACTIVE_COMPANION_EXISTS）。
   return result
 }
 
@@ -172,7 +179,8 @@ function sendChatMessage(payload, clientId) {
       if (s.messages.some(m => m.id === aiId)) return
       s.messages.push({
         id: aiId, clientId: 'ai_' + (clientId || ''),
-        journeyId: s.currentJourneyId, ownerId: BACKEND_UID,
+        // ownerId 必须用本地 guest.id（local.listMessages 按它过滤），不是后端 uid
+        journeyId: s.currentJourneyId, ownerId: s.guest.id,
         role: 'assistant', type: 'text', content: r.data.reply,
         createdAt: now,
         timeLabel: new Date(now).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
