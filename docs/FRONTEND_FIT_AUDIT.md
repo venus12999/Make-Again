@@ -14,19 +14,20 @@
 
 ## 2. 前端 service 契约（11 方法）→ 后端映射
 
-| 前端方法 | 后端 API | 契合 |
+**诚实修正（2026-11-23）**：初版本表的映射是我**凭方法名猜的，没真对过**（11 个方法里只有 startChat 有同名路由，其余全靠语义猜）——这是同 D2/D7、标签映射一类"没查实物就下结论"的错误。下面改为**标明哪些是查证的、哪些还需前端队友逐个对**：
+
+| 前端方法 | 后端对应（初步） | 状态 |
 |---|---|---|
-| acceptConsent | POST /api/consent | ✅ |
-| getOverview | GET /api/state + /api/home/{uid} + /api/initial-report | ✅ |
-| getChatState | GET /api/state + /api/chat/history | ✅ |
-| startChat | POST /api/interview/start 或 /api/companions | ⚠️ 语义需对齐 |
-| sendChatMessage | POST /api/chat | ✅ |
-| listMessages | GET /api/chat/history/{uid}/days | ✅ |
-| saveMessage | （后端由 /api/chat 自动落库，无需单独方法） | ⚠️ 契约差异 |
-| getProfile | GET /api/state + /api/mood | ⚠️ 字段映射 |
-| saveProfile | PATCH /api/state | ✅ |
-| listCollection | GET /api/item + /api/photo + /api/diary | ✅ |
-| markLetterRead | POST /api/treehole/letter 相关 | ⚠️ 需确认 |
+| startChat | POST /api/interview/start（唯一同名可查证） | ✅ 查证 |
+| acceptConsent | POST /api/consent（语义明显，未逐字对） | ⚠️ 待队友核 |
+| sendChatMessage | POST /api/chat（语义明显，未逐字对） | ⚠️ 待队友核 |
+| getOverview / getChatState / getProfile | /api/state /api/home /api/mood（多个路由组合，需看前端要哪些字段） | ❓ 需逐个对字段 |
+| listMessages / saveMessage | /api/chat/history（save 由后端 chat 自动落库，前端契约可能冗余） | ❓ 需对语义 |
+| saveProfile | PATCH /api/state /api/account | ❓ 需对字段 |
+| listCollection | /api/item /api/photo /api/diary | ❓ 需对 |
+| markLetterRead | treehole/letter 相关 | ❓ 需对 |
+
+**结论修正**：后端 74 路由数量够，但"能否一一对应前端 11 方法"**没验证过**——必须前端队友拿方法签名和后端路由逐个对，不能我在这边拍脑袋说"都能映射"。
 
 ## 3. 让队友本地实测的方案（不碰服务器）
 
