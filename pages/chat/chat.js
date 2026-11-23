@@ -11,6 +11,8 @@ Page({
     this._active = true
     getApp().globalData.pendingChatGuide = false
     this.setData({ keyboardHeight: 0 })
+    // 云端模式：后端 AI 回复异步到达后自动刷新消息流（local 模式下 _setRefresh 不存在也无妨）
+    if (service._setRefresh) service._setRefresh(() => { if (this._active) this.refresh() })
     this.refresh(true)
   },
   onHide() { this.leave() },

@@ -1,36 +1,36 @@
 /**
- * cloud-service —— 连真后端的 service 适配层（保留 local-service 的数据模型）。
+ * cloud-service —— 后端当数据源的适配层（同步签名，页面零改动）。
  *
- * 设计：页面用的 11 个方法签名和数据结构完全不变（页面零改动）；
- * 本地 storage 继续作为 UI 状态的快速来源；只在两个关键点走真后端：
- *   1) sendChatMessage 在访谈建档阶段 → 后端 /api/interview/* 生成真实报告/回复
- *   2) 建档完成后的自由聊天 → 后端 /api/chat 拿真实 AI 回复
- * 失败时回退到 local-service 的假数据（离线也能用），并把错误记在控制台。
+ * 关键约束：前端页面全部同步调用 service 方法（无 await），所以本模块所有方法
+ * 必须同步返回。网络请求在后台异步进行，结果写回 storage；页面 refresh() 重拉可见。
  *
- * 配置：utils/config.js 的 API_BASE（默认 http://127.0.0.1:8000）
- * 微信开发者工具需勾选「不校验合法域名」才能连本机 IP。
+ * 分层：
+ *   - 建档阶段（chat-guide 有 step）：前端 UX 本地建档（6字段，后端无对应概念）
+ *   - 自由聊天：sendChatMessage 同步落本地 + 后台调 /api/chat，真实 AI 回复异步写 storage
+ *   - 读取：getChatState/listMessages 从 storage 读（含异步补进来的后端消息）
+ *   - getOverview/saveProfile/listCollection：本地为准 + 后台同步后端
+ *
+ * 配置：utils/config.js（CLOUD / API_BASE）。微信开发者工具需关域名校验。
  */
 const local = require('./local-service')
 const storage = require('./storage')
-const { PROFILE_FIELDS, LOSS_TYPES } = require('./constants')
+const { LOSS_TYPES } = require('./constants')
+const { getGuide } = require('./chat-guide')
 const config = require('./config')
 
 const API_BASE = (config && config.API_BASE) || 'http://127.0.0.1:8000'
 let TOKEN = null
-let BACKEND_UID = null   // 后端注册返回的真实 user_id（≠ 本地 guest.id，混用会 OWNER_MISMATCH 403）
+let BACKEND_UID = null
+let accountReady = null   // Promise：确保只注册/登录一次
+let companionReady = null // Promise：consent + companion 建好，自由聊天前必须等它
+let chatQueue = Promise.resolve()  // /api/chat 串行队列（后端有 CONVERSATION_BUSY 并发保护）
 
-function fail(code, message) { throw Object.assign(new Error(message), { code }) }
-
-/** 发请求到后端；自动带 token；返回 {ok, data, status}。 */
 function request(path, method, body) {
   return new Promise((resolve) => {
     const header = { 'content-type': 'application/json' }
     if (TOKEN) header.Authorization = 'Bearer ' + TOKEN
     wx.request({
-      url: API_BASE + '/api' + path,
-      method: method || 'GET',
-      header,
-      data: body,
+      url: API_BASE + '/api' + path, method: method || 'GET', header, data: body,
       success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) resolve({ ok: true, data: res.data, status: res.statusCode })
         else resolve({ ok: false, data: res.data, status: res.statusCode })
@@ -40,116 +40,163 @@ function request(path, method, body) {
   })
 }
 
-/** 确保有后端账号：本地 guestId 映射成后端 username，注册/登录拿 token。 */
-async function ensureAccount() {
-  const state = storage.read()
-  if (!state.guest) return false
-  if (TOKEN) return true
-  const username = 'ma_' + state.guest.id
-  const password = 'ma-local-password'
-  let r = await request('/auth/register', 'POST', { username, password })
-  if (!r.ok) {
-    // 可能已注册——改登录
-    r = await request('/auth/login', 'POST', { username, password })
+function ensureAccount() {
+  if (!accountReady) {
+    accountReady = (async () => {
+      const state = storage.read()
+      if (!state.guest) return false
+      const username = 'ma_' + state.guest.id
+      const password = 'ma-local-password'
+      let r = await request('/auth/register', 'POST', { username, password })
+      if (!r.ok) r = await request('/auth/login', 'POST', { username, password })
+      if (!r.ok || !r.data || !r.data.token) {
+        console.warn('[cloud] 后端登录失败，回退本地模式', r.status)
+        return false
+      }
+      TOKEN = r.data.token
+      BACKEND_UID = r.data.user_id
+      return true
+    })()
   }
-  if (!r.ok || !r.data || !r.data.token) {
-    console.warn('[cloud] 后端登录失败，回退本地模式', r.status, r.data)
-    return false
-  }
-  TOKEN = r.data.token
-  BACKEND_UID = r.data.user_id
-  return true
+  return accountReady
 }
 
-/** 把前端 profile 的 lossType(relative/friend...) 映射成后端 loss_type。 */
-function toBackendLossType(v) {
-  const map = { relative: 'loved_one', friend: 'breakup', '': 'breakup' }
-  return map[v] || v
-}
+function toBackendLossType(v) { return { relative: 'loved_one', friend: 'breakup', '': 'breakup' }[v] || v }
+function isOnboardingDone() { try { return !getGuide(local.getProfile()).step } catch (e) { return false } }
 
-// ---- 保持签名不变的方法 ----
+// ---- 同步方法（页面直接调）----
 
-async function acceptConsent() {
-  const overview = local.acceptConsent()   // 本地建档结构照旧建立
-  const ok = await ensureAccount()
-  if (ok) {
+function acceptConsent() {
+  const overview = local.acceptConsent()
+  companionReady = ensureAccount().then(ok => {
+    if (!ok) return false
     const state = storage.read()
-    const lt = toBackendLossType((state.journeys.find(j => j.id === state.currentJourneyId) || {}).profile
-      ? state.journeys.find(j => j.id === state.currentJourneyId).profile.lossType.value : '')
-    await request('/consent', 'POST', { user_id: BACKEND_UID, version: 1 })
-    await request('/companions', 'POST', { user_id: BACKEND_UID, relationship_type: lt })
-  }
+    const j = state.journeys.find(x => x.id === state.currentJourneyId)
+    const lt = toBackendLossType(j && j.profile && j.profile.lossType ? j.profile.lossType.value : '')
+    return request('/consent', 'POST', { user_id: BACKEND_UID, version: 1 })
+      .then(() => request('/companions', 'POST', { user_id: BACKEND_UID, relationship_type: lt }))
+      .then(r => {
+        // 409 ACTIVE_COMPANION_EXISTS 也算就绪（companion 已在）
+        if (!r.ok && r.status !== 409) console.warn('[cloud] companion 创建失败', r.status, r.data)
+        return true
+      })
+  }).catch(e => { console.warn('[cloud] consent 同步失败', e); return false })
   return overview
 }
 
-function getOverview() { return local.getOverview() }
+function getOverview() {
+  const ov = local.getOverview()
+  ensureAccount().then(ok => {
+    if (!ok || !ov.hasGuest) return
+    Promise.all([
+      request('/state', 'GET'),
+      request('/home/' + encodeURIComponent(BACKEND_UID), 'GET'),
+    ]).then(([st, home]) => {
+      ov.backendState = st.ok ? st.data : null
+      ov.backendHome = home.ok ? home.data : null
+      storage.update(s => { s.backendSnapshot = { state: ov.backendState, home: ov.backendHome, at: Date.now() } })
+    }).catch(() => {})
+  })
+  // 若之前已缓存快照，直接带上（同步可见）
+  const snap = storage.read().backendSnapshot
+  if (snap) { ov.backendState = snap.state; ov.backendHome = snap.home }
+  return ov
+}
+
 function markLetterRead() { return local.markLetterRead() }
-function listMessages() { return local.listMessages() }
+
+function listMessages() { return local.listMessages() }  // 含异步补进来的后端消息
+
 function saveMessage(text, clientId) { return local.saveMessage(text, clientId) }
 function getProfile() { return local.getProfile() }
+
 function saveProfile(fields) {
   const result = local.saveProfile(fields)
-  // 用户改了离别类型 → 同步后端场景（后端切换 companion）
   const lt = toBackendLossType((fields.lossType || {}).value || '')
-  const state = storage.read()
-  if (state.guest && TOKEN) {
-    request('/companions', 'POST', { user_id: BACKEND_UID, relationship_type: lt }).catch(() => {})
-  }
+  ensureAccount().then(ok => {
+    if (ok) request('/companions', 'POST', { user_id: BACKEND_UID, relationship_type: lt }).catch(() => {})
+  })
   return result
 }
 
-function startChat() {
-  local.startChat()
-  // 访谈引导完全由前端 chat-guide 驱动（保数据模型），不在这里发请求
+function listCollection(kind) {
+  const items = local.listCollection(kind)
+  if (kind === 'letters') return items
+  ensureAccount().then(ok => {
+    if (!ok) return
+    const map = { items: '/item/', photos: '/photo/' }
+    if (!map[kind]) return
+    request(map[kind] + encodeURIComponent(BACKEND_UID), 'GET').then(r => {
+      if (r.ok && r.data) {
+        const arr = r.data.items || r.data.photos || r.data.list || []
+        if (Array.isArray(arr)) storage.update(s => { s.backendCollection = s.backendCollection || {}; s.backendCollection[kind] = arr })
+      }
+    }).catch(() => {})
+  })
+  const cached = storage.read().backendCollection
+  return (cached && cached[kind] && cached[kind].length) ? cached[kind] : items
 }
 
-/**
- * 核心：发消息。访谈阶段本地建档照旧；建档完成后，走后端 /api/chat 拿真实 AI 回复。
- * 返回结构仍是一条 message（role=assistant, content=AI 回复），页面零改动。
- */
-async function sendChatMessage(payload, clientId) {
-  const saved = local.sendChatMessage(payload, clientId)  // 本地落一条 user 消息 + 更新 profile
-  try {
-    const state = storage.read()
-    const guide = require('./chat-guide').getGuide(local.getProfile())
-    const ok = await ensureAccount()
-    if (!ok) return saved
+function startChat() { local.startChat() }
 
-    let aiText = null
-    if (guide.step) {
-      // 访谈阶段：把答案喂给后端访谈引擎，拿模型生成的承接问题/回复
-      const r = await request('/chat', 'POST', {
-        user_id: BACKEND_UID,
-        message: payload.skip ? '这个问题先跳过' : (payload.text || ''),
-      })
-      if (r.ok && r.data && r.data.reply) aiText = r.data.reply
-    } else {
-      // 自由聊天：真 AI 陪伴回复
-      const text = (payload.text || '').trim()
-      if (text) {
-        const r = await request('/chat', 'POST', { user_id: BACKEND_UID, message: text })
-        if (r.ok && r.data && r.data.reply) aiText = r.data.reply
-      }
+/**
+ * 发消息：同步返回本地消息 + 后台调真后端；真实 AI 回复异步写 storage。
+ * 建档阶段纯本地 UX，不调后端。
+ */
+function sendChatMessage(payload, clientId) {
+  // 关键：用发送前的建档状态判断。最后一题回答时发送前还没建档完成 → 纯本地，不调后端。
+  // 否则最后一题会触发一个 /chat，紧接着自由聊天第一条又发 /chat → CONVERSATION_BUSY。
+  const wasOnboarding = !isOnboardingDone()
+  const saved = local.sendChatMessage(payload, clientId)
+  if (wasOnboarding) return saved
+  const text = (payload.text || '').trim()
+  if (!text && !payload.skip) return saved
+
+  // 自由聊天前必须等 companion 建好，且 /api/chat 串行发送（后端有 CONVERSATION_BUSY 并发保护）
+  const ready = companionReady || ensureAccount()
+  chatQueue = chatQueue.then(() => ready).then(() => ensureAccount()).then(ok => {
+    if (!ok) return null
+    return request('/chat', 'POST', {
+      user_id: BACKEND_UID,
+      message: payload.skip ? '这个问题先跳过' : text,
+      client_request_id: clientId,
+    })
+  }).then(r => {
+    if (!r || !r.ok || !r.data || !r.data.reply) {
+      if (r) console.warn('[cloud] /api/chat 失败', r.status, r.data)
+      return
     }
-    if (aiText) {
-      // 追加一条 assistant 消息到 local 消息流，页面自然会显示
-      const id = 'ai_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)
-      storage.update(s => {
-        s.messages.push({ id, clientId: 'ai_' + (clientId || ''), journeyId: s.currentJourneyId,
-          ownerId: s.guest.id, role: 'assistant', type: 'text', content: aiText, createdAt: Date.now() })
+    const now = Date.now()
+    const aiId = r.data.assistant_message_id ? 'be_' + r.data.assistant_message_id : 'ai_' + now.toString(36)
+    storage.update(s => {
+      if (s.messages.some(m => m.id === aiId)) return
+      s.messages.push({
+        id: aiId, clientId: 'ai_' + (clientId || ''),
+        journeyId: s.currentJourneyId, ownerId: BACKEND_UID,
+        role: 'assistant', type: 'text', content: r.data.reply,
+        createdAt: now,
+        timeLabel: new Date(now).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        fromBackend: true,
+        backend: { emotion: r.data.emotion, crisis: r.data.crisis, tool: r.data.tool },
       })
-    }
-  } catch (e) {
-    console.warn('[cloud] AI 回复失败，已保留本地消息', e && e.message)
-  }
+    })
+    if (typeof global._makeAgainRefresh === 'function') global._makeAgainRefresh()
+  }).catch(e => console.warn('[cloud] 后端回复异常', e))
   return saved
 }
 
-function listCollection(kind) { return local.listCollection(kind) }
-function getChatState() { return local.getChatState() }
+function getChatState() {
+  const base = local.getChatState()
+  // 把缓存的后端快照带上（供页面显示 mood 等）
+  const snap = storage.read().backendSnapshot
+  if (snap) base.backendHome = snap.home
+  return base
+}
 
 module.exports = {
   acceptConsent, getOverview, markLetterRead, listMessages, saveMessage,
   getProfile, saveProfile, listCollection, startChat, getChatState, sendChatMessage,
   _request: request, _ensureAccount: ensureAccount, _toBackendLossType: toBackendLossType,
+  _isOnboardingDone: isOnboardingDone,
+  _setRefresh(fn) { global._makeAgainRefresh = fn },
 }
