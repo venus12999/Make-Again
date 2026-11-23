@@ -211,15 +211,24 @@ def compact(messages: list[dict], client, session_id: str, previous_entry: Compa
         return CompactionResult(entry=None, kept_messages=messages)
 
     msgs = build_summary_messages(to_summarize, previous_entry.summary if previous_entry else None)
-    try:
-        resp = client.chat(msgs, temperature=0.0, model=client.settings.llm_fast_model, max_tokens=1500)
-        summary = (resp.get("content") or "").strip()
-    except Exception as exc:
-        return CompactionResult(entry=None, kept_messages=messages, error=f"SUMMARY_CALL_FAILED: {str(exc)[:100]}")
+    # hy4 偶发返回空 content（D-033 已知问题，当时用 3 次重试解决）。
+    # PI 算法也有 retryAssistantCall；这里同模型最多重试 3 次，仍空才放弃压缩（逐字节回退）。
+    resp = None
+    summary = ""
+    last_error = "SUMMARY_EMPTY"
+    for _ in range(3):
+        try:
+            resp = client.chat(msgs, temperature=0.0, model=client.settings.llm_fast_model, max_tokens=1500)
+            summary = (resp.get("content") or "").strip()
+            if summary:
+                break
+            last_error = "SUMMARY_EMPTY"
+        except Exception as exc:
+            last_error = f"SUMMARY_CALL_FAILED: {str(exc)[:100]}"
 
     # 失败保护（PI: getSummarizationFailure）
     if not summary:
-        return CompactionResult(entry=None, kept_messages=messages, error="SUMMARY_EMPTY")
+        return CompactionResult(entry=None, kept_messages=messages, error=last_error)
     if "```" in summary and "## " not in summary:
         return CompactionResult(entry=None, kept_messages=messages, error="SUMMARY_MALFORMED")
     if len(summary) < 30:
@@ -271,8 +280,61 @@ def load_latest_entry(db, session_id: str) -> CompactionEntry | None:
     ).fetchone()
     if not row:
         return None
+    # SQLAlchemy 2.0 的 Row 不支持 row["col"] 字符串索引（抛 "tuple indices must be
+    # integers or slices, not str"），必须走 _mapping —— 之前这里让第二次起的压缩全部
+    # 静默失败（D-070 根因）。
+    m = row._mapping
     return CompactionEntry(
-        id=row["id"], session_id=row["session_id"], summary=row["summary"],
-        first_kept_id=row["first_kept_id"], tokens_before=row["tokens_before"], created_at=row["created_at"],
-        usage=json.loads(row["usage_json"] or "{}"), details=json.loads(row["details_json"] or "{}"),
+        id=m["id"], session_id=m["session_id"], summary=m["summary"],
+        first_kept_id=m["first_kept_id"], tokens_before=m["tokens_before"], created_at=m["created_at"],
+        usage=json.loads(m["usage_json"] or "{}"), details=json.loads(m["details_json"] or "{}"),
     )
+
+
+# ---------------- 公共入口（companion.py + 三场景引擎共用）----------------
+
+def maybe_compact(db, user_id: str, session_id: str | None, turns: list[dict], client) -> tuple[list[dict], str | None]:
+    """长对话压缩的统一入口（D-070：从 companion.py 提出来给四个引擎共用）。
+
+    - 开关关闭 → 原样返回 turns（逐字节回退，零影响）
+    - 超阈值 → 用全量历史压缩，返回精简后的 turns + 摘要字符串
+    - 任何失败 → 原样返回 turns（压缩是增强，不是主链路依赖）
+    调用方把摘要作为 system 消息插在历史前（PI: system + summary + kept messages）。
+    """
+    if not compaction_enabled():
+        return turns, None
+
+    sid = session_id or ("default:" + user_id)
+    # 关键（D-070 二次修复）：摘要一旦落库就必须**每轮持续注入**，不能只在
+    # "本轮压缩成功"那一轮注入。否则下一次压缩失败（SUMMARY_TOO_SHORT/EMPTY）
+    # 或未触发阈值时，早期事实又从上下文里消失——正是"周明远在摘要里却说没听过"的根因。
+    summary = None
+    try:
+        prev = load_latest_entry(db, sid)
+        if prev:
+            summary = prev.summary
+
+        from memory.models import ChatMessage
+        from sqlalchemy import select
+
+        # turns 已被 get_turns 截到 max_turns，阈值判断必须拿全量历史
+        all_rows = db.scalars(
+            select(ChatMessage)
+            .where(ChatMessage.user_id == user_id,
+                   ChatMessage.session_id == (session_id or ""))
+            .order_by(ChatMessage.id.asc())
+        ).all()
+        full_history = [{"role": r.role, "content": r.content} for r in all_rows]
+        if should_compact(estimate_context_tokens(full_history)):
+            result = compact(full_history, client, sid, previous_entry=prev)
+            if result.error or result.entry is None:
+                logger.warning("compaction skipped: %s", result.error)
+            else:
+                save_entry(db, result.entry)
+                summary = result.entry.summary
+                # 只在压缩真成功时才用精简后的 turns；失败时原文逐字节保留
+                return result.kept_messages, summary
+    except Exception as exc:
+        logger.warning("compaction failed, keep original turns: %s", exc)
+    # 没触发压缩 / 压缩失败：turns 原样，但已落库的摘要继续带着
+    return turns, summary

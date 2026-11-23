@@ -21,7 +21,7 @@ from emotion.classifier import classify
 from emotion.crisis import CRISIS_MESSAGE, detect
 from emotion.tone import SHARED_RULE
 from gateway.client import LLMClient
-from memory import session_context, store
+from memory import session_context, store, context_compaction as cc
 from memory.async_write import schedule_memory_write
 from memory.breakup import extract as breakup_extract
 from memory.breakup import state as breakup_state
@@ -60,6 +60,9 @@ def breakup_chat(db, user_id: str, message: str, client: LLMClient, session_id: 
         "object": store.get_portrait(db, user_id, "object"),
     }
     turns = session_context.get_turns(user_id, session_id)
+    # D-070: 长对话压缩（开关默认关，失败逐字节回退；摘要作为 system 插在历史前）
+    summary_block = None
+    turns, summary_block = cc.maybe_compact(db, user_id, session_id, turns, client)
     recent_text = " ".join(t["content"] for t in turns)
     memories = breakup_recall(db, user_id, message, recent_text=recent_text)
 
@@ -76,7 +79,10 @@ def breakup_chat(db, user_id: str, message: str, client: LLMClient, session_id: 
             f"\n\n[安全边界] 检测到用户在被伤害情境({', '.join(victim)}),"
             "本次不做任何归咎于用户的表述,转为共情 + 识别不健康关系 + 重建自我。"
         )
-    msgs = [{"role": "system", "content": prompt}] + turns + [{"role": "user", "content": message}]
+    msgs = [{"role": "system", "content": prompt}]
+    if summary_block:
+        msgs.append({"role": "system", "content": "[此前对话摘要]\n" + summary_block})
+    msgs += turns + [{"role": "user", "content": message}]
     tools = None if no_tools else [item_mod.ITEM_RITUAL_TOOL, photo_mod.PHOTO_UPLOAD_TOOL,
                                    todo_mod.TODO_LIST_TOOL, note_mod.SELF_NOTE_TOOL]
     result = client.chat(

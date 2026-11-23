@@ -19,6 +19,7 @@ from emotion.crisis import CRISIS_MESSAGE, detect
 from emotion.tone import ANALYZE, SHARED_RULE, detect_victim_signals, pick_tone
 from gateway.client import LLMClient
 from memory import recall, session_context, store, temporal
+from memory import context_compaction as cc
 from memory.async_write import schedule_memory_write
 from memory.facts import facts_for_context
 
@@ -247,40 +248,6 @@ def chat(db, user_id: str, message: str, client: LLMClient, session_id: str | No
     return _chat_generic(db, user_id, message, client, session_id, no_tools=no_tools)
 
 
-def _compaction_on() -> bool:
-    import os
-    return os.getenv("USE_CONTEXT_COMPACTION", "0").strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _maybe_compact(db, user_id: str, session_id: str | None, turns: list[dict], client) -> tuple[list[dict], str | None]:
-    """长对话压缩：超阈值时压缩旧轮次+返回摘要。失败原样返回（零影响）。"""
-    try:
-        from memory import context_compaction as cc
-        sid = session_id or ("default:" + user_id)
-        # 用完整历史判断阈值（turns 已被 get_turns 截到 max_turns，需拿全量）
-        from memory.db import _RawSessionLocal
-        from memory.models import ChatMessage
-        from sqlalchemy import select
-        all_rows = db.scalars(
-            select(ChatMessage).where(ChatMessage.user_id == user_id,
-                                      ChatMessage.session_id == (session_id or ''))
-            .order_by(ChatMessage.id.asc())
-        ).all()
-        full_history = [{"role": r.role, "content": r.content} for r in all_rows]
-        if not cc.should_compact(cc.estimate_context_tokens(full_history)):
-            return turns, None
-        prev = cc.load_latest_entry(db, sid)
-        result = cc.compact(full_history, client, sid, previous_entry=prev)
-        if result.error or result.entry is None:
-            logger.warning("compaction skipped: %s", result.error)
-            return turns, None
-        cc.save_entry(db, result.entry)
-        return result.kept_messages, result.entry.summary
-    except Exception as exc:
-        logger.warning("compaction failed, keep original turns: %s", exc)
-        return turns, None
-
-
 def _chat_generic(db, user_id: str, message: str, client: LLMClient, session_id: str | None = None, no_tools: bool = False) -> dict:
     # 1. 危机前置检测(硬门槛,不可绕过)
     crisis = detect(message)
@@ -300,8 +267,7 @@ def _chat_generic(db, user_id: str, message: str, client: LLMClient, session_id:
     # USE_CONTEXT_COMPACTION=1 时：长对话超阈值则压缩旧轮次+注入摘要（PI算法移植）。
     # 失败/关闭时 turns 不变，逐字节回退原行为。
     summary_block = None
-    if _compaction_on():
-        turns, summary_block = _maybe_compact(db, user_id, session_id, turns, client)
+    turns, summary_block = cc.maybe_compact(db, user_id, session_id, turns, client)
     # 「正在聊」的判据用最近 1 轮,而不是整个 session 历史:
     # 用全部 6 轮会让跨天/重新打开 App 后的回忆被误判为"刚聊过"而永久召回不到。
     recent_text = " ".join(t["content"] for t in turns[-1:])
