@@ -69,8 +69,15 @@ chatGuide = chatGuide.replace('bindtap="startChat"', 'id="chatGuideButton" type=
 chatGuide = chatGuide.replace(/<\/?view\b/g, tag => tag.startsWith('</') ? '</div' : '<div').replace(/<\/?text\b/g, tag => tag.startsWith('</') ? '</span' : '<span')
 if (/\{\{|wx:|bindtap/.test(chatGuide)) throw new Error('Unresolved chat guide binding')
 const styles = [read('assets/fonts/brand.wxss'), read('assets/fonts/motto.wxss'), css(read('components/author-letter/author-letter.wxss')), css(read('pages/login/login.wxss')), css(read('pages/collection/collection.wxss')), css(read('pages/chat/chat.wxss').replace(/^page\s*\{[^}]*\}/, ''))].join('\n')
-const chatModules = ['utils/storage.js', 'utils/constants.js', 'utils/chat-guide.js', 'utils/local-service.js', 'utils/service.js', 'utils/ui.js', 'pages/chat/chat.js']
-const chatBundle = 'window.__maChatSources = ' + JSON.stringify(Object.fromEntries(chatModules.map(file => [file, read(file)]))).replace(/</g, '\\u003c') + ';\n' + read('scripts/chat-preview.js')
+// 真后端模式：把 config.js 覆盖成 CLOUD=true + 后端地址，让 HTML 预览连真 AI。
+// 用环境变量 MA_API_BASE 指定后端（默认 http://127.0.0.1:8000）；MA_CLOUD=0 可切回本地假数据。
+const apiBase = process.env.MA_API_BASE || 'http://127.0.0.1:8000'
+const cloudOn = process.env.MA_CLOUD !== '0'
+const configSource = 'module.exports = { CLOUD: ' + cloudOn + ', API_BASE: ' + JSON.stringify(apiBase) + ' }\n'
+const chatModules = ['utils/storage.js', 'utils/constants.js', 'utils/chat-guide.js', 'utils/local-service.js', 'utils/cloud-service.js', 'utils/service.js', 'utils/ui.js', 'pages/chat/chat.js']
+const sources = Object.fromEntries(chatModules.map(file => [file, read(file)]))
+sources['utils/config.js'] = configSource  // 覆盖成连真后端
+const chatBundle = 'window.__MA_API_BASE = ' + JSON.stringify(apiBase) + ';\nwindow.__maChatSources = ' + JSON.stringify(sources).replace(/</g, '\\u003c') + ';\n' + read('scripts/chat-preview.js')
 const html = read('scripts/preview-template.html').replace('/* EMBEDDED_STYLES */', () => styles).replace('<!-- LETTER_TEMPLATE -->', () => letter).replace('<!-- LOGIN_TEMPLATE -->', () => login).replace('<!-- CHAT_GUIDE_TEMPLATE -->', () => chatGuide)
   .replace('<!-- CHAT_NATIVE_TEMPLATE -->', () => '<template id="chatNativeTemplate">' + read('pages/chat/chat.wxml').replace(/<(textarea|t-icon)\b([^>]*?)\/>/g, '<$1$2></$1>') + '</template>')
   .replace('/* CHAT_PREVIEW_RUNTIME */', () => chatBundle)

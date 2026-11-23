@@ -56,6 +56,23 @@
   const wx = {
     getStorageSync(key) { const value = localStorage.getItem('preview_' + key); return value ? JSON.parse(value) : '' },
     setStorageSync(key, value) { localStorage.setItem('preview_' + key, JSON.stringify(value)) },
+    // 真后端桥接：把 wx.request 转成 fetch，让预览里的 cloud-service 真连后端。
+    // 后端地址从 window.__MA_API_BASE 读（build 时注入），默认 localhost:8000。
+    request({ url, method, header, data, success, fail }) {
+      // cloud-service 传进来的 url 已是完整地址（API_BASE + /api + path），直接用；
+      // 若是相对 /api 路径才补 base（兼容本地其它调用）。
+      const fullUrl = /^https?:\/\//.test(url) ? url : (window.__MA_API_BASE || 'http://127.0.0.1:8000') + url
+      fetch(fullUrl, {
+        method: method || 'GET',
+        headers: header || {},
+        body: data ? JSON.stringify(data) : undefined,
+      }).then(async res => {
+        let body = {}
+        const text = await res.text()
+        try { body = text ? JSON.parse(text) : {} } catch (e) { body = text }
+        success({ statusCode: res.status, data: body })
+      }).catch(err => fail && fail({ errMsg: String(err) }))
+    },
     showToast: options => toast(options.title), hideKeyboard() { if (document.activeElement.tagName === 'TEXTAREA') document.activeElement.blur() },
     switchTab() { window.dispatchEvent(new Event('ma-chat-home')) },
     navigateTo(options) {
