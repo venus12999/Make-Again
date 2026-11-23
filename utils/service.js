@@ -1,2 +1,5 @@
-// Pages depend on this boundary. A later CloudBase adapter can replace the local service.
-module.exports = require('./local-service')
+// Pages depend on this boundary.
+// CLOUD=true → 连真后端（cloud-service）；false → 本地假数据（local-service）。
+// 配置见 utils/config.js
+const config = require('./config')
+module.exports = (config && config.CLOUD) ? require('./cloud-service') : require('./local-service')
