@@ -26,7 +26,16 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-BACKEND = Path(__file__).resolve().parents[1]
+# 兼容两种仓库布局：
+#   主仓 make-again-mvp/MakeAgain-backend/scripts/  → parents[1] = MakeAgain-backend
+#   队友仓 make-again-post-merge/MakeAgain-backend-source/scripts/ → 后端在同级 MakeAgain-backend/
+_THIS = Path(__file__).resolve()
+BACKEND = _THIS.parents[1]
+if not (BACKEND / "main.py").exists():
+    # 脚本在 MakeAgain-backend-source/scripts/，真实后端在 MakeAgain-backend-source/MakeAgain-backend/
+    alt = _THIS.parent.parent / "MakeAgain-backend"
+    if (alt / "main.py").exists():
+        BACKEND = alt
 sys.path.insert(0, str(BACKEND))
 
 

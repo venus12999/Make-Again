@@ -1,6 +1,6 @@
 {
-  "port": 49343,
-  "db": "D:\\12412\\AppData\\Temp\\makeagain-local-ybkhxsf0/local.sqlite3",
+  "port": 64654,
+  "db": "D:\\12412\\AppData\\Temp\\makeagain-local-zf8496wv/local.sqlite3",
   "steps": [
     {
       "name": "preflight 离线检查",
@@ -15,7 +15,7 @@
     {
       "name": "API 启动 + health",
       "ok": true,
-      "detail": "http://127.0.0.1:49343/api/health"
+      "detail": "http://127.0.0.1:64654/api/health"
     },
     {
       "name": "未授权 state 返回 401",
@@ -25,12 +25,12 @@
     {
       "name": "注册",
       "ok": true,
-      "detail": "user_id=53b4ee7123034fbb85d5523f9c3b1e84"
+      "detail": "user_id=114129c59e284fae85054f57f47f4cb3"
     },
     {
       "name": "consent 授权",
       "ok": true,
-      "detail": "{'accepted': True, 'accepted_at': '2026-11-23T01:25:41.026231Z', 'version': 1, 'companion_id': 'b5b968fa255a4ff5a3333339114f1cb4', 'ok': True, 'request_id': 'a1ace8c121904f5887bcff63f7e6d461', 'client"
+      "detail": "{'accepted': True, 'accepted_at': '2026-11-23T01:28:33.575081Z', 'version': 1, 'companion_id': 'e14d28e15aa2433b9415f2f2adb47122', 'ok': True, 'request_id': '51f3c303efea45b0b75cb135e3ad41d3', 'client"
     },
     {
       "name": "chat 核心链路",
