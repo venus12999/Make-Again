@@ -1,0 +1,22 @@
+{
+  "port": 61441,
+  "db": "D:\\12412\\AppData\\Temp\\makeagain-local-lmqtgyfg/local.sqlite3",
+  "steps": [
+    {
+      "name": "preflight 离线检查",
+      "ok": false,
+      "detail": "call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'preflight'\nlist index out of range"
+    },
+    {
+      "name": "migrate 建库",
+      "ok": false,
+      "detail": "make-again-post-merge\\\\MakeAgain-backend-source\\\\admin_cli.py': [Errno 2] No such file or directory\n"
+    },
+    {
+      "name": "API 启动 + health",
+      "ok": false,
+      "detail": "启动失败(poll=3): ERROR:    Error loading ASGI app. Could not import module \"main\".\r\n"
+    }
+  ],
+  "verdict": "FAILED_AT_STARTUP"
+}
