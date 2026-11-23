@@ -1,0 +1,58 @@
+name: eval-gate
+
+# 每次 push 跑确定性回归（Anthropic: automated evals can run on every commit）；
+# PR 上 prompt/评测相关路径变更必跑（promptfoo GitHub Actions 官方做法）。
+# 调研 URL + 日期见 .github/EVAL_CI.md。CI 不注入任何 secrets，不碰真 key。
+"on":
+  push:
+  pull_request:
+    paths:
+      - 'MakeAgain-backend/eval/**'
+      - 'MakeAgain-backend/agent/**'
+      - 'MakeAgain-backend/tests/test_ci_runner.py'
+      - 'MakeAgain-backend/tests/test_eval_statistics.py'
+      - 'MakeAgain-backend/tests/test_judge_calibration.py'
+      - '.github/workflows/eval.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eval-gate:
+    runs-on: ubuntu-latest
+    env:
+      MOCK_LLM: 'true'
+      ENVIRONMENT: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: MakeAgain-backend/requirements-tested.txt
+
+      - name: Install pinned offline test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r MakeAgain-backend/requirements-tested.txt
+
+      # 门禁本身：结构化 JSON + exit 0/1。ci_runner.py 内部还会强制覆盖 MOCK_LLM=true。
+      - name: Run offline deterministic eval gate
+        working-directory: MakeAgain-backend
+        run: python eval/ci_runner.py --out ../eval-gate-result.json
+
+      - name: Run eval-related offline pytest subset
+        working-directory: MakeAgain-backend
+        run: python -m pytest tests/test_ci_runner.py tests/test_eval_statistics.py tests/test_judge_calibration.py tests/test_gate_inventory.py -q
+
+      - name: Upload gate result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-gate-result
+          path: eval-gate-result.json
+          if-no-files-found: ignore
