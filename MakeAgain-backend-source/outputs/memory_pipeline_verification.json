@@ -1,0 +1,48 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "name": "用户建立",
+      "companion": true,
+      "consent": true,
+      "ok": true
+    },
+    {
+      "step": 2,
+      "name": "enqueue 产出 intent",
+      "n": 1,
+      "ok": true
+    },
+    {
+      "step": 3,
+      "name": "flush_intents 落 durable_jobs",
+      "n": 1,
+      "status": "pending",
+      "ok": true
+    },
+    {
+      "step": 4,
+      "name": "Worker run_one 消费(独立子进程)",
+      "processed": true,
+      "status": "completed",
+      "attempts": 1,
+      "error_code": null,
+      "worker_out": "WORKER_PROCESSED=True\n",
+      "ok": true
+    },
+    {
+      "step": 5,
+      "name": "_do_write 落记忆",
+      "n": 1,
+      "cat_mem": 1,
+      "ok": true
+    },
+    {
+      "step": 6,
+      "name": "记忆可被召回",
+      "recalled": 1,
+      "ok": true
+    }
+  ],
+  "verdict": "PIPELINE_OK"
+}
