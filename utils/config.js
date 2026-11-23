@@ -9,6 +9,6 @@
  *   4) CLOUD 设 true 即连真后端；false 则继续用本地假数据
  */
 module.exports = {
-  CLOUD: false,
+  CLOUD: true,
   API_BASE: 'http://127.0.0.1:8000',
 }
