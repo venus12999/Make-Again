@@ -152,6 +152,10 @@ def main():
     ap.add_argument("--scenario", default="all")
     ap.add_argument("--rounds", type=int, default=10)
     ap.add_argument("--base", default="http://127.0.0.1:8000")
+    # 硬门禁：低于阈值直接 exit 1，让 CI/合入前拦住"长对话丢事实"这类 bug。
+    # 不设 --gate 就只出报告不拦（保留诊断用途）。
+    ap.add_argument("--gate", type=float, default=None,
+                    help="事实保留率下限，低于则 exit 1（如 0.66 表示3场景至少对2个）")
     args = ap.parse_args()
 
     scenarios = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
@@ -173,6 +177,11 @@ def main():
               f"| probe轮={r.get('probe_round')} | prompt_tokens={r.get('total_prompt_tokens')}")
     print(f"\n事实保留率: {summary['fact_retention_rate']} ({retained}/{len(results)})")
     print(f"产物: {OUT}")
+    if args.gate is not None:
+        if summary["fact_retention_rate"] < args.gate:
+            print(f"\n[GATE FAIL] 事实保留率 {summary['fact_retention_rate']} < 阈值 {args.gate} —— 长对话会丢失用户说过的事实，禁止合入")
+            raise SystemExit(1)
+        print(f"\n[GATE PASS] 事实保留率 {summary['fact_retention_rate']} >= 阈值 {args.gate}")
 
 
 if __name__ == "__main__":
