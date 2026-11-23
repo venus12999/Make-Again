@@ -1,28 +1,49 @@
-# 前端同学交接说明（可直接转给他）
+# 前端实测交接（adapter 已写好，直接体验）
 
-## 一句话现状
+## 一句话
 
-**前端现在 100% 用本地假数据（`local-service.js`），从没连过真后端。** 后端已经写好了、能本地跑、全部验证过，就差前端这边接上。
+**前后端已经接好了（我写的 `utils/cloud-service.js`），你不用再写适配层——打开开关就能从产品使用者角度真实体验。**
 
-## 你要做的（4 步）
+冻结点：`v0.1-before-frontend-integration`（接线前的状态，可随时对照）。
 
-1. **看文档**：`docs/LOCAL_DEV_GUIDE.md`（后端怎么本地跑）+ `docs/FRONTEND_FIT_AUDIT.md`（接口对应情况，注意：里面标了哪些是查证的、哪些需要你逐个对，别直接信"都能映射"）。
-2. **跑后端**：在你电脑 `cd MakeAgain-backend && python scripts/local_quickstart.py`，30 秒出 `LOCAL_OK` 就是后端可用（全 mock，不需要真实 key/服务器）。要自己调 API 就按 LOCAL_DEV_GUIDE 手动起 uvicorn + worker。
-3. **写 cloud-service.js**：照抄 `utils/local-service.js` 的 11 个方法，把每个方法内部改成发网络请求到本机后端 `http://127.0.0.1:8000/api/...`（用 `wx.request`）。11 个方法：`acceptConsent / getOverview / markLetterRead / listMessages / saveMessage / getProfile / saveProfile / listCollection / startChat / getChatState / sendChatMessage`。
-4. **改 service.js 开关**：现在是写死的 `module.exports = require('./local-service')`，改成可切换 local/cloud。微信开发者工具勾"不校验合法域名"才能连本机 IP。
+## 你要做的最小步骤（3 步）
 
-## 你要交付的
+### 1. 启动后端
+```bash
+cd MakeAgain-backend-source
+python scripts/local_quickstart.py     # 一键验证后端可用（30秒，LOCAL_OK）
+# 要真实 AI 体验的话，用真 key 手动起（见 docs/LOCAL_DEV_GUIDE.md）
+```
 
-- `utils/cloud-service.js`（11 个方法连真后端）
-- `service.js` 开关改造
-- 微信开发者工具里连本机后端的实测截图/结果
+### 2. 打开前端云开关
+编辑 `utils/config.js`：
+```js
+module.exports = { CLOUD: true, API_BASE: 'http://127.0.0.1:8000' }
+```
+- 微信开发者工具里跑 → `127.0.0.1:8000`
+- 真机跑 → `http://<你电脑局域网IP>:8000`
+- 微信开发者工具 → 详情 → 本地设置 → 勾「不校验合法域名」
 
-## 两个提醒（避免踩坑）
+### 3. 实测
+在微信开发者工具里打开小程序 → 同意 → 建档 → 聊天。AI 回复是**真后端真实生成的**，不再是本地假话。
 
-1. **登录**：真后端要 token（register/login 发 Bearer token），假后端不用——cloud adapter 里要先注册/登录拿 token，之后每个请求带上。
-2. **接口逐个对，别猜**：后端有 74 个路由，但前端 11 方法不是一一同名。`FRONTEND_FIT_AUDIT.md` 里只有 startChat 是查证过的，其余要你拿方法签名和后端路由逐个对（比如 sendChatMessage→`/api/chat`、acceptConsent→`/api/consent`）。对不上就告诉我，后端可以加/改接口。
+## 我做了什么（你不用做）
+
+- `utils/cloud-service.js`：实现了全部 11 个 service 方法，关键节点（consent/chat）调真后端；保留前端数据模型，页面零改动
+- `utils/config.js`：云开关 + API 地址
+- `utils/service.js`：改成按开关切 local/cloud
+- `tests/cloud-service-e2e.js`：Node 模拟 wx 的端到端验证脚本
+
+**已验证**：mock 后端和真 hy4 后端都跑通 `CLOUD_E2E_OK`——前端发消息，真 AI 回复显示在消息流里。
+
+## 接线踩过的坑（已修，记给你知道）
+
+1. **前端 guest.id ≠ 后端 user_id**——混用会 403 OWNER_MISMATCH，adapter 里注册后保存后端真实 uid 用
+2. 微信开发者工具必须关域名校验才能连本机 IP
+3. 连真后端要 token——adapter 自动注册/登录拿 token，你不用管
 
 ## 边界
 
-- 云端部署、支付、微信真机订阅消息——先都不管，只做本地连本机后端。
-- 你改前端代码，我不碰（前端是你的范围）。对接口有问题随时找我。
+- 云端部署/支付/微信真机订阅消息——先不管，只做本地连本机后端
+- 真 AI 体验需要真 key（wire 在后端），mock 模式下回复是假的
+- 前端代码我动了你不用重复做；有问题找我
