@@ -519,3 +519,17 @@ class DailyMood(CompanionScoped, Base):
     arousal: Mapped[float | None] = mapped_column(Float, nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     ts: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ContextCompaction(Base):
+    """长对话上下文压缩记录（PI compaction 算法移植，docs/CONTEXT_REUSE_PLAN.md）。"""
+    __tablename__ = "context_compactions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(String(128), index=True)
+    summary: Mapped[str] = mapped_column(Text)
+    first_kept_id: Mapped[str] = mapped_column(String(64))
+    tokens_before: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[str] = mapped_column(String(64))
+    usage_json: Mapped[str] = mapped_column(Text, default="{}")
+    details_json: Mapped[str] = mapped_column(Text, default="{}")
