@@ -1,5 +1,11 @@
 """召回流程:recency + importance + relevance 混合打分。
 
+ G2 中文词形归一(开关 USE_TOKENIZE_NORMALIZE,默认开,显式=0 回退):
+   只在「基线 relevance=0」(字面 token 完全不相交)的死区,用
+   memory/tokenize_zh.py 的 normalize+signature 补一个归一化重叠信号;
+   基线已有重叠时分数逐字节不动 → D-023 V2 golden / 逐字节 oracle 不受影响。
+   繁简/全半角变体因此能被召回;开关关闭时零调用、零行为变化。
+
 R1 多路融合(开关 USE_RECALL_FUSION,默认关闭):
   关闭 / 新路径异常 → _recall_legacy():与 main@45f3351 的实现逐字节一致。
   开启 → 三路候选(recency / importance / relevance)→ rrf 融合
@@ -66,7 +72,7 @@ def _tokens(text: str) -> set[str]:
 
 
 def _relevance(query_tokens: set[str], entry_tokens: set[str]) -> float:
-    """余弦式关键词重叠,无重叠为 0。"""
+    """余弦式关键词重叠,无重叠为 0。（G2 归一化补点见 _relevance_with_norm）"""
     if not query_tokens or not entry_tokens:
         return 0.0
     inter = query_tokens & entry_tokens
@@ -90,6 +96,43 @@ def _overlap_fraction(entry_tokens: set[str], recent_tokens: set[str]) -> float:
 # 原路径:以下函数体逐字节保留 main@45f3351 的 recall.py:40-62(仅函数名改别名)。
 # 开关关闭 / 新路径异常一律走这里,保证基线行为零变化。
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# G2 · 中文词形归一接主链路（USE_TOKENIZE_NORMALIZE，默认开，显式 0/off 回退）
+#   只在「基线 relevance=0」的死区补信号：繁简 / 全半角变体字面 token 不相交，
+#   基线给 0 分导致召回不到；归一化后词形签名相交，用余弦式重叠补一个信号。
+#   基线已有重叠时原样返回 base —— 逐字节不改，D-023 V2 golden 与所有 oracle 不受影响。
+#   异常一律吞掉回退 base，绝不让分词问题打断召回主链。
+# ---------------------------------------------------------------------------
+def _use_tokenize_normalize_enabled() -> bool:
+    """中文词形归一开关，默认开；显式 0/off/false/no 关闭（逐字节回退）。"""
+    return os.getenv("USE_TOKENIZE_NORMALIZE", "1").strip().lower() not in {"0", "off", "false", "no"}
+
+
+def _relevance_with_norm(
+    query_text: str, entry_text: str, q_tokens: set[str], entry_tokens: set[str]
+) -> float:
+    """基线相关性 + 归一化词形补点（仅当基线为 0 时生效）。
+
+    base>0 → 原样返回 base（逐字节不改已有召回行为）；
+    base==0 且开关开 → 用 tokenize_zh.normalize/signature 的签名重叠余弦补信号，
+    使「難過/难过」「ＩＴ/IT」这类变体能召回；开关关 → 零调用、直接返回 base。
+    """
+    base = _relevance(q_tokens, entry_tokens)
+    if not _use_tokenize_normalize_enabled():
+        return base
+    try:
+        from memory import tokenize_zh
+        q_sig = tokenize_zh.signature(tokenize_zh.normalize(query_text))
+        e_sig = tokenize_zh.signature(tokenize_zh.normalize(entry_text))
+        if not q_sig or not e_sig:
+            return base
+        norm_rel = len(q_sig & e_sig) / math.sqrt(len(q_sig) * len(e_sig))
+        return base if base > 0.0 else norm_rel
+    except Exception as exc:
+        logger.warning("tokenize normalize relevance failed, fallback to base: %s", exc)
+        return base
+
+
 def _recall_legacy(db, user_id: str, query: str, top_k: int | None = None, recent_text: str | None = None) -> list[dict]:
     s = get_settings()
     top_k = top_k or s.recall_top_k
@@ -100,14 +143,15 @@ def _recall_legacy(db, user_id: str, query: str, top_k: int | None = None, recen
 
     scored: list[dict] = []
     for e in entries:
-        entry_tokens = _tokens(f"{facts_text(e.facts)} {e.summary or ''} {e.content}")
+        entry_text = f"{facts_text(e.facts)} {e.summary or ''} {e.content}"
+        entry_tokens = _tokens(entry_text)
         # 克制:已出现在最近几轮对话里的记忆不再注入(它已在会话历史里,模型本就看得见)
         if recent_tokens and _overlap_fraction(entry_tokens, recent_tokens) >= s.recall_recent_overlap_threshold:
             continue
         days = max(0.0, (now - e.ts).total_seconds() / 86400.0)
         recency = math.exp(-days / 30.0)  # 30 天半衰期
         importance = (e.importance or 5.0) / 10.0
-        relevance = _relevance(q_tokens, entry_tokens)
+        relevance = _relevance_with_norm(query, entry_text, q_tokens, entry_tokens)
         score = s.recall_alpha * recency + s.recall_beta * importance + s.recall_gamma * relevance
         scored.append({"entry": e, "score": score, "recency": recency, "relevance": relevance})
 
@@ -406,7 +450,8 @@ def _recall_fusion(db, user_id: str, query: str, top_k: int | None = None,
 
     cands: list[dict] = []
     for e in entries:
-        entry_tokens = _tokens(f"{facts_text(e.facts)} {e.summary or ''} {e.content}")
+        entry_text = f"{facts_text(e.facts)} {e.summary or ''} {e.content}"
+        entry_tokens = _tokens(entry_text)
         # 与基线一致的「正在聊」克制门槛(原样保留)
         if recent_tokens and _overlap_fraction(entry_tokens, recent_tokens) >= s.recall_recent_overlap_threshold:
             continue
@@ -417,7 +462,7 @@ def _recall_fusion(db, user_id: str, query: str, top_k: int | None = None,
             "tokens": entry_tokens,
             "recency": math.exp(-days / 30.0),
             "importance": (e.importance or 5.0) / 10.0,
-            "relevance": _relevance(q_tokens, entry_tokens),
+            "relevance": _relevance_with_norm(query, entry_text, q_tokens, entry_tokens),
         })
     if not cands:
         return []
@@ -590,6 +635,7 @@ def _recall_dual(db, user_id: str, query: str, top_k: int | None = None,
     for mid in fused_ids:
         m = meta[mid]
         entry_tokens = m["tokens"]
+        entry_text = m.get("text") or ""
         if recent_tokens and _overlap_fraction(entry_tokens, recent_tokens) >= s.recall_recent_overlap_threshold:
             continue
         ts = m["ts"] or now
@@ -598,7 +644,7 @@ def _recall_dual(db, user_id: str, query: str, top_k: int | None = None,
             "id": mid,
             "tokens": entry_tokens,
             "recency": math.exp(-days / 30.0),
-            "relevance": _relevance(q_tokens, entry_tokens),
+            "relevance": _relevance_with_norm(query, entry_text, q_tokens, entry_tokens),
             "vec_score": vec_scores.get(mid, 0.0),
             "kw_score": kw_scores.get(mid, 0.0),
             "embedding": m["embedding"],

@@ -92,15 +92,41 @@ def _mute_topic_enabled() -> bool:
     return os.getenv("USE_MUTE_TOPIC", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _mute_topics(db, user_id: str) -> list[str]:
-    """取用户标记为「不再提及」的话题列表（P1 接线点）。
+# G2 接线口径：config.py / memory.models.UserState / Portrait / db.info 均无专用
+# mute_topics 列，且全仓无任何写入方 → NO_STATE_FIELD: 未接真实来源（不硬造 DB 列、
+# 不改 models.py）。下面只提供一个「从现有请求作用域 db.info / 现有 UserState 属性
+# 读值」的注入框架；无来源时恒返回 []。过滤钩子本身已在 _context_block 接好。
+MUTE_STATE_SOURCE = "NO_STATE_FIELD: 未接真实来源"
 
-    现状：config.py 与 memory.models.UserState 均无现成字段，故恒返回空列表——
-    只落开关框架与过滤钩子、零行为变化，绝不硬造 DB 列。未来加列后在这里读取，例如：
-        state = store.get_user_state(db, user_id)
-        return [t for t in (getattr(state, "mute_topics", None) or []) if str(t).strip()]
+
+def _mute_topics(db, user_id: str) -> list[str]:
+    """读取用户标记为「不再提及」的话题列表（订阅现有来源，不新增列）。
+
+    读取顺序（任一路有值即用，均来自现有对象、零 schema 变更）：
+      1) db.info['mute_topics'] —— 请求作用域注入点（SecureRoute 已用 db.info 承载
+         user_id / companion_id；测试可注入列表验证过滤钩子本身正确）。
+      2) store.get_user_state(db, user_id).mute_topics —— 未来上游在现有 UserState
+         JSON 列里落该键时自动生效；当前无此属性，读不到即为空。
+    无来源 / 任意异常 → []，绝不因读 mute 列表打断对话主链路。
     """
-    return []
+    raw = None
+    try:
+        info = getattr(db, "info", None)
+        if isinstance(info, dict):
+            raw = info.get("mute_topics")
+    except Exception:
+        raw = None
+    if raw is None:
+        try:
+            state = store.get_user_state(db, user_id)
+            raw = getattr(state, "mute_topics", None) if state is not None else None
+        except Exception:
+            raw = None
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, (list, tuple, set, frozenset)):
+        return []
+    return [t for t in (str(x or "").strip() for x in raw) if t]
 
 
 def _is_muted(text: str, muted: list[str]) -> bool:
@@ -126,7 +152,7 @@ def _context_block(db, user_id: str, message: str, portraits: dict, memories: li
     if portraits.get("object"):
         stable.append(f"[思念对象画像]\n{_dict_text(portraits['object'])}")
 
-    # [半稳定] 相关记忆（mute_topic 开启且已接线时过滤命中话题；当前列表恒空）
+    # [半稳定] 相关记忆（USE_MUTE_TOPIC=1 且注入源提供列表时过滤命中话题；无来源列表为空）
     muted = _mute_topics(db, user_id) if _mute_topic_enabled() else []
     if memories:
         lines = []
