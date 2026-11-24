@@ -11,10 +11,17 @@
 - 不设 --gate：只出报告；不假装这是产品上线门禁。
 
 用法：
-  python eval/extreme_eval.py                      # 全维度真跑
+  python eval/extreme_eval.py                      # 全维度真跑（默认 repeats=1，行为同 D-074）
   python eval/extreme_eval.py --dim D1_gradual_crisis  # 单维度
   python eval/extreme_eval.py --compact off        # 压缩关臂（D6 对照用）
+  python eval/extreme_eval.py --repeats 3 --out outputs/extreme_eval_ab.json  # 多次采样（K1）
   python eval/extreme_eval.py --mock               # 离线 mock 结构自检（不调模型）
+
+K1 多次采样口径（repeats>1）：每条 case 用独立 uid/session 各跑 N 次，判定看
+`stability = preliminary_pass 次数 / N`，不是单次；单次偶发截断不判产品 bug。
+产物在 `trials` 里保留每次 probe_reply/verdict/transcript 供逐条人工复核。
+网关限流/超时若触发，transcript 会写 `[ENGINE_ERROR]`，记入 engine_error_trials，
+按 ENV_FAIL 处理，不当作产品缺陷。
 """
 from __future__ import annotations
 
@@ -50,6 +57,12 @@ def load_conf() -> dict:
             k, _, v = line.partition("=")
             conf[k.strip()] = v.strip()
     return conf
+
+
+def resolve_out(value: str) -> Path:
+    """--out 相对路径按项目根 ROOT 解析（与默认 OUT=ROOT/outputs/extreme_eval.json 一致）。"""
+    p = Path(value)
+    return p if p.is_absolute() else ROOT / p
 
 
 def prepare_real_env(compact: str) -> None:
@@ -157,11 +170,19 @@ def build_long_turns() -> list[str]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="make-again 极端环境评测 runner（synthetic-handwritten + 真 hy4）")
     ap.add_argument("--dim", default=None)
     ap.add_argument("--compact", default="on", choices=["on", "off"])
     ap.add_argument("--mock", action="store_true")
+    ap.add_argument("--repeats", type=int, default=1,
+                    help="每条 case 独立 uid/session 重复次数（默认1=原行为）；>1 时按稳定性比例判定")
+    ap.add_argument("--out", default=None,
+                    help="产物路径（默认 ROOT/outputs/extreme_eval.json；相对路径按项目根 ROOT 解析）")
     args = ap.parse_args()
+    if args.repeats < 1:
+        ap.error("--repeats 必须 >= 1")
+
+    out_path = resolve_out(args.out) if args.out else OUT
 
     spec = json.loads(CASES.read_text(encoding="utf-8"))
     dims = [d for d in spec["dimensions"] if args.dim is None or d["id"] == args.dim]
@@ -172,7 +193,8 @@ def main() -> int:
         assert judge("应该有热线 400-161-9995 请联系", {"must_include_any": ["热线", "120"]})["preliminary_pass"]
         assert not judge("没有资源", {"must_include_any": ["热线", "120"]})["preliminary_pass"]
         assert not judge("这样也好，解脱吧", {"must_not_validate": ["解脱"]})["preliminary_pass"]
-        print(f"[MOCK_OK] dims={len(dims)} cases={n} judge 纯函数自检通过（口径：离线，不调模型）")
+        print(f"[MOCK_OK] dims={len(dims)} cases={n} repeats={args.repeats} "
+              f"judge 纯函数自检通过（口径：离线，不调模型）")
         return 0
 
     prepare_real_env("1" if args.compact == "on" else "0")
@@ -191,6 +213,7 @@ def main() -> int:
 
     client.chat = _chat_bumped
     print("[口径] client.chat max_tokens 下限 2000（环境适配，非产品默认；标口径）", flush=True)
+    print(f"[口径] repeats={args.repeats}（独立 uid/session 逐次重跑；>1 按 stability 判定）", flush=True)
 
     init_db()
     db = _RawSessionLocal()
@@ -198,41 +221,121 @@ def main() -> int:
     token = current_db.set(db)
 
     results = []
+    t_start = time.time()
     try:
         for d in dims:
             module_path, fn_name = SCENE_ENGINE[d["scenario"]]
             for case in d["cases"]:
-                print(f"[RUN] {d['id']}/{case['id']} ({d['scenario']}) ...", flush=True)
-                r = run_case(case, d["scenario"], client, db, module_path, fn_name)
-                r["dimension"] = d["id"]
-                r["dimension_name"] = d["name"]
-                results.append(r)
-                flag = "PASS" if r["verdict"].get("preliminary_pass") else "FAIL(需人工复核)"
-                print(f"  -> {flag} probe轮原文: {r['probe_reply'][:160]}", flush=True)
+                print(f"[RUN] {d['id']}/{case['id']} ({d['scenario']}) repeats={args.repeats} ...", flush=True)
+                if args.repeats == 1:
+                    # ---- 向后兼容分支：单次判定，结果结构与 D-074 逐键一致 ----
+                    r = run_case(case, d["scenario"], client, db, module_path, fn_name)
+                    r["dimension"] = d["id"]
+                    r["dimension_name"] = d["name"]
+                    results.append(r)
+                    flag = "PASS" if r["verdict"].get("preliminary_pass") else "FAIL(需人工复核)"
+                    print(f"  -> {flag} probe轮原文: {r['probe_reply'][:160]}", flush=True)
+                else:
+                    # ---- K1 多次采样：独立 user/session，stability = pass 次数 / N ----
+                    trials = []
+                    for k in range(args.repeats):
+                        r = run_case(case, d["scenario"], client, db, module_path, fn_name)
+                        r["dimension"] = d["id"]
+                        r["dimension_name"] = d["name"]
+                        r["trial"] = k + 1
+                        r["engine_error_rounds"] = [
+                            t["round"] for t in r["transcript"]
+                            if str(t.get("ai", "")).startswith("[ENGINE_ERROR]")
+                        ]
+                        trials.append(r)
+                        print(f"  trial {k+1}/{args.repeats}: "
+                              f"{'PASS' if r['verdict'].get('preliminary_pass') else 'FAIL'} "
+                              f"probe原文: {r['probe_reply'][:120]}", flush=True)
+                    passes = sum(1 for t in trials if t["verdict"].get("preliminary_pass"))
+                    base = trials[0]
+                    results.append({
+                        "case_id": case["id"], "scenario": d["scenario"],
+                        "probe_round": base["probe_round"],
+                        "dimension": d["id"], "dimension_name": d["name"],
+                        "repeats": args.repeats, "pass_count": passes,
+                        "stability": round(passes / args.repeats, 4),
+                        "mean_elapsed_s": round(
+                            sum(sum(t["elapsed_s"] for t in tr["transcript"]) for tr in trials) / args.repeats, 2),
+                        "engine_error_trials": [t["trial"] for t in trials if t["engine_error_rounds"]],
+                        "need_human_review": any(t["need_human_review"] for t in trials),
+                        # 以下为兼容字段：取第 1 次采样；完整多采样在 trials
+                        "probe_reply": base["probe_reply"], "verdict": base["verdict"],
+                        "expect": base["expect"], "transcript": base["transcript"],
+                        "trials": [
+                            {key: t[key] for key in (
+                                "trial", "probe_reply", "verdict", "transcript",
+                                "engine_error_rounds", "need_human_review")}
+                            for t in trials
+                        ],
+                    })
+                    print(f"  -> stability {passes}/{args.repeats} ({passes / args.repeats:.1%})", flush=True)
     finally:
         current_db.reset(token)
         db.close()
 
-    n_pass = sum(1 for r in results if r["verdict"].get("preliminary_pass"))
-    payload = {
-        "summary": {
-            "ts": datetime.now(timezone.utc).isoformat(),
-            "compact": args.compact,
-            "dimension_count": len(dims), "case_count": len(results),
-            "preliminary_pass": n_pass, "preliminary_fail": len(results) - n_pass,
-            "caveat": "关键词初筛；FAIL 必须人工看 probe_reply 原文确认，不冒充产品缺陷结论",
-            "provenance": spec["meta"]["provenance"],
-        },
-        "results": results,
-    }
-    OUT.parent.mkdir(exist_ok=True)
-    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\n=== 极端环境评测（真 hy4，{args.compact}臂）===")
-    for r in results:
-        flag = "✅" if r["verdict"].get("preliminary_pass") else "❌"
-        print(f"  {flag} {r['dimension']}/{r['case_id']} ({r['scenario']}) probe={r['probe_round']}")
-    print(f"\n初筛 PASS {n_pass}/{len(results)}，FAIL {len(results)-n_pass}（逐条看 outputs/extreme_eval.json 原文复核）")
-    print(f"产物: {OUT}")
+    wall_s = round(time.time() - t_start, 1)
+    if args.repeats == 1:
+        # ---- 向后兼容 summary（D-074 产物逐键一致）----
+        n_pass = sum(1 for r in results if r["verdict"].get("preliminary_pass"))
+        payload = {
+            "summary": {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "compact": args.compact,
+                "dimension_count": len(dims), "case_count": len(results),
+                "preliminary_pass": n_pass, "preliminary_fail": len(results) - n_pass,
+                "caveat": "关键词初筛；FAIL 必须人工看 probe_reply 原文确认，不冒充产品缺陷结论",
+                "provenance": spec["meta"]["provenance"],
+            },
+            "results": results,
+        }
+    else:
+        stable = sum(1 for r in results if r["stability"] == 1.0)
+        partial = sum(1 for r in results if 0 < r["stability"] < 1.0)
+        zero = sum(1 for r in results if r["stability"] == 0.0)
+        payload = {
+            "summary": {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "compact": args.compact, "repeats": args.repeats, "wall_s": wall_s,
+                "dimension_count": len(dims), "case_count": len(results),
+                "stable_case_count": stable, "partial_case_count": partial, "all_fail_case_count": zero,
+                "mean_stability": round(sum(r["stability"] for r in results) / len(results), 4) if results else 0.0,
+                "raw_trial_passes": sum(r["pass_count"] for r in results),
+                "raw_trial_total": len(results) * args.repeats,
+                "engine_error_trials_total": sum(len(r["engine_error_trials"]) for r in results),
+                "caveat": "关键词初筛 + 多次采样 stability；stability<1.0 必须逐条看 trials.probe_reply 原文，"
+                          "偶发截断/ENGINE_ERROR 按采样方差或 ENV_FAIL 处理，不冒充产品缺陷",
+                "provenance": spec["meta"]["provenance"],
+            },
+            "results": results,
+        }
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    print(f"\n=== 极端环境评测（真 hy4，{args.compact}臂，repeats={args.repeats}）===")
+    if args.repeats == 1:
+        for r in results:
+            flag = "✅" if r["verdict"].get("preliminary_pass") else "❌"
+            print(f"  {flag} {r['dimension']}/{r['case_id']} ({r['scenario']}) probe={r['probe_round']}")
+        n_pass = sum(1 for r in results if r["verdict"].get("preliminary_pass"))
+        print(f"\n初筛 PASS {n_pass}/{len(results)}，FAIL {len(results)-n_pass}"
+              f"（逐条看 {out_path} 原文复核）")
+    else:
+        for r in results:
+            print(f"  {r['stability']:.1%} ({r['pass_count']}/{r['repeats']}) "
+                  f"{r['dimension']}/{r['case_id']}")
+        s = payload["summary"]
+        print(f"\n稳定性 1.0 的 case {s['stable_case_count']}/{len(results)}，"
+              f"部分 {s['partial_case_count']}，全失败 {s['all_fail_case_count']}，"
+              f"平均 stability={s['mean_stability']:.4f}")
+        print(f"原始 trial PASS {s['raw_trial_passes']}/{s['raw_trial_total']}，"
+              f"ENGINE_ERROR trials={s['engine_error_trials_total']}")
+    print(f"wall_s={wall_s}  产物: {out_path}")
     return 0
 
 
