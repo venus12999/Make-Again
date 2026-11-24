@@ -15,7 +15,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 
 from memory.db import _RawSessionLocal
 
@@ -105,9 +105,76 @@ def save_crisis_event(event: dict, db=None) -> str:
     return event_id
 
 
-def list_crisis_events(db, user_id: str, limit: int = 100) -> list[dict]:
+def update_event_state(user_id: str, event_ref: str, state: str, extra: dict | None = None) -> int:
+    """确认轮回写：把 crisis_flow 的确认结果落到 crisis_events，返回受影响行数。
+
+    定位口径（R3）：
+      主定位 = ``user_id + event_ref`` 直接命中 DB 主键 ``id``。依据：
+      ``save_crisis_event`` 用事件 dict 的 ``id``（crisis_flow 里的 ``crisis-N``）
+      作为 CrisisEvent.id 落库，所以内存 id 与 DB 主键是同一个值，不需要猜。
+      兜底定位 = 若 event_ref 在 DB 中不存在（例如历史事件/异常路径），退化为
+      ``user_id + 最近一条 state='pending_confirm' 事件``（按 ts、id 倒序第一条），
+      **永远带 user_id 约束**，A 的确认绝不改 B 的行。
+      两种定位都只读 ``row._mapping`` 取列（D-070 的 SQLAlchemy 2.0 Row 坑）。
+
+    可落库字段：``state`` 与 ``extra['review_required']``（CrisisEvent 有对应列）。
+    ``extra['review_entry']`` / ``extra['confirmed_at']`` 在当前 CrisisEvent schema
+    无对应列（models.py 不在 R3 写作用域），不写库；它们仍保留在 crisis_flow 内存
+    事件与 confirm_crisis 返回 dict 中——这是诚实边界，不伪造 DB 列。
+
+    独立会话真提交（同 save_crisis_event，绕开 managed session 只 flush 的坑）；
+    失败 swallow 并返回 0，调用方 confirm_crisis 的确认话术不受影响。
+    """
+    from memory.models import CrisisEvent
+
+    table = CrisisEvent.__table__
+    uid = str(user_id)
+    ref = str(event_ref or "")
+    values: dict = {"state": str(state)}
+    if extra and "review_required" in extra:
+        values["review_required"] = bool(extra["review_required"])
+
+    d = _RawSessionLocal()
+    try:
+        target_id: str | None = None
+        if ref:
+            row = d.execute(
+                select(table.c.id).where(table.c.user_id == uid, table.c.id == ref)
+            ).first()
+            if row is not None:
+                target_id = row._mapping["id"]  # D-070: 不能用 row["id"]
+        if target_id is None:
+            row = d.execute(
+                select(table.c.id)
+                .where(table.c.user_id == uid, table.c.state == "pending_confirm")
+                .order_by(table.c.ts.desc(), table.c.id.desc())
+                .limit(1)
+            ).first()
+            if row is not None:
+                target_id = row._mapping["id"]
+        if target_id is None:
+            return 0  # 无对应 DB 行（如纯内存事件），幂等 no-op
+
+        result = d.execute(
+            update(table)
+            .where(table.c.user_id == uid, table.c.id == target_id)
+            .values(**values)
+        )
+        d.commit()  # 独立会话真提交，不用调用方的 managed session
+        return int(result.rowcount or 0)
+    except Exception as exc:  # 回写是增强，不能挡确认轮话术
+        d.rollback()
+        logger.warning("crisis event state writeback failed (non-blocking): %s", exc)
+        return 0
+    finally:
+        d.close()
+
+
+def list_crisis_events(db, user_id: str, limit: int = 100, state: str | None = None) -> list[dict]:
     """按用户列出危机事件（新→旧），只读本人数据，调用方需已完成鉴权。
 
+    `state` 为可选的精确过滤（confirmed_safe / escalated / pending_confirm），
+    在 SQL 层先过滤再 limit，避免"limit 截断后才过滤"的语义坑；不传时行为逐字节不变。
     `select(table)` + `row._mapping`：SQLAlchemy 2.0 不能用 `row["col"]`。
     """
     from memory.models import CrisisEvent
@@ -119,6 +186,8 @@ def list_crisis_events(db, user_id: str, limit: int = 100) -> list[dict]:
         .order_by(table.c.ts.desc(), table.c.id.desc())
         .limit(max(1, min(int(limit), 200)))
     )
+    if state:
+        stmt = stmt.where(table.c.state == str(state))
     out: list[dict] = []
     for row in db.execute(stmt):
         m = row._mapping  # D-070: 不能用 row["col"] 字符串索引

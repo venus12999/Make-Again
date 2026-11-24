@@ -64,6 +64,12 @@ class ChatResp(BaseModel):
 
 @router.post("/chat")
 def chat(req: ChatReq, db: Session = Depends(get_session)):
+    # U-005: 生成入口接 entitlement 门禁。USE_ENTITLEMENT_GATE 默认关 → 不查库、零影响；
+    # 开启且服务端判定无权限 → 按既有契约 403 ENTITLEMENT_EXPIRED 拒绝（新增拒绝分支，
+    # 正常用户路径输出逐字节不变）。已生成资产/低情绪与危机话术不走此门禁。
+    from api.entitlement import gate_enabled, require_generate
+    if gate_enabled():
+        require_generate(db.get(User, req.user_id))
     c = store.get_current_companion(db, req.user_id)
     if not c or c.archived_at: fail(409, "COMPANION_REQUIRED", "请先开始陪伴")
     if req.session_id and req.session_id != c.chat_session_id:

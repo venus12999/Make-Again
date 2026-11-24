@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     judge_model: str = ""                    # 评估 judge 模型;空则用 llm_fast_model
     llm_timeout: float = 60.0
 
+    # Prompt caching(H3):默认关,逐字节回退。开启后 gateway/client.chat 对稳定前缀
+    # (开头的连续 system 消息)做 sha256,派生稳定的 x-opencode-session 头给
+    # opencode-go 网关复用 prompt cache,并从 usage.prompt_tokens_details.cached_tokens
+    # 读**网关真实回传**的命中数;网关未回传时标 NO_DATA,绝不伪造命中。
+    # 来源: https://opencode.ai/docs/console/harnesses/ §Sessions(Sessions 路由+prompt cache)
+    use_prompt_cache: bool = False
+
     # 无 key 或显式开启时走 mock,便于本地 smoke test
     mock_llm: bool = False
 

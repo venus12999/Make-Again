@@ -315,9 +315,46 @@ def chat(db, user_id: str, message: str, client: LLMClient, session_id: str | No
     return _chat_generic(db, user_id, message, client, session_id, no_tools=no_tools)
 
 
+# ---- W0/H1: 危机闭环接线（USE_CRISIS_FLOW 默认关）------------------------------
+# 关闭时 _detect_crisis 直接返回 detect(message)，与旧路径逐字节一致；开启时只做
+# 增量：调 detect_with_flow 取事件 → crisis_store 独立会话真提交 → 扩展字段挂在
+# crisis["flow"]。用户可见 reply 仍是 CRISIS_MESSAGE，硬门槛行为不变；任何失败
+# swallow，绝不因为落库问题破坏危机话术返回。
+def _crisis_flow_enabled() -> bool:
+    return os.getenv("USE_CRISIS_FLOW", "0").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _detect_crisis(db, user_id: str, message: str, session_id: str | None) -> dict:
+    """硬门槛检测；开关开启时叠加危机闭环（分级/确认/冷却/事件持久化）。"""
+    base = detect(message)  # 原硬门槛永远先算：非危机 / 开关关闭逐字节走旧路径
+    if not base["is_crisis"] or not _crisis_flow_enabled():
+        return base
+    try:
+        from emotion.crisis import detect_with_flow
+        from memory import crisis_store
+
+        flow = detect_with_flow(message, user_id, session_id=session_id)
+        # 只增量扩展字段：level/hit/is_crisis 不变，也不替换用户可见的 CRISIS_MESSAGE。
+        base = dict(base)
+        base["flow"] = {k: v for k, v in flow.items()
+                        if k not in ("level", "hit", "is_crisis")}
+        event = flow.get("event")
+        if event:
+            # crisis_store 内部用 _RawSessionLocal 独立会话真提交，绕开 managed
+            # session 只 flush 不 commit 的坑（D-070 同类坑）；其自身已 swallow 异常。
+            # 这里再包一层：落库失败只丢持久化，不影响已算好的内存闭环字段与话术。
+            try:
+                crisis_store.save_crisis_event(event, db=db)
+            except Exception as exc:
+                logger.warning("crisis event persistence failed (non-blocking): %s", exc)
+    except Exception as exc:
+        logger.warning("crisis flow wiring failed (non-blocking): %s", exc)
+    return base
+
+
 def _chat_generic(db, user_id: str, message: str, client: LLMClient, session_id: str | None = None, no_tools: bool = False) -> dict:
     # 1. 危机前置检测(硬门槛,不可绕过)
-    crisis = detect(message)
+    crisis = _detect_crisis(db, user_id, message, session_id)
     if crisis["is_crisis"]:
         session_context.append_turn(user_id, "user", message, session_id)
         session_context.append_turn(user_id, "assistant", CRISIS_MESSAGE, session_id)

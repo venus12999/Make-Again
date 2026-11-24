@@ -16,8 +16,12 @@ router = APIRouter(prefix="/api/crisis", route_class=SecureRoute)
 
 
 @router.get("/events")
-def crisis_events(limit: int = 100, db=Depends(get_session)):
-    """列出当前登录用户的危机事件（新→旧）。只回本人数据。"""
+def crisis_events(limit: int = 100, state: str | None = None, db=Depends(get_session)):
+    """列出当前登录用户的危机事件（新→旧）。只回本人数据。
+
+    R3：新增可选 ``state`` 精确过滤（pending_confirm / confirmed_safe / escalated），
+    便于查确认后的 closed 事件；不传时行为与契约逐字节不变（SecureRoute 鉴权不变）。
+    """
     uid = str(db.info["user_id"])
-    events = list_crisis_events(db, uid, limit=limit)
+    events = list_crisis_events(db, uid, limit=limit, state=state)
     return {"ok": True, "events": events, "count": len(events)}

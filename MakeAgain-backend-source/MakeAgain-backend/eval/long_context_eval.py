@@ -9,6 +9,7 @@
 
 用法：
   python eval/long_context_eval.py --scenario all --rounds 10
+  python eval/long_context_eval.py --rounds 100 --scenario breakup  # §5 超长对话压力口径（中间话题周期复用）
   python eval/long_context_eval.py --scenario breakup --compact  # 带压缩对照
 
 输出：outputs/long_context_eval.json（每场景事实保留率 + 逐轮对话 + AI回复）
@@ -122,7 +123,17 @@ def run_scenario(base, scenario_name, rounds=10):
     req(base, "/companions", "POST", {"user_id": uid, "relationship_type": scenario_name}, token)
     planted = s["planted_fact"]
     transcript = []
-    messages = [planted["utterance"]] + s["followups"][:rounds - 1]
+    followups = s["followups"]
+    if rounds - 1 <= len(followups):
+        # 原 10 轮口径逐字不变（向后兼容）
+        messages = [planted["utterance"]] + followups[:rounds - 1]
+    else:
+        # --rounds 100 压力测试（CONTEXT_REUSE_PLAN §5）：中间话题周期复用
+        # （synthetic-handwritten 口径），首尾结构保留：第1轮埋事实 + 倒数第2轮硬追问 + 末轮收尾。
+        n_mid = rounds - 3
+        middle_pool = followups[:-2]  # 去掉末尾"硬追问 + 收尾"
+        mid = [middle_pool[i % len(middle_pool)] for i in range(n_mid)] if middle_pool else []
+        messages = [planted["utterance"]] + mid + followups[-2:]
     for i, msg in enumerate(messages):
         t0 = time.time()
         code, res = req(base, "/chat", "POST", {
@@ -137,7 +148,8 @@ def run_scenario(base, scenario_name, rounds=10):
             "recalled": res.get("recalled") if isinstance(res, dict) else None,
         })
     # 事实保留判定：找 probe 轮 AI 回复是否含事实值
-    probe_idx = s["probe_round"]
+    # 10 轮用场景自带 probe_round；>11 轮的 100 轮压力口径，硬追问固定在倒数第2轮。
+    probe_idx = s["probe_round"] if rounds - 1 <= len(s["followups"]) else rounds - 2
     probe_reply = transcript[probe_idx]["ai"] if probe_idx < len(transcript) else ""
     value = planted["value"]
     retained = value in probe_reply

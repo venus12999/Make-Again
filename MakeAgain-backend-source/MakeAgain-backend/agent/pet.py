@@ -22,6 +22,7 @@ from agent.companion import _context_block, _detect_item_mention, _detect_photo_
 from config import get_settings
 from emotion.classifier import classify
 from emotion.crisis import CRISIS_MESSAGE, detect
+from agent.crisis_wiring import detect_crisis
 from emotion.tone import SHARED_RULE
 from gateway.client import LLMClient
 from memory import session_context, store, context_compaction as cc
@@ -100,7 +101,8 @@ def _build_prompt(stage_info: dict, context_block: str) -> str:
 
 def pet_chat(db, user_id: str, message: str, client: LLMClient, session_id: str | None = None, no_tools: bool = False) -> dict:
     # 1. 危机前置检测(硬门槛,不可绕过):通用自伤 + 宠物丧亲特有「想随它而去」
-    crisis = detect(message)
+    # D-073 R2: 走共享危机入口；USE_CRISIS_FLOW 关时返回 detect 原值，逐字节回退旧路径
+    crisis = detect_crisis(db, user_id, message, session_id)
     reunion = _is_reunion_hint(message)
     if crisis["is_crisis"] or reunion:
         session_context.append_turn(user_id, "user", message, session_id)

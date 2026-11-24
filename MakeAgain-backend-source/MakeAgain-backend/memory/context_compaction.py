@@ -35,6 +35,17 @@ DEFAULT_RESERVE_TOKENS = int(os.getenv("COMPACTION_RESERVE_TOKENS", "1200"))
 DEFAULT_KEEP_RECENT_TOKENS = int(os.getenv("COMPACTION_KEEP_RECENT_TOKENS", "2000"))
 DEFAULT_CONTEXT_WINDOW = int(os.getenv("COMPACTION_CONTEXT_WINDOW", "6000"))
 
+# R1（2026-11-24）摘要调用 max_tokens：原硬编码 1500 在本机 opencode-go hy4
+# （reasoning 模型）长对话摘要输入下被 reasoning 吃满 → content 空 → SUMMARY_EMPTY，
+# 3 次重试仍空 → 开臂压缩从未真正生效（D-073 H4 100 轮真跑发现）。
+# 复现证据 work/_repro_summary_empty.py（synthetic-handwritten + 真 hy4，非 8000 HTTP）：
+#   输入 prompt≈949（40 轮对话）：mt=1500/2000/3000 各 0/2 非空，4000 1/2，5000 1/2，6000 2/2，8000 2/2；
+#   输入 prompt≈1174（带累积 previous_summary）：mt≤5000 全 0/2，6000 1/2，8000 2/2（content_len 2202/2210）。
+# 取 8000 = 本次实测唯一在两种输入下 2/2 都拿到非空摘要的值；key 文件
+# RECOMMENDED_MAX_TOKENS=2000 只是短输入基线（H4 mt=2000 len=477），长摘要下已被实测推翻。
+# 环境变量可覆盖以便调参，语义（3 次重试 + SUMMARY_EMPTY/MALFORMED/TOO_SHORT 逐字节回退）不变。
+COMPACTION_SUMMARY_MAX_TOKENS = int(os.getenv("COMPACTION_SUMMARY_MAX_TOKENS", "8000"))
+
 
 def compaction_enabled() -> bool:
     # D-071：默认开（A/B 真门禁：开臂 3/3 稳定 vs 关臂 2/3 压线）；显式 =0 可关闭回退。
@@ -220,7 +231,8 @@ def compact(messages: list[dict], client, session_id: str, previous_entry: Compa
     last_error = "SUMMARY_EMPTY"
     for _ in range(3):
         try:
-            resp = client.chat(msgs, temperature=0.0, model=client.settings.llm_fast_model, max_tokens=1500)
+            resp = client.chat(msgs, temperature=0.0, model=client.settings.llm_fast_model,
+                               max_tokens=COMPACTION_SUMMARY_MAX_TOKENS)
             summary = (resp.get("content") or "").strip()
             if summary:
                 break

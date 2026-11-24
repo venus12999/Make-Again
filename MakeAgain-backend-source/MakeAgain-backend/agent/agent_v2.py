@@ -81,6 +81,7 @@ from agent import todo as _todo  # noqa: E402
 from config import get_settings  # noqa: E402
 from emotion.classifier import classify  # noqa: E402
 from emotion.crisis import CRISIS_MESSAGE, detect  # noqa: E402
+from agent.crisis_wiring import detect_crisis  # noqa: E402
 from emotion.tone import ANALYZE, SHARED_RULE, pick_tone  # noqa: E402
 from memory import recall, session_context, store, temporal  # noqa: E402
 from memory.async_write import schedule_memory_write  # noqa: E402
@@ -407,15 +408,19 @@ def _date_key() -> str:
 def chat_v2(db, user_id: str, message: str, client, session_id: str | None = None,
             no_tools: bool = False, *, model: Any = None, action_model: Any = None) -> dict:
     """USE_PYDANTIC_AI=1 时的陪伴入口，返回与 companion._chat_generic 相同的 dict 契约。"""
-    store.get_or_create_user(db, user_id)
-
     # 1. 危机硬门槛：agent.run 之前，命中直接返回（绝不进 LLM）。
-    crisis = detect(message)
+    # D-073 R2: 走共享危机入口；USE_CRISIS_FLOW 关时返回 detect 原值，逐字节回退旧路径。
+    # 用户创建放在危机闸门之后（与 v1 companion.chat 同序）：危机命中时本轮无任何
+    # 前置 DB 写，crisis_store 才能用独立会话真提交落事件（否则新用户会撞 SQLite
+    # "database is locked" 被 swallow，开臂落库形同虚设）。非危机路径仍照旧建用户。
+    crisis = detect_crisis(db, user_id, message, session_id)
     if crisis["is_crisis"]:
         session_context.append_turn(user_id, "user", message, session_id)
         session_context.append_turn(user_id, "assistant", CRISIS_MESSAGE, session_id)
         store.save_chat_turn(db, user_id, session_id, message, CRISIS_MESSAGE)
         return {"reply": CRISIS_MESSAGE, "crisis": crisis, "emotion": None, "recalled": 0}
+
+    store.get_or_create_user(db, user_id)
 
     # 2. 召回 + 画像 + 今日主题 + 语气 + 提示（与 v1 同一套上下文构建）
     portraits = {

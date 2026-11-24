@@ -53,6 +53,10 @@ def run_one():
                     allowed={'memory.breakup.extract':'extract_breakup_turn','memory.loved_one.extract':'extract_loved_one_turn','memory.pet.extract':'extract_pet_turn'}
                     if job.payload['extractor'] not in allowed:raise ValueError('Unsupported extractor')
                     extractor=getattr(importlib.import_module(job.payload['extractor']),allowed[job.payload['extractor']])
+                # D-073 checkpoint：session_id 走 db.info 旁路传递，_do_write 调用签名保持不变
+                # （现有 monkeypatch/调用方零改动；无 session_id 时连 db.info 都不碰）。
+                if job.payload.get('session_id'):
+                    db.info['checkpoint_session_id']=job.payload['session_id']
                 _do_write(job.user_id,job.payload['message'],job.payload['type'],extractor);job.status='completed'
             elif job.kind=='portrait':
                 from memory.portrait import merge_if_due
@@ -138,6 +142,20 @@ def reconcile_orders(limit=20):
     return count
 
 
+def fact_check(user_id):
+    """只读运维入口：列出可疑 conflict/stale Fact 候选（D-073）。
+
+    用独立 session 调 memory.fact_check.check_facts（纯只读函数），不 commit、不改任何
+    Fact / ChatMessage；只在 `admin_cli.py fact-check` 时调用，绝不塞进 chat 热路径。
+    """
+    from memory.fact_check import check_facts
+    db = _RawSessionLocal()
+    try:
+        return list(check_facts(db, user_id))
+    finally:
+        db.close()
+
+
 def main():
     parser=argparse.ArgumentParser()
     sub=parser.add_subparsers(dest='command',required=True)
@@ -146,6 +164,7 @@ def main():
     sub.add_parser('reconcile-orders')
     p=sub.add_parser('worker');p.add_argument('--max-jobs',type=int,default=100);p.add_argument('--forever',action='store_true');p.add_argument('--poll-seconds',type=float,default=3)
     sub.add_parser('recover-stopped-worker')
+    p=sub.add_parser('fact-check');p.add_argument('--user-id',required=True)
     p=sub.add_parser('huey-trial-worker');p.add_argument('--max-tasks',type=int,default=10)
     args=parser.parse_args();validate_runtime();init_db()
     if args.command=='init-admin':init_admin(args.username)
@@ -171,6 +190,16 @@ def main():
         print(f'Processed {count} jobs; stopped cleanly')
     elif args.command=='reconcile-orders':print(f'Reconciled {reconcile_orders()} original orders')
     elif args.command=='recover-stopped-worker':recover_jobs()
+    elif args.command=='fact-check':
+        issues=fact_check(args.user_id)
+        if not issues:
+            print(f'Fact check user_id={args.user_id}: 0 candidates (no conflict/stale).')
+        else:
+            print(f'Fact check user_id={args.user_id}: {len(issues)} candidate(s):')
+            for i in issues:
+                print(f'  kind={i.kind} rule={i.rule} fact_id={i.fact_id} '
+                      f'evidence_msg_id={i.evidence_message_id} confidence={i.confidence:.2f} '
+                      f'reason={i.reason} evidence_text={str(i.evidence_text)[:60]}')
     elif args.command=='huey-trial-worker':
         from memory.jobs import huey_trial_enabled,run_trial_worker
         if not huey_trial_enabled():

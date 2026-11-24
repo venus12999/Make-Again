@@ -8,11 +8,57 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from gateway.client import LLMClient
 from memory.db import SessionLocal
 
 logger = logging.getLogger(__name__)
+
+# ---- Session checkpoint 接线（USE_CHECKPOINT，默认关；关闭时零调用逐字节回退） ----
+# D-073：把 checkpoint 的 save 挂到「后台写入链」_do_write（memory job），不进 chat 热路径。
+# 默认关：_maybe_save_checkpoint 立即返回——不 import checkpoint、不建表、不写库、不 commit，
+# 后台写入链路与接线前逐字节一致（可回退）。开时懒建 session_checkpoints 表（不改 models.py）。
+USE_CHECKPOINT_ENV = "USE_CHECKPOINT"
+_CHECKPOINT_TRUTHY = frozenset(("1", "true", "yes", "on"))
+
+
+def checkpoint_enabled() -> bool:
+    """运行期读取开关（os.getenv，测试可 monkeypatch）；默认关。"""
+    return os.getenv(USE_CHECKPOINT_ENV, "").strip().lower() in _CHECKPOINT_TRUTHY
+
+
+def _maybe_save_checkpoint(db, user_id: str, message: str, type: str,
+                           turn: dict | None, result: dict, session_id: str | None) -> None:
+    """后台写入成功后落一份 checkpoint（最近主题 + 阶段 + 关键事实 id）。
+
+    开关关闭时**零调用**直接返回；开启时表由 checkpoint.ensure_checkpoint_table 懒建。
+    旁路增强：任何失败都 swallow，绝不破坏已完成的记忆落库（store.add_memory 已先 commit）。
+    session_id 缺省用 "default"，保证显式 session 之间的隔离可测且向后兼容。
+    """
+    if not checkpoint_enabled():
+        return
+    try:
+        from memory import checkpoint as ckpt
+
+        sid = str(session_id or "").strip() or "default"
+        summary = str((turn or {}).get("summary") or "")[:200]
+        payload = {
+            "stage": type,
+            "topics": [t for t in ((turn or {}).get("place_tag"), (turn or {}).get("time_tag")) if t],
+            "summary": summary,
+            "key_fact_ids": [str(result["memory_id"])] if result.get("memory_id") else [],
+            "last_message": str(message or "")[:200],
+        }
+        ckpt.ensure_checkpoint_table(db)
+        ckpt.save_checkpoint(db, user_id, sid, payload, summary=summary)
+        db.commit()
+    except Exception:  # noqa: BLE001 - checkpoint 是旁路，失败不能破坏记忆写入
+        logger.warning("checkpoint save failed in _do_write", exc_info=True)
+        try:
+            db.rollback()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def link_facts_for_entry(db, memory_id, user_id: str, facts, *,
@@ -45,14 +91,22 @@ def link_facts_for_entry(db, memory_id, user_id: str, facts, *,
     return linked
 
 
-def schedule_memory_write(user_id: str, message: str, *, type: str = "chat", extractor=None) -> None:
+def schedule_memory_write(user_id: str, message: str, *, type: str = "chat", extractor=None,
+                          session_id: str | None = None) -> None:
     """提交一次后台回写,立即返回。抽取失败不影响主流程。
 
     extractor 为可选的自定义抽取函数 `f(client, text) -> turn dict`,
     用于按场景替换抽取逻辑(如失恋场景的 CBT 抽取);缺省走通用抽取。
+
+    session_id 是可选的关键字参数（D-073 checkpoint 接线）：不传时 payload 与接线前
+    **逐字节一致**，现有 chat 热路径（agent/*）零改动；传入后随 job payload 透传到
+    后台 _do_write，用于 checkpoint 的 session 隔离。
     """
     from memory.jobs import enqueue
-    enqueue("memory",user_id,{"message":message,"type":type,"extractor":extractor.__module__ if extractor else None})
+    payload = {"message": message, "type": type, "extractor": extractor.__module__ if extractor else None}
+    if session_id is not None:
+        payload["session_id"] = str(session_id)
+    enqueue("memory", user_id, payload)
 
 
 def schedule_trial_echo(user_id: str, message: str, *, fail_times: int = 0) -> None:
@@ -66,7 +120,13 @@ def schedule_trial_echo(user_id: str, message: str, *, fail_times: int = 0) -> N
     enqueue("trial_echo", user_id, {"message": message, "fail_times": fail_times})
 
 
-def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
+def _do_write(user_id: str, message: str, type: str, extractor=None, *,
+              session_id: str | None = None) -> None:
+    """后台 memory job 的实际写入体（chat 热路径之外）。
+
+    session_id 可选（D-073 checkpoint 接线）：不传则与接线前调用方式完全兼容；
+    传入后在本次写库成功后由 _maybe_save_checkpoint 落一份 checkpoint 快照。
+    """
     from memory import extract, portrait, reflect, store
 
     db = SessionLocal()
@@ -134,6 +194,10 @@ def _do_write(user_id: str, message: str, type: str, extractor=None) -> None:
                     link_facts_for_entry(db, str(entry.id), user_id, turn.get("facts") or [])
                 except Exception:  # noqa: BLE001 - 双保险：链接步骤永不破坏已落库记忆
                     logger.warning("link_facts step failed in _do_write", exc_info=True)
+        # D-073：后台写入成功后落 checkpoint（USE_CHECKPOINT 默认关→零调用；开→懒建表+save）。
+        # 放在事实落库之后、portrait 入队之前；失败 swallow，不影响已落库记忆。
+        _maybe_save_checkpoint(db, user_id, message, type, turn, result,
+                               session_id or db.info.get('checkpoint_session_id'))
         # 回声壁:随机捕获富有情感的句子,随机延时后回显(零 LLM、纯采样,不阻塞主流程)
         from agent import echo as echo_mod
         echo_mod.maybe_capture_echo(db, user_id, message, turn.get("emotion"))

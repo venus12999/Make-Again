@@ -18,12 +18,15 @@
 """
 from __future__ import annotations
 
+import logging
 import os
 import threading
 import time
 from typing import Any
 
 from emotion.crisis import CRISIS_MESSAGE, detect
+
+logger = logging.getLogger(__name__)
 
 # ---- 开关 -------------------------------------------------------------------
 
@@ -203,8 +206,17 @@ def handle_crisis(text: str, user_id: str, session_id: str | None = None, now: f
     return base
 
 
-def confirm_crisis(user_id: str, safe: bool, now: float | None = None) -> dict:
-    """确认轮的用户回答：safe=True 记 confirmed_safe；safe=False 升级人工复核。"""
+def confirm_crisis(user_id: str, safe: bool, now: float | None = None, writeback=None) -> dict:
+    """确认轮的用户回答：safe=True 记 confirmed_safe；safe=False 升级人工复核。
+
+    R3（U-004 最后一公里）：更新内存事件**之后**额外做一次持久化回写。
+      - ``writeback`` 是可选回调（签名同 memory.crisis_store.update_event_state）；
+        不传时按开关懒加载默认实现，避免 emotion 模块 import 期依赖 memory。
+      - **仅 USE_CRISIS_FLOW 开时才调用**；关时零调用，返回 dict 与旧版逐字节一致
+        （H1 的默认关语义不变）。
+      - 回写失败 swallow：只记 warning，不影响确认轮话术/返回结构。
+      - ``no_pending_confirm`` 早退路径在回写之前，行为也不变。
+    """
     ts = _now(now)
     with _LOCK:
         ev = _PENDING_CONFIRM.pop(user_id, None)
@@ -215,4 +227,29 @@ def confirm_crisis(user_id: str, safe: bool, now: float | None = None) -> dict:
         if not safe:
             ev["review_required"] = True
             ev["review_entry"] = _review_entry(ev["level"], forced=True)
-        return {"ok": True, "event": dict(ev)}
+        result = {"ok": True, "event": dict(ev)}
+
+    if _flow_enabled():
+        snapshot = result["event"]  # 锁内已复制，锁外只读快照，不碰共享 ev
+        hook = writeback
+        if hook is None:
+            try:
+                from memory.crisis_store import update_event_state as hook  # 懒加载，避免 import 期循环依赖
+            except Exception as exc:
+                logger.warning("crisis confirm writeback unavailable: %s", exc)
+                hook = None
+        if hook is not None:
+            try:
+                hook(
+                    user_id=user_id,
+                    event_ref=snapshot.get("id"),
+                    state=snapshot["state"],
+                    extra={
+                        "review_required": snapshot.get("review_required"),
+                        "review_entry": snapshot.get("review_entry"),
+                        "confirmed_at": snapshot.get("confirmed_at"),
+                    },
+                )
+            except Exception as exc:  # 回写是增强，绝不能破坏确认轮话术
+                logger.warning("crisis confirm state writeback failed (non-blocking): %s", exc)
+    return result
