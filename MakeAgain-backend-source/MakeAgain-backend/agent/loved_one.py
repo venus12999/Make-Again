@@ -123,7 +123,8 @@ def loved_one_chat(db, user_id: str, message: str, client: LLMClient, session_id
     # D-070: 长对话压缩（开关默认关，失败逐字节回退；摘要作为 system 插在历史前）
     summary_block = None
     turns, summary_block = cc.maybe_compact(db, user_id, session_id, turns, client)
-    recent_text = " ".join(t["content"] for t in turns)
+    # U-013: 「正在聊」判据用最近 1 轮，跟 companion/breakup 统一（用全量 turns 会把跨天旧记忆误判为刚聊过）
+    recent_text = " ".join(t["content"] for t in turns[-1:])
     memories = loved_one_recall(db, user_id, message, recent_text=recent_text)
 
     offset = get_settings().timezone_offset_hours

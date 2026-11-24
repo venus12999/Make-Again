@@ -63,7 +63,9 @@ def breakup_chat(db, user_id: str, message: str, client: LLMClient, session_id: 
     # D-070: 长对话压缩（开关默认关，失败逐字节回退；摘要作为 system 插在历史前）
     summary_block = None
     turns, summary_block = cc.maybe_compact(db, user_id, session_id, turns, client)
-    recent_text = " ".join(t["content"] for t in turns)
+    # U-013/D-064：与 companion.py 统一，「正在聊」判据只用最近 1 轮，
+    # 不用全部 turns（否则跨天/重开的历史会让记忆被误判为刚聊过而永久召回不到）。
+    recent_text = " ".join(t["content"] for t in turns[-1:])
     memories = breakup_recall(db, user_id, message, recent_text=recent_text)
 
     offset = get_settings().timezone_offset_hours

@@ -423,7 +423,8 @@ def chat_v2(db, user_id: str, message: str, client, session_id: str | None = Non
         "object": store.get_portrait(db, user_id, "object"),
     }
     turns = session_context.get_turns(user_id, session_id)
-    recent_text = " ".join(t["content"] for t in turns)
+    # U-013: 「正在聊」判据用最近 1 轮，跟 companion 主链路统一
+    recent_text = " ".join(t["content"] for t in turns[-1:])
     memories = recall.recall(db, user_id, message, recent_text=recent_text)
     daily_pick = store.get_daily_pick(db, user_id, _date_key())
     tone = pick_tone(db, user_id, message=message)

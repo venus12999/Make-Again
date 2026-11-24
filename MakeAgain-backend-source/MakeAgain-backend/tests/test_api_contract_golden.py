@@ -163,6 +163,7 @@ class TestToolPayloadGolden:
             "memory_context", "ok", "request_id", "client_request_id",
             "session_id", "companion_id", "status", "created_at",
             "user_message_id", "assistant_message_id",
+            "disclosure",  # D-053 GAP-D1：/api/chat AI 披露字段
         }, body
         assert body["ok"] is True
         assert body["request_id"] == "golden-envelope"

@@ -59,6 +59,7 @@ class ChatResp(BaseModel):
     tone: str | None = None  # soothe | guide | analyze(仅通用引擎)
     stage: str | None = None  # 疗愈阶段标签(失恋/亲友/宠物引擎返回,如 acute/rumination/oscillating)
     tool: dict | None = None  # 物品纪念·照片·待办·写给自己 四类卡片动作(无则 None),前端据此展示卡片
+    disclosure: str | None = None  # GAP-D1：AI 披露字段(复用 ending/call 文案)，新增可选字段保持向后兼容
 
 
 @router.post("/chat")
@@ -84,7 +85,9 @@ def chat(req: ChatReq, db: Session = Depends(get_session)):
     result.update(session_id=c.chat_session_id, companion_id=c.id, status="completed",
                   user_message_id=str(rows[-1].id) if rows else None,
                   assistant_message_id=str(rows[0].id) if rows else None,
-                  created_at=iso(rows[0].ts) if rows else None)
+                  created_at=iso(rows[0].ts) if rows else None,
+                  # D-053 GAP-D1：/api/chat 补 AI 披露，复用 ending/call 的同一文案常量。
+                  disclosure=call_mod._DISCLOSURE)
     if result.get("tool"):
         result["tool"].update(suggestion_id=db.info.get("request_id"), status="awaiting_confirmation")
     return result

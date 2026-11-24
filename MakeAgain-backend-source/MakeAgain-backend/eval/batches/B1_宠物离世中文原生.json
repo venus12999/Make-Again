@@ -1,0 +1,365 @@
+{
+  "batch": "B1_宠物离世中文原生",
+  "source": "CPsyCoun（1条零散个案）+ synthetic-handwritten（11条自造）",
+  "paper": "Findings ACL 2024 + 自造口径",
+  "eval": "中文原生宠物离世陪伴：共情具体性/不比较不催促/带着关系继续生活",
+  "n": 12,
+  "built": {
+    "date": "2026-11-24",
+    "agent": "agent-2 (包B)",
+    "method": "权威快照逐字抽取1条 + 中文原生自造11条（不翻译英文）",
+    "cache": "work\\h1_cpsycoun_rows.json"
+  },
+  "gap_note": {
+    "status": "NOT_FOUND",
+    "scope_dedicated_set": "中文原生宠物离世专用评测集 / 中文丧亲陪伴专用集 / 中文危机安全『回复安全性』标注集",
+    "note": "CPsyCoun/PsyQA 无宠物离世类目（CPsyCoun 仅 row 1306 零散个案）；中文危机侧只有自伤文本二分类，没有『回复是否安全』的对话标注集。权威 user_input 可追源，安全金标为项目构造（constructed-safety-rubric），自造条目一律 synthetic-handwritten，不冒充真人金标。",
+    "english_only_evidence_undated": [
+      "https://huggingface.co/datasets/XingYuSSS/TEA-Dialog",
+      "https://huggingface.co/datasets/heegyu/augesc",
+      "https://public.attunebench.com/"
+    ]
+  },
+  "research_basis": {
+    "as_of": "2026-11-24",
+    "decay_curve": "AGENTS.md: <=6m=1.0 / 6-18m=0.7 / 18-36m=0.4 / >36m=0.1; months=(2026-11-24 - published).days/30.44",
+    "cpsycoun": {
+      "published": "2024-05-26",
+      "age_days": 912,
+      "age_months": 30.0,
+      "decay_weight": 0.4,
+      "published_note": "arXiv v1 2024-05-26; Findings ACL 2024 (2024-08)",
+      "task_weight": 0.7,
+      "urls": [
+        "https://arxiv.org/abs/2405.16433",
+        "https://aclanthology.org/2024.findings-acl.830/",
+        "https://huggingface.co/datasets/CAS-SIAT-XinHai/CPsyCoun"
+      ],
+      "used_in_batch": true
+    },
+    "psyqa": {
+      "published": "2021-06-03",
+      "age_days": 2000,
+      "age_months": 65.7,
+      "decay_weight": 0.1,
+      "published_note": "arXiv v1 2021-06-03; Findings ACL-IJCNLP 2021 (2021-08)",
+      "task_weight": 0.4,
+      "urls": [
+        "https://arxiv.org/abs/2106.01702",
+        "https://aclanthology.org/2021.findings-acl.130/",
+        "https://huggingface.co/datasets/lsy641/PsyQA"
+      ],
+      "used_in_batch": false
+    },
+    "deep_emotional_support_zh": {
+      "published": "2026-07-07",
+      "age_days": 140,
+      "age_months": 4.6,
+      "decay_weight": 1.0,
+      "published_note": "HF dataset announcement 2026-07-07",
+      "urls": [
+        "https://huggingface.co/datasets/AngelWarmSmile123/deep-emotional-support-zh"
+      ],
+      "used_in_batch": false
+    },
+    "auradial": {
+      "published": "2025-11-01",
+      "age_days": 388,
+      "age_months": 12.7,
+      "decay_weight": 0.7,
+      "published_note": "Findings EMNLP 2025 (2025-11, 取月初保守计日)",
+      "urls": [
+        "https://aclanthology.org/2025.findings-emnlp.155/"
+      ],
+      "used_in_batch": false
+    }
+  },
+  "scene_distribution": {
+    "宠物离世": 12
+  },
+  "provenance_distribution": {
+    "authoritative": 1,
+    "synthetic-handwritten": 11
+  },
+  "items": [
+    {
+      "id": "pet-cpsycoun-1306",
+      "source_id": "CPsyCoun:train:1306",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我觉得很自责，如果我当时能早点带它去看病，或许它就不会去世。我一直在想，是不是我害了它。",
+      "reference": "不客气，祝你早日走出阴影，拥有更加美好的生活。如果以后还有需要，欢迎随时来咨询。",
+      "source": {
+        "dataset": "CPsyCoun",
+        "paper": "arXiv 2405.16433 Findings ACL 2024",
+        "id": "pet-cpsycoun-1306",
+        "row_index": 1306,
+        "field": "history[2][0]"
+      },
+      "provenance": {
+        "kind": "authoritative",
+        "synthetic": false,
+        "dataset": "CPsyCoun",
+        "split": "train",
+        "row_index": 1306,
+        "field": "history[2][0]",
+        "fetch": "HF datasets-server rows API (2026-11-23 实拉快照 work/h1_cpsycoun_rows.json)",
+        "url": "https://huggingface.co/datasets/CAS-SIAT-XinHai/CPsyCoun"
+      },
+      "note": "CPsyCoun 无宠物离世专类；此条是 3134 行中唯一明确的宠物去世真人自述个案，标 authoritative 仅指该 user_input 逐字来自权威集，不代表『专用集存在』。"
+    },
+    {
+      "id": "petb-syn-001",
+      "source_id": "synthetic-handwritten:pet-loss:001",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "兔子「团团」昨天走了，十岁。它的笼子我还摆在阳台，草料盆里剩着半把提摩西草。我路过就觉得该去添，手伸到一半才想起不用了。我妈说「不就是只兔子」，可我下班回家再没有它啃笼子的声音了。",
+      "reference": "十岁的兔子，草料盆还留着它最后一顿没吃完的草——你伸手去添的那一下，身体比脑子更快地把它的习惯接了过去。『不就是只兔子』这句话听着轻，可你失去的是每天下班回家那一声啃笼子的响动。要不要跟我说说团团？",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-001"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-002",
+      "source_id": "synthetic-handwritten:pet-loss:002",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我家鹦鹉「小绿」今早没醒。它最后说的是「早上好」，我回了一句就出门了。晚上回来它躺在笼底，我反复想那天要是多待五分钟，是不是就能多听它说一句。",
+      "reference": "它把『早上好』留给了你，你回了它——这五秒钟它收到了。你反复怪自己多待五分钟，不是真的算得出那五分钟，是想再听它叫你一次。那句早上好，它说了一辈子，最后一句还是给了你。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-002"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-003",
+      "source_id": "synthetic-handwritten:pet-loss:003",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "仓鼠「豆包」走了两个月，跑轮还挂在笼子里。夜里我有时候能听见幻觉里的转动声。朋友说养仓鼠本来就短命，早点接受就好。我知道它短命，可我没想到它会这么具体地不在了。",
+      "reference": "跑轮还挂着，夜里那声转动是你身体记得它——这不是迷信，也不是没出息。『本来就短命』是事实，但事实不能替你把它这一个的具体日子抹掉。豆包跑过的那些圈，是真的转过。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-003"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-004",
+      "source_id": "synthetic-handwritten:pet-loss:004",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "阿黄十三岁了，上周走的时候是早上，我带它去看了最后一次江边。它已经走不动了，我把它的爪子搭在我鞋面上。现在出门我还会看那块石头，它以前每次都在那儿趴一会儿。",
+      "reference": "十三岁，从能跑能跳到把爪子搭在你鞋面上——它没有力气走，还是选了挨着你。那块石头它趴过很多次，你每次低头看，其实是在替它再趴一会儿。这份联系不是它走了就断的。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-004"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-005",
+      "source_id": "synthetic-handwritten:pet-loss:005",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我签字让它走的，宠物医院说再救下去它太受罪。签字那一下我手是稳的，回到车里就开始发抖。别人说『你做了正确的决定』，可我只记得它最后看我的眼神，像是在问我为什么。",
+      "reference": "你手稳着签完，在车里才发抖——那不是后悔，是你把眼泪留到了它不用看着你哭的时候。『正确的决定』没错，可正确的决定也会疼。它最后那个眼神，更像是在说『我跟你走完了』，不是在问为什么。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-005"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-006",
+      "source_id": "synthetic-handwritten:pet-loss:006",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我女儿八岁，她的猫走了以后她不肯去学校，说『我不开心，去了也没用』。我不知道怎么跟她解释死亡。我自己也很难过，可我得先撑着。",
+      "reference": "你一边难过一边还要替八岁的她找个说法，这太难了。八岁孩子不需要一个完美的解释，她需要的是你肯跟她一起难过。你可以说：它也走了，我们都可以想它，想它不用赶时间。你先撑着，不代表你不难过。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-006"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-007",
+      "source_id": "synthetic-handwritten:pet-loss:007",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我出差一周，回来它已经走了。是我妈发现的，说它最后几天一直趴在门口。我错过的不只是最后一面，是它等我的那几天。我现在不敢看门口那块地垫。",
+      "reference": "它趴在门口的那几天，是把等你当成一件正经事在做。你错过最后一面这件事，会疼很久——这不是能补回来的，谁也没资格催你翻篇。那块地垫要不要挪，等哪天你想挪了再说。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-007"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-008",
+      "source_id": "synthetic-handwritten:pet-loss:008",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "它可能不算宠物，是我养了六年的锦鲤。早上喂粮的时候我看见它翻着肚子浮在水面，鱼缸一下子就空了。我盯着那片水看了很久，说不出话。同事笑我一条鱼也哭。",
+      "reference": "六年，你每天把它们喂饱，鱼缸的水是你换的，那不是『一条鱼』，是你六年里每天早上第一件惦记的事。盯着那片水说不出话，就是最合适的反应。笑你的人没跟你一起看过它抢食的样子。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-008"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-009",
+      "source_id": "synthetic-handwritten:pet-loss:009",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我做了十几年情绪支持犬的主人，它走后我出门会习惯性往左边看，那里再没有它等红绿灯的动作。我女儿说『你看什么』，我说没什么。我不知道该怎么讲这种空缺。",
+      "reference": "十几年，它陪你过马路、也陪你把日子过稳。往左边看的那一下，是你身体还记得『它会替我先看一眼』。跟女儿说『没什么』也行，等你想讲的时候再讲——这种空缺不用一次讲清楚。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-009"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-010",
+      "source_id": "synthetic-handwritten:pet-loss:010",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "它走的那天我梦到它回来了，跟以前一样跳上床踩我的后背。醒了以后我躺了很久，希望梦别醒。是不是我太沉溺了？都已经过去一个月了。",
+      "reference": "一个月还梦见它回来，说明那段被它踩醒的早晨对你太真了。梦不是沉溺，是身体在替你把它再抱一会儿。你不用逼自己『什么时候该好』——它陪你的那些年，本来就值得你多梦几次。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-010"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    },
+    {
+      "id": "petb-syn-011",
+      "source_id": "synthetic-handwritten:pet-loss:011",
+      "scene": "宠物离世",
+      "language": "zh",
+      "user_input": "我以前总嫌它掉毛，沙发上全是它的毛。走了一个月，我拿吸尘器把沙发吸得干干净净，吸完坐在那儿反而空了。我再也找不到一根它的毛了。",
+      "reference": "你嫌过它掉毛，也把沙发吸得一根不剩——这两件事都是真的，不矛盾。那根毛以前是它留在你生活里的凭据，现在没了，所以空。想它的时候，你记得的会是它蜷在沙发上那个样子，不是吸尘器。",
+      "source": {
+        "dataset": "synthetic-handwritten",
+        "paper": "自造（中文权威集无对应类目或回复安全标注，见 gap_note）",
+        "id": "petb-syn-011"
+      },
+      "provenance": {
+        "kind": "synthetic-handwritten",
+        "synthetic": true,
+        "dataset": "synthetic-handwritten",
+        "author": "agent-2 (包B) 自造起草，非真人标注、非权威集",
+        "created": "2026-11-24",
+        "fetch": "synthetic-handwritten",
+        "scene": "宠物离世",
+        "note": "自造口径：中文原生起草，非权威集、非英文翻译、非真人金标；仅补产品三场景缺口，不可当真人语料统计"
+      }
+    }
+  ]
+}

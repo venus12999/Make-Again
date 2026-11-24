@@ -12,7 +12,8 @@
 - 摘要格式中文化，适配情感陪伴（保留关系/情绪/事实，而非代码任务的 file paths）
 - 存储用我们的 SQLite（context_compactions 表），不用 PI 的 session 文件格式
 
-开关 USE_CONTEXT_COMPACTION 默认关闭，关闭时零影响。
+开关 USE_CONTEXT_COMPACTION 默认开启（D-071 A/B 决策：开臂事实保留率 3/3 稳定、
+关臂 2/3 压线不稳定；显式设 USE_CONTEXT_COMPACTION=0 可关闭回退，零影响）。
 """
 from __future__ import annotations
 
@@ -36,7 +37,8 @@ DEFAULT_CONTEXT_WINDOW = int(os.getenv("COMPACTION_CONTEXT_WINDOW", "6000"))
 
 
 def compaction_enabled() -> bool:
-    return os.getenv("USE_CONTEXT_COMPACTION", "0").strip().lower() in {"1", "true", "yes", "on"}
+    # D-071：默认开（A/B 真门禁：开臂 3/3 稳定 vs 关臂 2/3 压线）；显式 =0 可关闭回退。
+    return os.getenv("USE_CONTEXT_COMPACTION", "1").strip().lower() in {"1", "true", "yes", "on"}
 
 
 @dataclass

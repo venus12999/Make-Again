@@ -17,6 +17,7 @@ from api.memory_confirm import router as memory_confirm_router
 from api.memory_correct import router as memory_correct_router
 from api.memory_export import router as memory_export_router
 from api.memory_scope import router as memory_scope_router
+from api.crisis import router as crisis_router
 from api.limits import BodyLimitMiddleware
 
 
@@ -37,6 +38,7 @@ app.include_router(memory_confirm_router)
 app.include_router(memory_correct_router)
 app.include_router(memory_export_router)
 app.include_router(memory_scope_router)
+app.include_router(crisis_router)  # U-004 危机事件只读端点
 app.include_router(router)
 
 # 前端为静态原型（file:// 或本地静态服务器），跨源调用需要放开 CORS。

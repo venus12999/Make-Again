@@ -114,12 +114,13 @@ def ai_disclosure(*, content_type: str, enforced: bool | None = None) -> dict[st
 def audit_existing_disclosure() -> dict[str, Any]:
     """检查现有 agent 层 AI 披露字段完整性，输出结构化缺口清单（不做修改）。
 
-    现状（读码核对）：agent/ending.py 与 agent/call.py 仅有单字符串 disclosure，
-    缺少结构化字段；/api/chat 响应无披露字段（见 docs/COMPLIANCE.md）。
+    现状（读码核对 2026-11-24）：agent/ending.py、agent/call.py、api/routes.py(chat)
+    现均有单字符串 disclosure（chat 由 GAP-D1/D-071 补上，复用 call_mod._DISCLOSURE），
+    但三处都缺结构化字段（见 docs/COMPLIANCE.md）。
     """
     fields = ["is_ai_generated", "ai_disclosure", "generated_by", "content_type",
               "explicit_label", "implicit_marker"]
-    found = {"ending.py": ["disclosure"], "call.py": ["disclosure"], "routes.py(chat)": []}
+    found = {"ending.py": ["disclosure"], "call.py": ["disclosure"], "routes.py(chat)": ["disclosure"]}
     gaps = []
     for module, present in found.items():
         missing = [f for f in fields if f not in present]

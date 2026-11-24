@@ -533,3 +533,25 @@ class ContextCompaction(Base):
     created_at: Mapped[str] = mapped_column(String(64))
     usage_json: Mapped[str] = mapped_column(Text, default="{}")
     details_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class CrisisEvent(CompanionScoped, Base):
+    """危机事件持久化（U-004）：WP4 crisis_flow 内存事件的落库形态。
+
+    只存事实，不改 emotion/crisis.py 的硬门槛检测，也不改 crisis_flow.py。
+    severity 为 level2/level3（中风险/高风险），keywords 为命中的危机关键词（hit），
+    ts 存 naive UTC；新表由 create_all 建表，migrations_b07 遍历全部模型列的机制自动覆盖补列。
+    """
+    __tablename__ = "crisis_events"
+    __table_args__ = (Index("ix_crisis_events_user_ts", "user_id", "ts"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    severity: Mapped[str] = mapped_column(String(32), default="")
+    keywords: Mapped[list] = mapped_column(JSON, default=list)
+    level: Mapped[int] = mapped_column(Integer, default=0)
+    session_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    text: Mapped[str] = mapped_column(Text, default="")
+    state: Mapped[str] = mapped_column(String(32), default="")
+    review_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    ts: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

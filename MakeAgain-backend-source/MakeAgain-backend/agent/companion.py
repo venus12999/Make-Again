@@ -87,18 +87,55 @@ def _detect_item_mention(message: str) -> bool:
     return any(k in (message or "") for k in _ITEM_MENTION_HINTS)
 
 
+def _mute_topic_enabled() -> bool:
+    """D-063/D-064 P1：mute_topic 开关，默认关；逐字读环境变量，可随时回滚。"""
+    return os.getenv("USE_MUTE_TOPIC", "0").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _mute_topics(db, user_id: str) -> list[str]:
+    """取用户标记为「不再提及」的话题列表（P1 接线点）。
+
+    现状：config.py 与 memory.models.UserState 均无现成字段，故恒返回空列表——
+    只落开关框架与过滤钩子、零行为变化，绝不硬造 DB 列。未来加列后在这里读取，例如：
+        state = store.get_user_state(db, user_id)
+        return [t for t in (getattr(state, "mute_topics", None) or []) if str(t).strip()]
+    """
+    return []
+
+
+def _is_muted(text: str, muted: list[str]) -> bool:
+    return bool(muted) and any(t and t in text for t in muted)
+
+
 def _context_block(db, user_id: str, message: str, portraits: dict, memories: list[dict], daily_pick=None) -> str:
-    parts: list[str] = []
+    """上下文分层注入（P0 稳定前缀，D-063/D-064）。
+
+    按字节稳定性分三层，拼接顺序固定：
+      [稳定区] 双画像（system prompt + 场景规则由调用方 format 在最前，见 _chat_generic）
+      [半稳定] 相关记忆（语义召回，每轮可能变）
+      [易变] 今日主题 + 时间线（当天/每轮变）
+    只调整字符串顺序，原有信息一条不丢；输出与重排前逐字一致。
+    """
+    stable: list[str] = []
+    semi_stable: list[str] = []
+    volatile: list[str] = []
+
+    # [稳定区] 双画像
     if portraits.get("user"):
-        parts.append(f"[用户画像]\n{_dict_text(portraits['user'])}")
+        stable.append(f"[用户画像]\n{_dict_text(portraits['user'])}")
     if portraits.get("object"):
-        parts.append(f"[思念对象画像]\n{_dict_text(portraits['object'])}")
+        stable.append(f"[思念对象画像]\n{_dict_text(portraits['object'])}")
+
+    # [半稳定] 相关记忆（mute_topic 开启且已接线时过滤命中话题；当前列表恒空）
+    muted = _mute_topics(db, user_id) if _mute_topic_enabled() else []
     if memories:
         lines = []
         for m in memories[:5]:
             e = m["entry"]
             text = (e.summary or e.content or "").strip()[:80]
             if not text:
+                continue
+            if _is_muted(text, muted):
                 continue
             facts = facts_for_context(e.facts, min_conf=0.6, max_n=2)
             if facts:
@@ -109,17 +146,21 @@ def _context_block(db, user_id: str, message: str, portraits: dict, memories: li
                 when = f"{ts.month}月{ts.day}日 "
             lines.append(f"- {when}TA曾说过:{text}")
         if lines:
-            parts.append("[相关记忆(均为TA过去的倾诉,不是此刻正在发生)]\n" + "\n".join(lines))
+            semi_stable.append("[相关记忆(均为TA过去的倾诉,不是此刻正在发生)]\n" + "\n".join(lines))
+
+    # [易变] 今日主题 + 时间线
     if daily_pick and daily_pick.opening:
-        parts.append(f"[今日启发] {daily_pick.opening}")
+        volatile.append(f"[今日启发] {daily_pick.opening}")
     # 时间依据:仅在用户回想过去状态 / 讲现在状态·变化 / 带时间参照时按需注入(不常驻、不灌水)
     skip_ids = {m["entry"].id for m in memories}
     trajectory = temporal.recall_daily_summaries(db, user_id, message)
     if trajectory:
-        parts.append(trajectory)
+        volatile.append(trajectory)
     past_event = temporal.recall_by_time(db, user_id, message, skip_ids=skip_ids)
     if past_event:
-        parts.append(past_event)
+        volatile.append(past_event)
+
+    parts = stable + semi_stable + volatile
     return "\n\n".join(parts) if parts else "(暂无记忆)"
 
 
