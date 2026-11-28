@@ -1,0 +1,13 @@
+Make Again · 时光相册 & 时光小屋（2026-11-27 最新版）
+
+直接用：
+  Make-Again-时光相册.html   书架、翻书、追思馆、照片墙、信箱（双击用浏览器打开）
+  Make-Again-时光小屋.html   拍立得、打字机、老物件、树洞（自带 Three.js，离线可用）
+
+改源码：
+  源码/mail   信箱      → python3 build.py
+  源码/wall   照片墙    → python3 build.py（会把信箱打包进去）
+  源码/album  相册+小屋 → python3 build.py（会把照片墙打包进去，同时生成两个 html）
+  修改顺序：先 mail，再 wall，最后 album。
+
+数据都存在浏览器本地（localStorage / IndexedDB），换浏览器或清缓存会清空。

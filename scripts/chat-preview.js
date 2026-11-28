@@ -166,7 +166,8 @@
       else if (node.hasAttribute('wx:else')) { if (condition) continue }
       if (node.hasAttribute('wx:for')) {
         const items = value(node.getAttribute('wx:for'), scope) || []
-        items.forEach((item, index) => { const clone = node.cloneNode(true); clone.removeAttribute('wx:for'); clone.removeAttribute('wx:if'); appendNodes([clone], target, Object.assign({}, scope, { item, index })) })
+        const itemName = node.getAttribute('wx:for-item') || 'item'
+        items.forEach((item, index) => { const clone = node.cloneNode(true); clone.removeAttribute('wx:for'); clone.removeAttribute('wx:if'); appendNodes([clone], target, Object.assign({}, scope, { [itemName]: item, index })) })
         continue
       }
       const nativeTag = node.tagName.toLowerCase(), tag = ({ view: 'div', text: 'span', block: 'div', 'scroll-view': 'div' })[nativeTag] || nativeTag
@@ -178,7 +179,17 @@
           const event = attr.name.replace(/^(bind|catch):?/, ''), method = attr.value
           if (event.startsWith('touch')) { element.dataset[event] = method; continue }
           if (event === 'keyboardheightchange') continue
+          if (event === 'longpress') {
+            let timer = 0
+            element.addEventListener('pointerdown', () => { clearTimeout(timer); timer = setTimeout(() => { element.dataset.longpressed = '1'; page[method]({ detail: {}, currentTarget: { dataset: element.dataset }, touches: [] }) }, 450) })
+            for (const type of ['pointerup', 'pointerleave', 'pointercancel']) element.addEventListener(type, () => clearTimeout(timer))
+            element.addEventListener('contextmenu', e => e.preventDefault())
+            continue
+          }
+          const isCatch = attr.name.startsWith('catch')
           element.addEventListener(event === 'tap' ? 'click' : event, nativeEvent => {
+            if (isCatch) nativeEvent.stopPropagation()
+            if (event === 'tap' && element.dataset.longpressed) { delete element.dataset.longpressed; return }
             const source = nativeEvent.target
             page[method]({ detail: { value: source.value }, currentTarget: { dataset: element.dataset }, touches: [] })
           })

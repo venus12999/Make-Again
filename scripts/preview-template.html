@@ -28,7 +28,7 @@ button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-v
 .ma-tabbar{position:absolute;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,1fr);height:73px;padding:8px 0 18px;background:rgba(251,251,253,.72);backdrop-filter:blur(12px);border-top:1px solid #EEEBF2;z-index:80}
 .ma-tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:center;color:#9E98A6;background:none;border:0;font-size:11px}.ma-tabbar button.active{color:#665273;font-weight:600}.ma-tabbar .ma-icon{color:inherit;width:28px;height:28px;position:relative}.ma-tab-icon img{position:absolute;inset:0;width:100%;height:100%}.ma-tab-icon .ma-tab-selected,.ma-tabbar button.active .ma-tab-default{display:none}.ma-tabbar button.active .ma-tab-selected{display:block}
 .ma-tabs{display:flex;justify-content:space-between;border-bottom:1px solid #EFEDF3;margin:-14px -3px 18px}.ma-tabs button{position:relative;padding:18px 12px;background:none;border:0;color:#92909B;font-size:15px}.ma-tabs button.active{color:#746786}.ma-tabs button.active::after{content:'';position:absolute;bottom:0;width:21px;height:2px;background:#8D7D9A;border-radius:2px;left:50%;transform:translateX(-50%)}
-.ma-empty{text-align:center;padding:78px 8px;color:#A39BAF;font-size:14px;line-height:2}.ma-empty .ma-icon{display:block;width:40px;height:40px;margin:0 auto 18px;color:#C8BED2}
+#collection.ma-page{padding:0;overflow:hidden}#folderFrame{display:block;width:100%;height:100%;border:0;background:transparent;color-scheme:normal}#letterCard[hidden-visual]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.ma-empty{text-align:center;padding:78px 8px;color:#A39BAF;font-size:14px;line-height:2}.ma-empty .ma-icon{display:block;width:40px;height:40px;margin:0 auto 18px;color:#C8BED2}
 .ma-chat-guide-layer{position:absolute;inset:0;pointer-events:none}.ma-chat-guide-layer .chat-guide-scrim{z-index:125;pointer-events:auto}.ma-chat-guide-layer .chat-guide{z-index:130;pointer-events:auto}.ma-phone.ma-chat-onboarding .ma-tabbar{z-index:140;background:#E9E4ED;backdrop-filter:none}.ma-chat-onboarding .ma-tabbar button:disabled{opacity:.4}.ma-chat-onboarding .ma-tabbar [data-page=chat]{position:relative;border-radius:16px;color:#715E80;background:#FFFAFD;transform:translateY(-5px);box-shadow:0 0 0 5px #FFFAFD,0 0 0 12px #E4D3F562,0 10px 25px #67517E50;animation:chat-guide-light .5s ease both}.ma-chat-onboarding .ma-tabbar [data-page=chat] .ma-icon{width:32px;height:32px;padding:2px;border-radius:11px;background:linear-gradient(140deg,#E9DCF6,#D3C2E4)}.ma-chat-onboarding .ma-tabbar [data-page=chat] .ma-tab-icon img{inset:2px;width:28px;height:28px}
 .ma-identity{display:flex;align-items:center;gap:15px;margin:14px 0 28px}.ma-avatar{width:55px;height:55px;border-radius:50%;display:grid;place-items:center;background:#F0EDF5}.ma-avatar .ma-icon{width:28px;height:28px}.ma-name{font-size:21px}.ma-settings{border-radius:14px;background:#FFF;overflow:hidden}.ma-settings .ma-list-row{border-radius:0;border-bottom:1px solid #F2EFF5}
 .ma-splash{position:absolute;inset:0;height:100%;min-height:0;z-index:110}
@@ -42,7 +42,7 @@ button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-v
 .ma-dialog-layer{position:absolute;inset:0;background:#81728F22;display:grid;place-items:center;z-index:200;padding:30px}.ma-dialog{width:100%;padding:25px;background:#FFF;border-radius:18px;color:#756A7E;box-shadow:0 15px 60px #81728F20}.ma-dialog h2{font-size:18px;text-align:center;font-weight:500;color:#504557;margin:0 0 18px}.ma-dialog p{font-size:14px;line-height:1.8;margin:0 0 23px}.ma-dialog button{width:100%;border:0;background:#81728F;color:#FFF;padding:11px;border-radius:22px}
 @media(max-width:480px){body{background:#EDF1F9}.preview-toolbar{margin-top:10px;margin-bottom:10px}.ma-phone{height:calc(100dvh - 56px);min-height:450px;border-radius:0;margin-bottom:0;box-shadow:none}.preview-label{font-size:12px}.preview-tools button{font-size:11px;padding:6px 9px}}
 @media(prefers-reduced-motion:reduce){.ma-phone,.ma-chat-onboarding .ma-tabbar [data-page=chat]{animation:none}}
-#chat.ma-page{padding:0;overflow:hidden}#chat .chat-screen{height:100%!important;font-size:calc(var(--ma-rpx) * 28);line-height:1.65}#chat textarea{box-sizing:border-box;resize:none;outline:none;border:0;font:inherit;font-size:calc(var(--ma-rpx) * 30);line-height:calc(var(--ma-rpx) * 44);height:calc(var(--ma-rpx) * 64);overflow:auto}#chat textarea::placeholder{color:#BAAFC6}#chat .message-scroll,#chat .consent-scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}#chat [data-native-block]{display:contents}#chat t-icon{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}#chat t-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}#chat .chat-primary{font-family:inherit}#chat .message-main{max-width:calc(100% - var(--ma-rpx) * 74)}#chat .from-user .message-main{max-width:80%}.ma-preview-toast{position:absolute;bottom:190px;left:8%;right:8%;z-index:210;background:#655570EB;color:white;font-size:12px;padding:12px 16px;border-radius:14px;text-align:center;pointer-events:none}.ma-preview-profile{position:absolute;inset:0;z-index:190;overflow:auto;background:#F8F7FC;padding:25px 22px 90px;color:#7D6B8C}.ma-preview-profile h2{font-size:21px;font-weight:500}.ma-preview-profile label{display:block;margin-top:22px;font-size:13px}.ma-preview-profile textarea{display:block;width:100%;padding:12px;margin:9px 0;border:1px solid #E5DDEC;border-radius:12px;background:white;color:#7D6B8C;font:inherit;resize:none}.ma-preview-profile .ma-description{font-size:11px}.ma-preview-profile button{border:0;background:#A58DBD;color:#FFF;border-radius:22px;padding:10px 18px;margin-top:18px}.ma-preview-profile select{display:block;width:100%;padding:12px;margin-top:9px;border:1px solid #E5DDEC;border-radius:12px;background:white;color:inherit}.ma-preview-profile input{accent-color:#A58DBD}
+#chat.ma-page{padding:0;overflow:hidden}#chat .chat-screen{height:100%!important;font-size:calc(var(--ma-rpx) * 28);line-height:1.65}#chat textarea{box-sizing:border-box;resize:none;outline:none;border:0;font:inherit;font-size:calc(var(--ma-rpx) * 30);line-height:calc(var(--ma-rpx) * 44);height:calc(var(--ma-rpx) * 64);overflow:auto}#chat textarea::placeholder{color:#BAAFC6}#chat .message-scroll,#chat .consent-scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}#chat [data-native-block]{display:contents}#chat t-icon{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}#chat t-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}#chat .chat-primary{font-family:inherit}#chat .message-main,#chat .from-user .message-main{max-width:calc(var(--ma-rpx) * 470)}.ma-preview-toast{position:absolute;bottom:190px;left:8%;right:8%;z-index:210;background:#655570EB;color:white;font-size:12px;padding:12px 16px;border-radius:14px;text-align:center;pointer-events:none}.ma-preview-profile{position:absolute;inset:0;z-index:190;overflow:auto;background:#F8F7FC;padding:25px 22px 90px;color:#7D6B8C}.ma-preview-profile h2{font-size:21px;font-weight:500}.ma-preview-profile label{display:block;margin-top:22px;font-size:13px}.ma-preview-profile textarea{display:block;width:100%;padding:12px;margin:9px 0;border:1px solid #E5DDEC;border-radius:12px;background:white;color:#7D6B8C;font:inherit;resize:none}.ma-preview-profile .ma-description{font-size:11px}.ma-preview-profile button{border:0;background:#A58DBD;color:#FFF;border-radius:22px;padding:10px 18px;margin-top:18px}.ma-preview-profile select{display:block;width:100%;padding:12px;margin-top:9px;border:1px solid #E5DDEC;border-radius:12px;background:white;color:inherit}.ma-preview-profile input{accent-color:#A58DBD}
 </style>
 </head>
 <body>
@@ -58,9 +58,8 @@ button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-v
       <button type="button" class="ma-list-row" data-open-letter><span class="ma-icon" data-icon="mail"></span><span class="ma-row-main">主创的信</span><span class="ma-chevron">›</span></button>
     </section>
     <section id="collection" class="ma-page" hidden>
-      <div class="ma-tabs" role="tablist" aria-label="收藏分类"><button role="tab" type="button" class="active" aria-selected="true" data-kind="letters">信件</button><button role="tab" type="button" aria-selected="false" data-kind="items">物品</button><button role="tab" type="button" aria-selected="false" data-kind="photos">照片</button><button role="tab" type="button" aria-selected="false" data-kind="memories">记忆</button></div>
-      <button type="button" class="ma-list-row" id="letterCard" data-open-letter><span class="ma-icon" data-icon="mail"></span><span class="ma-row-main">主创的信<span class="ma-description">来自 Make Again 主创团队</span></span><span class="ma-chevron">›</span></button>
-      <div class="ma-empty" id="emptyCollection" hidden><span class="ma-icon" data-icon="collection"></span>暂无收藏</div>
+      <iframe id="folderFrame" title="收藏 · 透明文件夹" srcdoc="<!-- FOLDER_APP_SRCDOC -->"></iframe>
+      <button type="button" id="letterCard" data-open-letter hidden-visual aria-hidden="true" tabindex="-1"></button><div id="emptyCollection" hidden></div>
     </section>
     <section id="chat" class="ma-page" aria-label="聊天" hidden></section>
     <section id="profile" class="ma-page" hidden>
@@ -110,11 +109,29 @@ button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-v
     tabbar.querySelectorAll('[data-page]').forEach(button => { button.disabled = visible && button.dataset.page !== 'chat'; });
     if (visible && !wasVisible) get('chatGuideButton').focus({ preventScroll: true });
   }
+  // 收藏页 = 透明文件夹（iframe 内运行原版交互）。按键在收藏页时转给文件夹。
+  function folders() { try { return get('folderFrame').contentWindow.maFolders; } catch (_) { return null; } }
   function selectCollection(kind) {
-    document.querySelectorAll('[data-kind]').forEach(button => { const active = button.dataset.kind === kind; button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active)); });
     get('letterCard').hidden = kind !== 'letters'; get('emptyCollection').hidden = kind === 'letters';
+    const open = () => { const api = folders(); if (api) api.openKind(kind); else setTimeout(open, 120); };
+    setTimeout(open, 60);
     updateChatGuide();
   }
+  // 点「收藏」时，先出现合着的「信件」文件夹封面
+  function showCollectionCover(kind) {
+    kind = kind || 'letters';
+    get('letterCard').hidden = kind !== 'letters'; get('emptyCollection').hidden = kind === 'letters';
+    const go = () => { const api = folders(); if (api && api.showKind) api.showKind(kind); else setTimeout(go, 120); };
+    setTimeout(go, 60);
+    updateChatGuide();
+  }
+  window.maOpenLetter = () => { if (get('chatGuide').hidden) openLetter(false); };
+  document.addEventListener('keydown', event => {
+    if (currentPage !== 'collection' || !get('chatGuide').hidden || event.target.closest && event.target.closest('textarea,input')) return;
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Escape', 'Backspace'].includes(event.key)) return;
+    const frame = get('folderFrame'); if (document.activeElement === frame) return;
+    event.preventDefault(); frame.contentWindow.dispatchEvent(new KeyboardEvent('keydown', { key: event.key }));
+  });
   function setPage(page) {
     if (currentPage === 'chat' && page !== 'chat') window.maChat.hide();
     currentPage = page;
@@ -151,7 +168,7 @@ button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-v
   function begin() {
     if (busy || !firstLetter) return;
     busy = true; clearTimers();
-    mount.hidden = true; mount.innerHTML = ''; tabbar.hidden = false; chatGuidePending = true; setPage('collection'); selectCollection('letters');
+    mount.hidden = true; mount.innerHTML = ''; tabbar.hidden = false; chatGuidePending = true; setPage('collection'); showCollectionCover('letters');
     busy = false;
     updateChatGuide();
   }
@@ -169,9 +186,8 @@ button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-v
     later(() => { loginPending = false; setPage('home'); openLetter(true); }, 400);
   }
   function dialog(title, text) { get('dialogTitle').textContent = title; get('dialogContent').textContent = text; get('dialogLayer').hidden = false; get('dialogClose').focus(); }
-  document.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => { if (!busy && (get('chatGuide').hidden || button.dataset.page === 'chat')) setPage(button.dataset.page); }));
+  document.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => { if (!busy && (get('chatGuide').hidden || button.dataset.page === 'chat')) { setPage(button.dataset.page); if (button.dataset.page === 'collection') showCollectionCover('letters'); } }));
   document.querySelectorAll('[data-open-letter]').forEach(button => button.addEventListener('click', () => { if (get('chatGuide').hidden) openLetter(false); }));
-  document.querySelectorAll('[data-kind]').forEach(button => button.addEventListener('click', () => { if (get('chatGuide').hidden) selectCollection(button.dataset.kind); }));
   mount.addEventListener('click', event => { const button = event.target.closest('[data-letter-action]'); if (!button) return; if (button.dataset.letterAction === 'begin') begin(); if (button.dataset.letterAction === 'goBack') closeLetter(); if (button.dataset.letterAction === 'openLetter') startOpen(); });
   get('navBack').addEventListener('click', closeLetter);
   get('replay').addEventListener('click', replay);
@@ -191,8 +207,11 @@ button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-v
   });
   replay();
   if (location.hash === '#chat') get('directChat').click();
+  // 直接打开收藏主界面（单独的收藏 HTML 用）
+  if (location.hash === '#collection' || window.__MA_START === 'collection') { clearTimers(); busy = false; chatGuidePending = false; mount.hidden = true; mount.innerHTML = ''; get('splash').hidden = true; get('dialogLayer').hidden = true; tabbar.hidden = false; setPage('collection'); showCollectionCover('letters'); }
   window.addEventListener('ma-chat-home', () => setPage('home'));
 })();
 </script>
+<!-- LIQUID_CHAT -->
 </body>
 </html>

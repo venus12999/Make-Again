@@ -1,11 +1,17 @@
 const service = require('../../utils/service')
+function clockOf(t) { const d = new Date(t || Date.now()); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) }
+// 只有 1–3 个表情（没有别的字）时，按大表情贴纸显示
+function isSticker(text) { if (!text) return false; const t = String(text).trim(); if (!t || /[\w\u4e00-\u9fa5]/.test(t)) return false; const n = Array.from(t.replace(/[\uFE0F\u200D\s]/g, '')).length; return n >= 1 && n <= 3 }
 const { showError, formatTime } = require('../../utils/ui')
 Page({
   data: {
     hasGuest: false, messages: [], draft: '', canSend: false, saving: false, scrollTarget: '', keyboardHeight: 0,
     error: '', mode: 'text', guide: null, completed: 0, total: 4, progress: 0, draftLimit: 30,
     recording: false, authorizing: false, cancelRecording: false,
-    recordSeconds: 0, pendingAudio: null, playingId: '', audioSaving: false, dateLabel: ''
+    recordSeconds: 0, pendingAudio: null, playingId: '', audioSaving: false, dateLabel: '',
+    reactFor: '', emojiOpen: false,
+    reactionChoices: ['❤️', '🥹', '😂', '😮', '🌷', '👍'],
+    emojiChoices: ['🥹', '❤️', '🌷', '✨', '😊', '😭', '🫶', '🤍', '🌙', '☁️', '🍃', '🕯️', '📮', '💌', '🫂', '😌']
   },
   onShow() {
     this._active = true
@@ -42,7 +48,8 @@ Page({
       if (!overview.hasGuest) { this.setData({ hasGuest: false, error: '' }); return }
       if (start) service.startChat()
       const state = service.getChatState()
-      const messages = state.messages.map(message => Object.assign({}, message, { timeLabel: formatTime(message.createdAt) }))
+      const reactions = wx.getStorageSync('ma_reactions') || {}
+      const messages = state.messages.map((message, i, list) => Object.assign({}, message, { sameAsPrev: i > 0 && list[i - 1].role === message.role, timeLabel: formatTime(message.createdAt), clock: clockOf(message.createdAt), reaction: reactions[message.id] || '', isSticker: message.type !== 'voice' && isSticker(message.content) }))
       const d = new Date()
       this.setData({
         hasGuest: true, messages, guide: state.step, completed: state.completed, total: state.total,
@@ -65,7 +72,28 @@ Page({
   retry() { this.refresh(true) },
   onInput(event) { const draft = event.detail.value; this.setData({ draft, canSend: !!draft.trim() }) },
   keyboardChange(event) { this.setData({ keyboardHeight: event.detail.height || 0 }) },
-  blurInput() { wx.hideKeyboard() },
+  blurInput() { wx.hideKeyboard(); if (Date.now() - (this._heldAt || 0) < 600) return; if (this.data.reactFor || this.data.emojiOpen) this.setData({ reactFor: '', emojiOpen: false }) },
+  // 像 Instagram：双击气泡点 ❤️，长按弹出表情回应，点回应角标可以取消
+  bubbleTap(event) {
+    if (Date.now() - (this._heldAt || 0) < 600) return
+    const id = event.currentTarget.dataset.id, now = Date.now(), last = this._lastTap
+    if (last && last.id === id && now - last.time < 320) { this._lastTap = null; this.setReaction(id, '❤️') } else this._lastTap = { id, time: now }
+  },
+  bubbleHold(event) { this._heldAt = Date.now(); this.setData({ reactFor: event.currentTarget.dataset.id, emojiOpen: false }); if (wx.vibrateShort) wx.vibrateShort({ type: 'light' }) },
+  react(event) { const { id, emoji } = event.currentTarget.dataset; this.setReaction(id, emoji) },
+  clearReaction(event) { this.setReaction(event.currentTarget.dataset.id, null) },
+  setReaction(id, emoji) {
+    const map = wx.getStorageSync('ma_reactions') || {}
+    if (!emoji || map[id] === emoji) delete map[id]; else map[id] = emoji
+    wx.setStorageSync('ma_reactions', map)
+    this.setData({ reactFor: '', messages: this.data.messages.map(m => m.id === id ? Object.assign({}, m, { reaction: map[id] || '' }) : m) })
+  },
+  toggleEmoji() { this.setData({ emojiOpen: !this.data.emojiOpen, reactFor: '' }) },
+  pickEmoji(event) {
+    const chars = Array.from(this.data.draft + event.currentTarget.dataset.emoji), draft = chars.slice(0, Math.max(chars.length - 0, 0)).join('')
+    if (Array.from(draft).length > this.data.draftLimit) return
+    this.setData({ draft, canSend: !!draft.trim() })
+  },
   toggleMode() {
     if (this.data.recording || this.data.authorizing || this.data.audioSaving || this.data.pendingAudio) return
     this.blurInput()
@@ -75,7 +103,12 @@ Page({
     if (this.data.draft.trim() || this.data.pendingAudio) { wx.showToast({ title: '请先发送或清空正在编辑的内容', icon: 'none' }); return }
     if (this.data.guide) this.submit({ skip: true })
   },
-  send() { if (this.data.canSend) this.submit({ text: this.data.draft }) },
+  send() {
+    if (!this.data.canSend) return
+    // 引导问题阶段，只发表情不算回答，免得档案里存进一个表情
+    if (this.data.guide && isSticker(this.data.draft)) { wx.showToast({ title: '先用文字回答这一题，答完就能发表情啦', icon: 'none' }); return }
+    this.setData({ emojiOpen: false }); this.submit({ text: this.data.draft })
+  },
   submit(payload) {
     if (this.data.saving || this.data.audioSaving || this.data.recording || this.data.authorizing) return false
     this.setData({ saving: true })

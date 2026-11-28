@@ -78,7 +78,7 @@ const chatModules = ['utils/storage.js', 'utils/constants.js', 'utils/chat-guide
 const sources = Object.fromEntries(chatModules.map(file => [file, read(file)]))
 sources['utils/config.js'] = configSource  // 覆盖成连真后端
 const chatBundle = 'window.__MA_API_BASE = ' + JSON.stringify(apiBase) + ';\nwindow.__maChatSources = ' + JSON.stringify(sources).replace(/</g, '\\u003c') + ';\n' + read('scripts/chat-preview.js')
-const html = read('scripts/preview-template.html').replace('/* EMBEDDED_STYLES */', () => styles).replace('<!-- LETTER_TEMPLATE -->', () => letter).replace('<!-- LOGIN_TEMPLATE -->', () => login).replace('<!-- CHAT_GUIDE_TEMPLATE -->', () => chatGuide)
+const html = read('scripts/preview-template.html').replace('<!-- LIQUID_CHAT -->', () => read('scripts/liquid-chat.html')).replace('/* EMBEDDED_STYLES */', () => styles).replace('<!-- LETTER_TEMPLATE -->', () => letter).replace('<!-- LOGIN_TEMPLATE -->', () => login).replace('<!-- CHAT_GUIDE_TEMPLATE -->', () => chatGuide).replace('<!-- FOLDER_APP_SRCDOC -->', () => read('scripts/folder-app.html').replace(/&/g, '&amp;').replace(/"/g, '&quot;'))
   .replace('<!-- CHAT_NATIVE_TEMPLATE -->', () => '<template id="chatNativeTemplate">' + read('pages/chat/chat.wxml').replace(/<(textarea|t-icon)\b([^>]*?)\/>/g, '<$1$2></$1>') + '</template>')
   .replace('/* CHAT_PREVIEW_RUNTIME */', () => chatBundle)
   .replace(/<span class="ma-icon" data-tab-icon="([a-z]+)"><\/span>/g, (_, name) => {

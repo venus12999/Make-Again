@@ -1,0 +1,14 @@
+Make Again · 照片墙
+
+Make-Again-照片墙.html —— 双击打开即可（手机浏览器效果最好），信箱已经内嵌在里面。
+
+源代码/
+  template.html     照片墙的全部页面、动画、交互代码
+  assets.json       照片墙用到的素材（已压缩成 webp）
+  assets.py         从素材 PNG 重新打包 assets.json
+  Make-Again-信箱.html  被嵌进来的信箱
+  gen.py            用代码画那 9 张示例照片（python3 gen.py）
+  生成的照片/        画好的 9 张照片
+  build.py          把素材和信箱塞进 template.html，生成最终 HTML：python3 build.py
+
+数据保存在浏览器本地（localStorage：maWall9），清除浏览器数据会恢复默认墙面。

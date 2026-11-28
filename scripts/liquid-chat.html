@@ -1,0 +1,177 @@
+<style>
+/* 对话页 · 真液态玻璃（WebGL）：背景和玻璃都画在这张画布上，气泡本身变透明，只留文字 */
+#liquidGL{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none}
+.ma-liquid #liquidGL{display:block}
+.ma-liquid #chat .reaction-badge,.ma-liquid #chat .reaction-picker,.ma-liquid #chat .emoji-panel,.ma-liquid #chat .message-bubble,.ma-liquid #chat .chat-profile-strip,.ma-liquid #chat .chat-input,.ma-liquid #chat .hold-to-talk,.ma-liquid #chat .mode-button,
+.ma-liquid #chat .send-button,.ma-liquid #chat .chat-user-avatar,.ma-liquid #chat .audio-review,.ma-liquid #chat .guide-skip-button{
+  background:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:transparent!important}
+.ma-liquid #chat .message-bubble::before,.ma-liquid #chat .chat-profile-strip::before,.ma-liquid #chat .hold-to-talk::before,.ma-liquid #chat .mode-button::before,
+.ma-liquid #chat .send-button::before,.ma-liquid #chat .chat-user-avatar::before,.ma-liquid #chat .audio-review::before,.ma-liquid #chat .guide-skip-button::before{content:none!important}
+.ma-liquid #chat .message-bubble{color:#3F3150!important}
+/* 深色玻璃模式 */
+.ma-dark.ma-liquid .ma-status,.ma-dark.ma-liquid .ma-header{color:#F3EEF8}
+.ma-dark.ma-liquid #chat *:not(svg):not(path):not(.profile-progress-fill){color:rgba(246,241,251,.92)!important}
+.ma-dark.ma-liquid #chat .chat-input::placeholder{color:rgba(246,241,251,.45)}
+.ma-dark.ma-liquid .ma-tabbar{background:rgba(28,22,36,.55)!important;-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);border-top-color:rgba(255,255,255,.08)}
+.ma-dark.ma-liquid .ma-tabbar button{color:rgba(246,241,251,.65)}.ma-dark.ma-liquid .ma-tabbar button.active{color:#fff}
+.ma-dark.ma-liquid #chat .profile-progress{background:rgba(255,255,255,.14)!important}
+#glassPanel{position:fixed;z-index:9999;right:16px;top:70px;width:260px;padding:14px 16px 12px;border-radius:22px;display:none;font:13px -apple-system,"PingFang SC",sans-serif;color:#4A3D5A;
+  background:rgba(252,250,255,.82);-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);box-shadow:inset 0 1px 0 #fff,0 18px 44px rgba(80,60,110,.22);touch-action:auto}
+#glassPanel.on{display:block}
+#glassPanel .gp-h{font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+#glassPanel .gp-x{border:0;background:none;font-size:20px;color:#8D7D9A;cursor:pointer;padding:0 4px}
+#glassPanel label{display:block;margin:8px 0}#glassPanel label span{display:flex;justify-content:space-between}#glassPanel i{font-style:normal;color:#9C8EAA}
+#glassPanel input{width:100%;accent-color:#9A84C2;margin:4px 0 0}
+#glassPanel .gp-reset{width:100%;margin-top:6px;border:0;border-radius:12px;padding:8px;background:rgba(154,132,194,.14);color:#6E5C82;cursor:pointer;font:inherit}
+.ma-liquid #chat .message-group{animation:none!important}
+/* 黑夜：欢迎卡片也换成深色玻璃，浅字；白天保持原来的浅色卡片 */
+.ma-dark.ma-liquid #chat .consent-welcome{background:linear-gradient(160deg,rgba(74,60,96,.62),rgba(40,32,54,.58))!important;
+  -webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);
+  border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -14px 28px -18px rgba(190,160,240,.35),0 24px 60px rgba(8,4,20,.45)}
+.ma-dark.ma-liquid #chat .consent-heading,.ma-dark.ma-liquid #chat .consent-greeting,.ma-dark.ma-liquid #chat .consent-title{color:#F4EEFB!important}
+.ma-dark.ma-liquid #chat .consent-greeting{color:rgba(244,238,251,.72)!important}
+.ma-dark.ma-liquid #chat .accept-consent{background:linear-gradient(115deg,rgba(255,255,255,.16),rgba(206,184,250,.14))!important;border:1px solid rgba(255,255,255,.22)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 10px 26px rgba(8,4,20,.3)!important}
+.ma-dark.ma-liquid #chat .accept-consent,.ma-dark.ma-liquid #chat .accept-consent *{color:#F6F1FC!important}
+.ma-dark.ma-liquid #chat .consent-button-pressed{background:linear-gradient(115deg,rgba(255,255,255,.24),rgba(206,184,250,.22))!important}
+.ma-dark.ma-liquid #chat .consent-orb{box-shadow:inset 0 0 18px #FFF,0 14px 34px rgba(160,130,220,.35)}
+</style>
+<script>
+(() => {
+  const phone = document.getElementById('phone'), cv = document.createElement('canvas'); cv.id = 'liquidGL'; phone.insertBefore(cv, phone.firstChild);
+  const gl = cv.getContext('webgl', { antialias: false, premultipliedAlpha: false }); if (!gl) return;
+  const MAX = 28, SEL = '.reaction-badge,.reaction-picker,.emoji-panel,.message-bubble,.chat-profile-strip,.chat-input,.hold-to-talk,.mode-button,.send-button,.chat-user-avatar,.audio-review,.guide-skip-button';
+  const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+  const FS = `precision highp float;
+uniform vec2 uRes;uniform float uDpr,uTime;uniform vec4 uP[${MAX}];uniform vec4 uQ[${MAX}];uniform vec4 uClip;uniform int uN;uniform float uDark,uMilk,uFrost,uBevel,uRefr,uGlow,uRain;
+#define MAXN ${MAX}
+// ---- 页面原背景：三团流动的彩色光晕（与 CSS 的 ma-bg-flow 一致） ----
+float ease(float x){return x<.5?2.*x*x:1.-pow(-2.*x+2.,2.)/2.;}
+vec2 kf(vec2 a,vec2 b,vec2 c,float t){return t<.5?mix(a,b,ease(t*2.)):mix(b,c,ease(t*2.-1.));}
+vec4 blob(vec2 p,float S,vec2 rad,vec2 pos,vec4 col){vec2 R=uRes;vec2 sz=S*R;vec2 o=(R-sz)*pos;vec2 c=o+sz*.5;
+  float d=length((p-c)/(sz*rad));return vec4(col.rgb,col.a*clamp(1.-d/.7,0.,1.));}
+vec3 over(vec3 b,vec4 c){return mix(b,c.rgb,c.a);}
+vec3 page(vec2 p){
+  float ph=mod(uTime/6.,2.);float t=ph<1.?ph:2.-ph;
+  vec3 c=vec3(248.,250.,255.)/255.;
+  c=over(c,blob(p,1.9,vec2(.48,.38),kf(vec2(.66,.88),vec2(.38,.60),vec2(.70,.72),t),vec4(222.,201.,250.,.32*255.)/255.));
+  c=over(c,blob(p,2.0,vec2(.52,.40),kf(vec2(.30,.68),vec2(.70,.44),vec2(.62,.30),t),vec4(250.,220.,234.,.40*255.)/255.));
+  c=over(c,blob(p,2.2,vec2(.58,.44),kf(vec2(.62,.18),vec2(.34,.42),vec2(.56,.72),t),vec4(188.,215.,250.,.45*255.)/255.));
+  return c;}
+vec3 darkPage(vec2 p){
+  vec2 R=uRes,u=p/R;float T=uTime*.08;
+  vec3 c=mix(vec3(.20,.17,.24),vec3(.12,.10,.15),u.y);
+  for(int i=0;i<7;i++){float f=float(i);
+    vec2 cc=vec2(.5+.42*sin(f*2.1+T*(.6+f*.07)),.12+f*.14+.05*cos(f*1.3+T));
+    float r=(.16+.05*sin(f*1.7))*R.x;float k=exp(-pow(length(p-cc*R)/r,2.));
+    vec3 tint=f<2.?vec3(.62,.50,.86):f<4.?vec3(.85,.55,.70):f<6.?vec3(.45,.52,.85):vec3(.95,.80,.85);
+    c=mix(c,tint,k*.42);}
+  return c;}
+vec3 bgc(vec2 p){return uDark<.01?page(p):uDark>.99?darkPage(p):mix(page(p),darkPage(p),uDark);}
+float sdBox(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}
+bool inClip(vec2 p){return p.x>uClip.x&&p.y>uClip.y&&p.x<uClip.z&&p.y<uClip.w;}
+vec3 scene(vec2 p){float d=1e5,hs=1.,tn=0.;
+  for(int i=0;i<MAXN;i++){if(i>=uN)break;vec4 P=uP[i],Q=uQ[i];
+    if(Q.y>.5&&!inClip(p))continue;
+    vec2 lp=p-P.xy;if(abs(lp.x)>P.z+40.*uDpr||abs(lp.y)>P.w+40.*uDpr)continue;
+    float di=sdBox(lp,P.zw,Q.x);if(di<d){d=di;hs=min(P.z,P.w);tn=Q.z;}}
+  return vec3(d,hs,tn);}
+// 磨砂：在玻璃里把背景再糊一遍（背景本身是解析式，可以随便多采几次）
+vec3 frosted(vec2 p,float r){vec3 c=bgc(p)*.2;
+  for(int i=0;i<8;i++){float a=float(i)*.785+.4;c+=bgc(p+vec2(cos(a),sin(a))*r)*.1;}return c;}
+void main(){
+  vec2 p=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y);
+  vec3 S=scene(p);float d=S.x;vec3 col=bgc(p);
+  float sd=scene(p-vec2(0.,8.*uDpr)).x;
+  col*=1.-mix(.10,.32,uDark)*smoothstep(20.*uDpr,0.,sd)*step(0.,d);          // 投影
+  if(d<0.){
+    float e=-d,w=min(S.y*.95,20.*uDpr*uBevel),t=clamp(e/w,0.,1.),h=sqrt(1.-(1.-t)*(1.-t));
+    vec2 E=vec2(1.,0.);vec2 n=normalize(vec2(scene(p+E).x-scene(p-E).x,scene(p+E.yx).x-scene(p-E.yx).x)+1e-5);
+    // 轻微折射（边缘把背景往里拉）+ 磨砂
+    vec2 q=p-n*(1.-h)*w*1.1*uRefr;
+    vec3 g=frosted(q,16.*uDpr*uFrost);
+    // 奶白 / 深色下的提亮
+    vec3 milk=mix(vec3(1.,.99,1.),vec3(.93,.88,1.),S.z);
+    g=mix(g,milk,clamp((mix(.30,.10,uDark)+.12*S.z)*uMilk,0.,.95))+uDark*vec3(.075,.07,.085)*uMilk;
+    // 厚边：沿着边缘内侧的一圈柔光，左上和右下最亮（参考控制中心那种）
+    float tl=max(dot(n,normalize(vec2(-.6,-.8))),0.),br=max(dot(n,normalize(vec2(.6,.8))),0.);
+    float dirL=.35+tl*.9+br*.6;
+    float glow=exp(-e/(4.5*uDpr))*.55+exp(-e/(13.*uDpr))*.22;
+    g+=vec3(1.)*glow*dirL*mix(.75,.6,uDark)*uGlow;
+    // 底部内侧的聚光（雨滴那张气泡底边更亮）
+    g+=vec3(1.,.98,1.)*br*exp(-pow((e/w-.45)/.3,2.))*.10*uGlow;
+    // 对边一点点内阴影，让厚度更立体
+    // 极淡的色散（只在最细的亮边上）
+    vec3 rb=clamp(vec3(abs(t*18.-3.)-1.,2.-abs(t*18.-2.),2.-abs(t*18.-4.)),0.,1.);
+    g=mix(g,g*.8+rb*.35,exp(-e/(3.*uDpr))*.10*uRain*(tl+br));
+    g+=smoothstep(1.3*uDpr,0.,e)*(.35+.4*dirL)*.6*min(uGlow,1.5);                            // 最外圈细亮线
+    col=mix(col,g,smoothstep(0.,1.1*uDpr,e));
+  }
+  gl_FragColor=vec4(col,1.);}`;
+  const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(o)); return o };
+  const pg = gl.createProgram(); gl.attachShader(pg, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pg, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pg); gl.useProgram(pg);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const al = gl.getAttribLocation(pg, 'a'); gl.enableVertexAttribArray(al); gl.vertexAttribPointer(al, 2, gl.FLOAT, false, 0, 0);
+  const U = n => gl.getUniformLocation(pg, n), P = new Float32Array(MAX * 4), Q = new Float32Array(MAX * 4), t0 = performance.now();
+  const chat = document.getElementById('chat');
+  // 玻璃参数（滑块），值存在浏览器里
+  const GP = { milk: { u: 'uMilk', n: '奶白 / 不透明', min: 0, max: 2.5, d: 1 }, frost: { u: 'uFrost', n: '磨砂', min: 0, max: 2.5, d: 1 },
+    bevel: { u: 'uBevel', n: '玻璃厚度（液态感）', min: .3, max: 2.2, d: 1 }, refr: { u: 'uRefr', n: '折射', min: 0, max: 4, d: 1 },
+    glow: { u: 'uGlow', n: '透光 / 边缘亮度', min: 0, max: 2.5, d: 1 }, rain: { u: 'uRain', n: '彩虹边', min: 0, max: 8, d: 1 },
+    juicy: { u: null, n: 'Juicy 弹性（新消息、按压）', min: 0, max: 2.5, d: 1 } };
+  const GV = {}; let saved = {}; try { saved = JSON.parse(localStorage.getItem('maGlass') || '{}') } catch (_) {}
+  for (const k in GP) GV[k] = typeof saved[k] === 'number' ? saved[k] : GP[k].d; let dk = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const on = !chat.hidden; phone.classList.toggle('ma-liquid', on); if (!on) return;
+    const pr = phone.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1), W = Math.round(pr.width * dpr), H = Math.round(pr.height * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; gl.viewport(0, 0, W, H) }
+    const sc = chat.querySelector('.message-scroll'), cr = sc ? sc.getBoundingClientRect() : pr;
+    let n = 0;
+    for (const el of chat.querySelectorAll(SEL)) {
+      if (n >= MAX) break; if (el.classList.contains('sticker-message')) continue; const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
+      const inScroll = sc && sc.contains(el); if (inScroll && (r.bottom < cr.top || r.top > cr.bottom)) continue;
+      const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) continue;
+      const rad = Math.min(parseFloat(cs.borderTopLeftRadius) || 0, r.width / 2, r.height / 2);
+      P.set([(r.left + r.width / 2 - pr.left) * dpr, (r.top + r.height / 2 - pr.top) * dpr, r.width / 2 * dpr, r.height / 2 * dpr], n * 4);
+      Q.set([rad * dpr, inScroll ? 1 : 0, el.classList.contains('user-message') || el.classList.contains('send-button') ? 1 : 0, 0], n * 4); n++;
+    }
+    gl.uniform4fv(U('uP'), P); gl.uniform4fv(U('uQ'), Q); gl.uniform1i(U('uN'), n);
+    gl.uniform4f(U('uClip'), (cr.left - pr.left) * dpr, (cr.top - pr.top) * dpr, (cr.right - pr.left) * dpr, (cr.bottom - pr.top) * dpr);
+    gl.uniform2f(U('uRes'), W, H); gl.uniform1f(U('uDpr'), dpr); for (const k in GP) if (GP[k].u) gl.uniform1f(U(GP[k].u), GV[k]); dk += ((phone.classList.contains('ma-dark') ? 1 : 0) - dk) * .12; if (Math.abs(dk - Math.round(dk)) < .004) dk = Math.round(dk); gl.uniform1f(U('uDark'), dk); gl.uniform1f(U('uTime'), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : (now - t0) / 1000);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  requestAnimationFrame(frame);
+  // Juicy：新消息像水珠一样弹出来；按住气泡/按钮会被压扁再回弹。玻璃画布每帧读位置，所以玻璃跟着一起变形
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function pop(el) { const J = GV.juicy; if (!J || reduced()) return;
+    el.animate([{ transform: `translateY(${22 * J}px) scale(${1 - .16 * J},${1 - .22 * J})`, opacity: 0 },
+      { transform: `translateY(${-4 * J}px) scale(${1 + .05 * J},${1 + .07 * J})`, opacity: 1, offset: .45 },
+      { transform: `scale(${1 - .025 * J},${1 + .02 * J})`, offset: .7 }, { transform: 'none', opacity: 1 }], { duration: 520 + 220 * J, easing: 'cubic-bezier(.2,.8,.3,1)' }) }
+  function squish(el) { const J = GV.juicy; if (!J || reduced()) return;
+    el.animate([{ transform: 'none' }, { transform: `scale(${1 + .05 * J},${1 - .08 * J})`, offset: .22 }, { transform: `scale(${1 - .03 * J},${1 + .04 * J})`, offset: .5 },
+      { transform: `scale(${1 + .012 * J},${1 - .012 * J})`, offset: .75 }, { transform: 'none' }], { duration: 480 + 220 * J, easing: 'ease-out' }) }
+  chat.addEventListener('pointerdown', e => { const el = e.target.closest(SEL); if (el && chat.contains(el)) squish(el) });
+  const seen = new Set(); chat.querySelectorAll('.message-group').forEach(g => seen.add(g.id));
+  new MutationObserver(() => { if (!phone.classList.contains('ma-liquid')) return; chat.querySelectorAll('.message-group').forEach(g => { if (!g.id || seen.has(g.id)) return; seen.add(g.id); g.querySelectorAll('.message-bubble').forEach(pop) }) })
+    .observe(chat, { childList: true, subtree: true });
+  // 预览工具栏：切换深浅
+  const tools = document.querySelector('.preview-tools'); if (tools) { const b = document.createElement('button'); b.type = 'button';
+    // 昼夜：默认跟着当地时间（6:00–18:00 白天），点按钮可以手动切换，手动选过就记住
+    const night = () => { const h = new Date().getHours(); return h < 6 || h >= 18 };
+    const set = (v, save) => { phone.classList.toggle('ma-dark', v); b.textContent = v ? '☾ 黑夜' : '☀ 白天'; b.title = '点击切换昼夜'; if (save) try { localStorage.setItem('maNight', v ? '1' : '0') } catch (_) {} };
+    let saved = null; try { saved = localStorage.getItem('maNight') } catch (_) {}
+    set(saved === null ? night() : saved === '1');
+    if (saved === null) setInterval(() => { let s2 = null; try { s2 = localStorage.getItem('maNight') } catch (_) {} if (s2 === null) set(night()) }, 60000);
+    b.onclick = () => set(!phone.classList.contains('ma-dark'), true); tools.insertBefore(b, tools.firstChild);
+    const gb = document.createElement('button'); gb.type = 'button'; gb.textContent = '玻璃参数'; tools.insertBefore(gb, b.nextSibling);
+    const pn = document.createElement('div'); pn.id = 'glassPanel'; document.body.appendChild(pn);
+    const save = () => { try { localStorage.setItem('maGlass', JSON.stringify(GV)) } catch (_) {} };
+    const build = () => { pn.innerHTML = '<div class="gp-h">玻璃参数<button type="button" class="gp-x" aria-label="关闭">×</button></div>';
+      for (const k in GP) { const g = GP[k], l = document.createElement('label'); l.innerHTML = `<span>${g.n}<i>${GV[k].toFixed(2)}</i></span><input type="range" min="${g.min}" max="${g.max}" step=".01" value="${GV[k]}">`;
+        const inp = l.querySelector('input'), out = l.querySelector('i'); inp.oninput = () => { GV[k] = +inp.value; out.textContent = GV[k].toFixed(2); save() }; pn.appendChild(l) }
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'gp-reset'; r.textContent = '恢复默认'; r.onclick = () => { for (const k in GP) GV[k] = GP[k].d; save(); build() }; pn.appendChild(r);
+      pn.querySelector('.gp-x').onclick = () => pn.classList.remove('on') };
+    build(); gb.onclick = () => { if (chat.hidden) { const t = document.querySelector('.ma-tabbar [data-page=chat]'); t && t.click() } pn.classList.toggle('on') } }
+})();
+</script>
