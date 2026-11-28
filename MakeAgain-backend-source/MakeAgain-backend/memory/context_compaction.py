@@ -129,6 +129,18 @@ def find_cut_point(messages: list[dict], keep_recent_tokens: int = DEFAULT_KEEP_
             candidates = [j for j in range(i, len(messages)) if _is_cut_point(messages[j])]
             cut_index = candidates[0] if candidates else 0
             break
+    # D-080：可选走 AIRI/plast-mem 的"事件分段切点"——在 token 预算附近选话题边界分最高的点，
+    # 避免 PI 的"最近有效切点"切在话题中间（离线真语料对比：3场景2个边界分提升，见 work/airi_compare.json）。
+    # 默认关，显式 USE_EVENT_SEGMENTATION=1 才启用；失败/关时逐字节回退原 PI 切点。
+    if os.getenv("USE_EVENT_SEGMENTATION", "0").strip().lower() in {"1", "true", "yes", "on"}:
+        try:
+            from memory import airi_patterns as ap
+            event_idx = ap.find_cut_point_by_event(messages, keep_recent_tokens, estimate_tokens)
+            if event_idx > 0:
+                cut_index = event_idx
+        except Exception as exc:
+            logger.warning("event segmentation cut failed, fallback to PI cut: %s", exc)
+
     # 是否在 turn 中间切（切点不是 user）
     is_split = cut_index > 0 and messages[cut_index].get("role") != "user"
     turn_start = -1
@@ -319,9 +331,10 @@ def maybe_compact(db, user_id: str, session_id: str | None, turns: list[dict], c
         return turns, None
 
     sid = session_id or ("default:" + user_id)
-    # 关键（D-070 二次修复）：摘要一旦落库就必须**每轮持续注入**，不能只在
-    # "本轮压缩成功"那一轮注入。否则下一次压缩失败（SUMMARY_TOO_SHORT/EMPTY）
-    # 或未触发阈值时，早期事实又从上下文里消失——正是"周明远在摘要里却说没听过"的根因。
+
+    # 关键（D-070）：摘要一旦落库就每轮持续注入——早期事实靠它保住。
+    # D-078：用已落库摘要的 first_kept_id 作边界，只把【边界之后的新消息】喂给压缩器，
+    # 模拟成熟 agent 的"压一次→替换历史→之后从摘要继续"（Codex replace_compacted_history）。
     summary = None
     try:
         prev = load_latest_entry(db, sid)
@@ -331,23 +344,80 @@ def maybe_compact(db, user_id: str, session_id: str | None, turns: list[dict], c
         from memory.models import ChatMessage
         from sqlalchemy import select
 
-        # turns 已被 get_turns 截到 max_turns，阈值判断必须拿全量历史
         all_rows = db.scalars(
             select(ChatMessage)
             .where(ChatMessage.user_id == user_id,
                    ChatMessage.session_id == (session_id or ""))
             .order_by(ChatMessage.id.asc())
         ).all()
-        full_history = [{"role": r.role, "content": r.content} for r in all_rows]
-        if should_compact(estimate_context_tokens(full_history)):
-            result = compact(full_history, client, sid, previous_entry=prev)
-            if result.error or result.entry is None:
-                logger.warning("compaction skipped: %s", result.error)
-            else:
-                save_entry(db, result.entry)
-                summary = result.entry.summary
-                # 只在压缩真成功时才用精简后的 turns；失败时原文逐字节保留
-                return result.kept_messages, summary
+
+        # 边界：上次压缩保留的第一条消息的 id（真实 ChatMessage.id，不是数组下标）
+        boundary_id = None
+        if prev and prev.first_kept_id and prev.first_kept_id.isdigit():
+            boundary_id = int(prev.first_kept_id)
+
+        # 压缩输入 = 摘要(作为历史) + 边界之后的新消息；不是每轮拿全量重压
+        new_rows = [r for r in all_rows if boundary_id is None or r.id > boundary_id]
+        compress_input = [{"role": r.role, "content": r.content} for r in new_rows]
+        if summary:
+            compress_input.insert(0, {"role": "system", "content": summary})
+        need_compact = should_compact(estimate_context_tokens(compress_input))
+
+        if need_compact:
+            kept, new_summary, new_boundary = None, None, None
+
+            # D-078：优先走 LangChain SummarizationMiddleware（本机已装依赖，官方实现）
+            if os.getenv("USE_LANGCHAIN_COMPACTION", "1").strip().lower() in {"1", "true", "yes", "on"}:
+                try:
+                    from memory import langchain_compact as lc
+                    from config import get_settings as _gs
+                    lc_result = lc.compact_via_langchain(
+                        compress_input, client,
+                        trigger_tokens=DEFAULT_CONTEXT_WINDOW - DEFAULT_RESERVE_TOKENS,
+                        # keep 必须小于输入条数；compress_input=全量历史，保留 max_turns 条足够
+                        keep_messages=_gs().session_context_max_turns,
+                    )
+                    if lc_result:
+                        for t in lc_result:
+                            if t.get("role") == "system" and lc.SUMMARY_BLOCK_MARK in t.get("content", ""):
+                                new_summary = t["content"].split(lc.SUMMARY_BLOCK_MARK + "\n", 1)[-1]
+                                break
+                        if new_summary:
+                            # 保留消息的第一条对应 new_rows 里的某条 → 用真实 id 作新边界
+                            real_kept = [t for t in lc_result if t.get("role") != "system"]
+                            if real_kept and new_rows:
+                                first_content = real_kept[0].get("content")
+                                matched = [r for r in new_rows if r.content == first_content]
+                                new_boundary = matched[0].id if matched else (boundary_id or 0)
+                            kept = lc_result
+                except Exception as exc:
+                    logger.warning("langchain compaction path failed, fallback to legacy: %s", exc)
+
+            # 自研回退（D-070/D-072 已验证）；也用于 USE_LANGCHAIN_COMPACTION=0
+            if kept is None:
+                result = compact(compress_input, client, sid, previous_entry=prev)
+                if result.error or result.entry is None:
+                    logger.warning("compaction skipped: %s", result.error)
+                else:
+                    new_summary = result.entry.summary
+                    kept = result.kept_messages
+                    # 自研：摘要是 kept 之外的内容，边界取 new_rows 中第一条保留消息
+                    if new_rows:
+                        first_kept_content = kept[0].get("content") if kept else None
+                        matched = [r for r in new_rows if r.content == first_kept_content]
+                        new_boundary = matched[0].id if matched else (boundary_id or 0)
+
+            if kept is not None and new_summary:
+                entry = CompactionEntry(
+                    id=uuid.uuid4().hex, session_id=sid, summary=new_summary,
+                    first_kept_id=str(new_boundary or (boundary_id or 0)), tokens_before=estimate_context_tokens(compress_input),
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                    details={"engine": "langchain" if os.getenv("USE_LANGCHAIN_COMPACTION", "1").strip().lower() in {"1", "true", "yes", "on"} else "legacy"},
+                )
+                save_entry(db, entry)
+                summary = new_summary
+                # 返回给调用方：压缩后的精简消息（含摘要 system）+ 摘要字符串
+                return kept, summary
     except Exception as exc:
         logger.warning("compaction failed, keep original turns: %s", exc)
     # 没触发压缩 / 压缩失败：turns 原样，但已落库的摘要继续带着
