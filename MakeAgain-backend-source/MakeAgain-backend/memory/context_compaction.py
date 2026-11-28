@@ -129,10 +129,11 @@ def find_cut_point(messages: list[dict], keep_recent_tokens: int = DEFAULT_KEEP_
             candidates = [j for j in range(i, len(messages)) if _is_cut_point(messages[j])]
             cut_index = candidates[0] if candidates else 0
             break
-    # D-080：可选走 AIRI/plast-mem 的"事件分段切点"——在 token 预算附近选话题边界分最高的点，
-    # 避免 PI 的"最近有效切点"切在话题中间（离线真语料对比：3场景2个边界分提升，见 work/airi_compare.json）。
-    # 默认关，显式 USE_EVENT_SEGMENTATION=1 才启用；失败/关时逐字节回退原 PI 切点。
-    if os.getenv("USE_EVENT_SEGMENTATION", "0").strip().lower() in {"1", "true", "yes", "on"}:
+    # D-081：事件分段切点（AIRI/plast-mem 移植）——在 token 预算附近选话题边界分最高的点，
+    # 避免 PI 的"最近有效切点"切在话题中间。
+    # 真实验证：离线边界分 3 场景 2 提升（work/airi_compare.json）+ 开臂事实门禁 3/3 GATE PASS。
+    # 默认开（显式 USE_EVENT_SEGMENTATION=0 可关闭回退到原 PI 切点）；失败时逐字节回退。
+    if os.getenv("USE_EVENT_SEGMENTATION", "1").strip().lower() in {"1", "true", "yes", "on"}:
         try:
             from memory import airi_patterns as ap
             event_idx = ap.find_cut_point_by_event(messages, keep_recent_tokens, estimate_tokens)

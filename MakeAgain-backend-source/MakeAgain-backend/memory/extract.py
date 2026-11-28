@@ -234,13 +234,22 @@ def _map_mem_extraction(parsed, user_text, emotion, place_tag, time_tag) -> dict
             confidence = float(item.get("confidence", 0.8))
         except (TypeError, ValueError):
             confidence = 0.8
-        facts.append({
+        fact_obj = {
             "kind": kind,
             "fact": text,
             "confidence": confidence,
             "attributed_to": item.get("attributed_to") or "user",
             "linked_memory_ids": item.get("linked_memory_ids") or [],
-        })
+        }
+        # D-080/AIRI：附加 8 类细分类（不改原 6 类 kind，向后兼容）。
+        # 开关 USE_AIRI_FACT_KIND 默认开；失败不影响事实落库。
+        if os.getenv("USE_AIRI_FACT_KIND", "1").strip().lower() in {"1", "true", "yes", "on"}:
+            try:
+                from memory import airi_patterns as _ap
+                fact_obj["airi_kind"] = _ap.classify_airi_kind(text)
+            except Exception:
+                pass
+        facts.append(fact_obj)
 
     importance = float(parsed.get("importance", _importance_from_emotion(emotion)))
     llm_place = parsed.get("place_tag")

@@ -22,12 +22,16 @@ def facts_text(facts) -> str:
     return " ".join(_fact_str(f) for f in (facts or []) if _fact_str(f))
 
 
-def facts_for_context(facts, min_conf: float = 0.6, kinds=None, max_n: int = 2) -> list[str]:
+def facts_for_context(facts, min_conf: float = 0.6, kinds=None, max_n: int = 2,
+                      airi_kinds=None) -> list[str]:
     """过滤出高置信、指定 kind 的 fact 文本(去重、保序、截断)。
 
     confidence 缺失时视为通过(不因字段缺失丢信息);`kinds` 为 None 时不过滤 kind。
+    D-080：`airi_kinds` 可选——AIRI 8 类细分类过滤（如 relationship/experience），
+    默认 None 不影响现有行为；事实无 airi_kind 字段时不因缺字段被过滤掉。
     """
     allowed = set(kinds) if kinds else None
+    allowed_airi = set(airi_kinds) if airi_kinds else None
     out: list[str] = []
     seen: set[str] = set()
     for f in (facts or []):
@@ -35,6 +39,8 @@ def facts_for_context(facts, min_conf: float = 0.6, kinds=None, max_n: int = 2) 
             continue
         if allowed is not None and f.get("kind") not in allowed:
             continue
+        if allowed_airi is not None and f.get("airi_kind") is not None and f.get("airi_kind") not in allowed_airi:
+            continue  # 有细分类才过滤；老事实无此字段时照常纳入，不破坏存量
         conf = f.get("confidence")
         if conf is not None:
             try:
