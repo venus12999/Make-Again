@@ -67,8 +67,12 @@ def chat(req: ChatReq, db: Session = Depends(get_session)):
     # U-005: 生成入口接 entitlement 门禁。USE_ENTITLEMENT_GATE 默认关 → 不查库、零影响；
     # 开启且服务端判定无权限 → 按既有契约 403 ENTITLEMENT_EXPIRED 拒绝（新增拒绝分支，
     # 正常用户路径输出逐字节不变）。已生成资产/低情绪与危机话术不走此门禁。
+    # D-083 安全修复：危机消息必须绕过门禁——原实现门禁在 companion.chat(含危机检测)之前，
+    # 过期会员说"我想死"会先被 403 拦掉，根本到不了热线话术（与上方注释"危机不走门禁"矛盾）。
+    # 这里先用硬门槛 detect() 判断，危机直接短路跳过门禁，保证生命安全的消息永不被付费墙拦。
     from api.entitlement import gate_enabled, require_generate
-    if gate_enabled():
+    from emotion.crisis import detect as _crisis_detect
+    if gate_enabled() and not _crisis_detect(req.message).get("is_crisis"):
         require_generate(db.get(User, req.user_id))
     c = store.get_current_companion(db, req.user_id)
     if not c or c.archived_at: fail(409, "COMPANION_REQUIRED", "请先开始陪伴")

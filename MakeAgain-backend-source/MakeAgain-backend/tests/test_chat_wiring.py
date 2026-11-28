@@ -219,3 +219,34 @@ def test_entitlement_on_denies_expired_and_allows_active(client, monkeypatch):
         "session_id", "companion_id", "status", "created_at",
         "user_message_id", "assistant_message_id", "disclosure",
     }
+
+
+# ===========================================================================
+# D-083 安全修复：危机消息必须绕过 entitlement 门禁（过期会员也不能被付费墙拦掉热线）
+# ===========================================================================
+def test_crisis_bypasses_entitlement_gate(client, monkeypatch):
+    monkeypatch.setenv(ent.FLAG, "1")
+    u, h, s = account(client)
+    _set_membership(u, expired=True)  # 过期会员
+
+    # 危机消息：即使门禁开+会员过期，也必须放行并拿到热线话术
+    crisis_resp = _chat(client, h, s["chat_session_id"], "我想死", "ent-crisis-bypass")
+    assert crisis_resp.status_code == 200, crisis_resp.text
+    body = crisis_resp.json()
+    assert body["reply"] == CRISIS_MESSAGE
+    assert body["crisis"]["is_crisis"] is True
+
+    # 同一用户非危机消息：仍被门禁拒绝（证明不是门禁整体失效）
+    denied = _chat(client, h, s["chat_session_id"], "今天有点想他", "ent-normal-deny")
+    assert denied.status_code == 403, denied.text
+    assert denied.json()["code"] == "ENTITLEMENT_EXPIRED"
+
+
+def test_entitlement_router_mounted_in_production_app(client):
+    """D-083：/api/entitlement 视图端点在生产 main.py 已挂载（此前仅测试自挂）。
+
+    新版 FastAPI 的 include_router 用 _IncludedRouter 聚合，r.path 拿不到内部路径，
+    因此用真实请求判定：挂载了→端点存在（401 鉴权失败或 200），没挂→404。
+    """
+    r = client.get("/api/entitlement")
+    assert r.status_code != 404, "entitlement router 未挂载到生产 app"

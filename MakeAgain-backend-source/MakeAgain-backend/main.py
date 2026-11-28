@@ -13,6 +13,7 @@ from api.b07 import router as b07_router
 from api.media import router as media_router
 from api.subscriptions import router as subscriptions_router
 from api.community import router as community_router
+from api.entitlement import router as entitlement_router  # D-083: 生产挂载 /api/entitlement（此前仅测试自挂）
 from api.memory_confirm import router as memory_confirm_router
 from api.memory_correct import router as memory_correct_router
 from api.memory_export import router as memory_export_router
@@ -39,6 +40,7 @@ app.include_router(memory_correct_router)
 app.include_router(memory_export_router)
 app.include_router(memory_scope_router)
 app.include_router(crisis_router)  # U-004 危机事件只读端点
+app.include_router(entitlement_router)  # D-083 entitlement 视图端点生产可用
 app.include_router(router)
 
 # 前端为静态原型（file:// 或本地静态服务器），跨源调用需要放开 CORS。
